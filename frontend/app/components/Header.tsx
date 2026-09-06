@@ -52,7 +52,7 @@ export default function Header() {
           <button
             type="button"
             onClick={() => setMenuOpen((open) => !open)}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 text-cream md:hidden"
+            className="relative z-[60] flex h-11 w-11 cursor-pointer touch-manipulation items-center justify-center rounded-full border border-white/10 text-cream md:hidden"
             aria-label="Toggle menu"
             aria-expanded={menuOpen}
           >
@@ -63,6 +63,7 @@ export default function Header() {
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2"
+                aria-hidden="true"
               >
                 <path
                   d="M6 6 L18 18 M18 6 L6 18"
@@ -76,6 +77,7 @@ export default function Header() {
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2"
+                aria-hidden="true"
               >
                 <path
                   d="M4 7h16M4 12h16M4 17h16"
@@ -88,13 +90,13 @@ export default function Header() {
       </div>
 
       {menuOpen && (
-        <nav className="border-t border-white/10 px-6 py-4 md:hidden">
+        <nav className="relative z-[55] border-t border-white/10 px-6 py-4 md:hidden">
           <div className="flex flex-col gap-4 text-sm text-muted">
             {navLinks.map((link) => (
               <a
                 key={link.href}
                 href={link.href}
-                className="transition-colors hover:text-cream"
+                className="block cursor-pointer touch-manipulation py-1 transition-colors hover:text-cream"
                 onClick={() => setMenuOpen(false)}
               >
                 {link.label}
@@ -103,7 +105,7 @@ export default function Header() {
 
             <Link
               href="/register"
-              className="mt-2 rounded-full bg-red px-5 py-2.5 text-center text-sm font-medium text-cream sm:hidden"
+              className="mt-2 block rounded-full bg-red px-5 py-3 text-center text-sm font-medium text-cream"
               onClick={() => setMenuOpen(false)}
             >
               Register
