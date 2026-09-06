@@ -1,0 +1,61 @@
+@import "tailwindcss";
+@import "@fontsource/fraunces/400.css";
+@import "@fontsource/fraunces/500.css";
+@import "@fontsource/fraunces/600.css";
+@import "@fontsource/fraunces/600-italic.css";
+@import "@fontsource/work-sans/400.css";
+@import "@fontsource/work-sans/500.css";
+@import "@fontsource/work-sans/600.css";
+
+:root {
+  /* Base */
+  --ink: #14100e;         /* warm near-black background */
+  --ink-raised: #1d1713;  /* slightly lifted panels on dark */
+  --paper: #faf6f0;       /* warm off-white for light sections */
+  --paper-raised: #f1ebe1;
+  --cream: #f5efe6;       /* text on dark */
+  --muted: #b8ada0;       /* secondary text on dark */
+  --muted-on-paper: #6b6259;
+
+  /* Brand accents */
+  --red: #b80319;
+  --gold: #e59200;
+  --teal: #00a5a8;
+}
+
+@theme inline {
+  --color-ink: var(--ink);
+  --color-ink-raised: var(--ink-raised);
+  --color-paper: var(--paper);
+  --color-paper-raised: var(--paper-raised);
+  --color-cream: var(--cream);
+  --color-muted: var(--muted);
+  --color-muted-on-paper: var(--muted-on-paper);
+  --color-red: var(--red);
+  --color-gold: var(--gold);
+  --color-teal: var(--teal);
+  --font-display: "Fraunces", serif;
+  --font-body: "Work Sans", sans-serif;
+}
+
+html,
+body {
+  background: var(--ink);
+  color: var(--cream);
+  font-family: var(--font-body);
+  margin: 0;
+  min-height: 100vh;
+}
+
+/* Recurring brand device: a three-colour rule reflecting the ACS palette */
+.tricolor-rule {
+  display: flex;
+  height: 4px;
+  width: 64px;
+}
+.tricolor-rule span {
+  flex: 1;
+}
+.tricolor-rule span:nth-child(1) { background: var(--red); }
+.tricolor-rule span:nth-child(2) { background: var(--gold); }
+.tricolor-rule span:nth-child(3) { background: var(--teal); }
