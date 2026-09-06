@@ -4,7 +4,7 @@ import { event } from "@/lib/content";
 export default function Hero() {
   return (
     <section className="relative overflow-hidden border-b border-white/10">
-      <div className="pointer-events-none absolute -right-24 -top-16 h-[420px] w-[420px] opacity-90 md:-right-10 md:top-10">
+      <div className="pointer-events-none absolute -right-24 -top-16 hidden h-[420px] w-[420px] opacity-90 md:-right-10 md:top-10 md:block">
         <div
           className="absolute h-64 w-64 rounded-full bg-red/80 blur-[2px]"
           style={{ top: 0, left: 40 }}
@@ -19,10 +19,10 @@ export default function Hero() {
         />
       </div>
 
-      <div className="mx-auto max-w-6xl px-6 pb-24 pt-16 md:pb-32 md:pt-24">
+      <div className="relative z-10 mx-auto max-w-6xl px-6 pb-24 pt-16 md:pb-32 md:pt-24">
         <p className="mb-6 text-sm text-muted">
           Organized by{" "}
-          <a
+          
             href="https://www.afrigos-academy.com/"
             target="_blank"
             rel="noopener noreferrer"
@@ -66,7 +66,7 @@ export default function Hero() {
             Register your interest
           </Link>
 
-          <a
+          
             href="#programme"
             className="rounded-full border border-white/20 px-7 py-3.5 text-sm font-medium text-cream transition-colors hover:border-white/40"
           >
