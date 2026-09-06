@@ -22,7 +22,7 @@ export default function Hero() {
       <div className="relative z-10 mx-auto max-w-6xl px-6 pb-24 pt-16 md:pb-32 md:pt-24">
         <p className="mb-6 text-sm text-muted">
           Organized by{" "}
-          
+          <a
             href="https://www.afrigos-academy.com/"
             target="_blank"
             rel="noopener noreferrer"
@@ -66,7 +66,7 @@ export default function Hero() {
             Register your interest
           </Link>
 
-          
+          <a
             href="#programme"
             className="rounded-full border border-white/20 px-7 py-3.5 text-sm font-medium text-cream transition-colors hover:border-white/40"
           >
