@@ -4,17 +4,19 @@ import { event } from "@/lib/content";
 export default function Hero() {
   return (
     <section className="relative overflow-hidden border-b border-white/10">
-      <div className="pointer-events-none absolute -right-24 -top-16 hidden h-[420px] w-[420px] opacity-90 md:-right-10 md:top-10 md:block">
+      <div className="pointer-events-none absolute -right-20 -top-14 h-56 w-56 opacity-25 blur-2xl md:-right-10 md:top-10 md:h-[420px] md:w-[420px] md:opacity-90 md:blur-[2px]">
         <div
-          className="absolute h-64 w-64 rounded-full bg-red/80 blur-[2px]"
+          className="absolute h-64 w-64 rounded-full bg-red/80"
           style={{ top: 0, left: 40 }}
         />
+
         <div
-          className="absolute h-64 w-64 rounded-full bg-gold/80 mix-blend-screen blur-[2px]"
+          className="absolute h-64 w-64 rounded-full bg-gold/80 mix-blend-screen"
           style={{ top: 90, left: 160 }}
         />
+
         <div
-          className="absolute h-64 w-64 rounded-full bg-teal/80 mix-blend-screen blur-[2px]"
+          className="absolute h-64 w-64 rounded-full bg-teal/80 mix-blend-screen"
           style={{ top: 170, left: 30 }}
         />
       </div>
