@@ -101,12 +101,12 @@ export default function Hero() {
   const activeHex = SLIDES[active].hex;
 
   return (
-    <section className="relative min-h-[620px] overflow-hidden border-b border-white/10">
+    <section className="relative min-h-[calc(100vh-104px)] border-b border-white/10">
       {/* =====================================================
           BACKGROUND ATMOSPHERE
       ====================================================== */}
 
-      <div className="pointer-events-none absolute inset-0">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
         {/* Very subtle ambient lighting */}
         <div className="absolute -right-40 -top-40 h-[650px] w-[650px] rounded-full bg-red/5 blur-[150px]" />
 
@@ -123,9 +123,9 @@ export default function Hero() {
         ================================================== */}
 
         {HERO_IMAGE && (
-          <div className="absolute right-0 top-0 hidden h-full w-[58%] lg:block">
+          <div className="absolute inset-x-0 top-0 h-[calc(100vh-104px)] lg:inset-y-0 lg:left-auto lg:right-0 lg:h-full lg:w-[58%]">
             <div
-              className="absolute inset-0 bg-cover bg-center opacity-[0.32] motion-safe:animate-image-drift"
+              className="absolute inset-0 bg-cover bg-center opacity-[0.18] lg:opacity-[0.32] motion-safe:animate-image-drift"
               style={{
                 backgroundImage: `url(${HERO_IMAGE})`,
               }}
