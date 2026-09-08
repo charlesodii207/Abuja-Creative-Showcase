@@ -101,7 +101,10 @@ export default function Hero() {
   const activeHex = SLIDES[active].hex;
 
   return (
-    <section className="relative min-h-[calc(100vh-104px)] overflow-hidden border-b border-white/10">
+    // FIXED: was `min-h-[calc(100vh-104px)]` (a minimum only, so section height
+    // shifted with content/zoom and dragged the image + ticker with it).
+    // Now a real fixed height with a safety floor for very short viewports.
+    <section className="relative h-[calc(100vh-104px)] min-h-[640px] overflow-hidden border-b border-white/10">
       {/* =====================================================
           BACKGROUND ATMOSPHERE
       ====================================================== */}
@@ -119,20 +122,24 @@ export default function Hero() {
             Put your image at:
             /public/images/hero-showcase.jpg
 
-            It sits on the RIGHT side and fades naturally
-            into the dark background.
+            FIXED: previously `hidden lg:block`, so the image
+            never rendered at all on mobile. Now it renders on
+            every screen size:
+              - Mobile: full-bleed background behind the text,
+                low opacity so text stays readable.
+              - lg and up: original right-side 58% panel look.
         ================================================== */}
 
         {HERO_IMAGE && (
-          <div className="absolute right-0 top-0 hidden h-full w-[58%] lg:block">
+          <div className="absolute inset-0 lg:left-auto lg:w-[58%]">
             <div
-              className="absolute inset-0 bg-cover bg-center opacity-[0.32] motion-safe:animate-image-drift"
+              className="absolute inset-0 bg-cover bg-center opacity-[0.18] lg:opacity-[0.32] motion-safe:animate-image-drift"
               style={{
                 backgroundImage: `url(${HERO_IMAGE})`,
               }}
             />
 
-            {/* Left fade */}
+            {/* Left fade (mainly relevant on lg, where image is a side panel) */}
             <div className="absolute inset-0 bg-gradient-to-r from-[#110d0d] via-[#110d0d]/60 to-transparent" />
 
             {/* Bottom fade */}
@@ -160,11 +167,6 @@ export default function Hero() {
           CONTENT
       ====================================================== */}
 
-      {/* UPDATED:
-          pt-16 / md:pt-24
-          ↓
-          pt-8 / md:pt-12
-      */}
       <div className="relative z-10 mx-auto max-w-6xl px-6 pb-28 pt-8 md:pb-32 md:pt-12">
         {/* Organizer */}
         <p className="mb-6 text-sm text-muted motion-safe:animate-fade-up">
@@ -213,9 +215,6 @@ export default function Hero() {
             SLIDESHOW
         ================================================== */}
 
-        {/* UPDATED:
-            mt-10 → mt-5
-        */}
         <div className="mt-5 min-h-[68px] max-w-xl">
           <div className="relative h-9 sm:h-10">
             {SLIDES.map((slide, i) => (
@@ -263,9 +262,6 @@ export default function Hero() {
             CTA
         ================================================== */}
 
-        {/* UPDATED:
-            mt-10 → mt-6
-        */}
         <div className="mt-6 flex flex-wrap gap-4 motion-safe:animate-fade-up">
           <Link
             href="/register"
