@@ -20,6 +20,9 @@ const SLIDES = [
 
 const SLIDE_DURATION = 3200;
 
+// Hero image
+// File location:
+// /public/images/hero-showcase.jpg
 const HERO_IMAGE = "/images/hero-showcase.jpg";
 
 function useReducedMotion() {
@@ -105,12 +108,15 @@ export default function Hero() {
       ====================================================== */}
 
       <div className="pointer-events-none absolute inset-0">
-        {/* Ambient lighting */}
+        {/* Very subtle ambient lighting */}
         <div className="absolute -right-40 -top-40 h-[650px] w-[650px] rounded-full bg-red/5 blur-[150px]" />
 
         <div className="absolute -bottom-40 right-0 h-[500px] w-[500px] rounded-full bg-teal/5 blur-[150px]" />
 
-        {/* Hero image */}
+        {/* =================================================
+            HERO IMAGE
+        ================================================== */}
+
         {HERO_IMAGE && (
           <div className="absolute inset-0 overflow-hidden lg:left-[42%] lg:right-0">
             <img
@@ -126,12 +132,15 @@ export default function Hero() {
             {/* Bottom fade */}
             <div className="absolute inset-0 bg-gradient-to-t from-[#110d0d] via-transparent to-[#110d0d]/20" />
 
-            {/* Cinematic wash */}
+            {/* Slight cinematic wash */}
             <div className="absolute inset-0 bg-black/15" />
           </div>
         )}
 
-        {/* Floating details */}
+        {/* =================================================
+            FLOATING DETAILS
+        ================================================== */}
+
         <span className="hero-particle particle-1">✦</span>
         <span className="hero-particle particle-2">+</span>
         <span className="hero-particle particle-3">○</span>
@@ -147,39 +156,37 @@ export default function Hero() {
 
       <div className="relative z-10 mx-auto max-w-6xl px-6 pb-28 pt-8 md:pb-32 md:pt-12">
         {/* Organizer */}
-        <p className="mb-6 animate-fade-up text-sm text-muted [animation-delay:0ms]">
+        <p className="mb-6 text-sm text-muted motion-safe:animate-fade-up">
           Organized by{" "}
           <a
             href="https://www.afrigos-academy.com/"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-cream underline underline-offset-4 transition-colors duration-300 hover:text-gold"
+            className="text-cream underline underline-offset-4 transition-colors hover:text-gold"
           >
             {event.organizer}
           </a>
         </p>
 
         {/* Main heading */}
-        <h1 className="max-w-3xl animate-fade-up font-display text-5xl leading-[1.05] text-cream [animation-delay:120ms] sm:text-6xl md:text-7xl">
+        <h1 className="max-w-3xl font-display text-5xl leading-[1.05] text-cream motion-safe:animate-fade-up sm:text-6xl md:text-7xl">
           {event.name}
         </h1>
 
         {/* Tagline */}
-        <p className="mt-6 max-w-xl animate-fade-up font-display text-2xl italic text-gold [animation-delay:240ms] sm:text-3xl">
+        <p className="mt-6 max-w-xl font-display text-2xl italic text-gold motion-safe:animate-fade-up sm:text-3xl">
           {event.tagline}
         </p>
 
         {/* Tricolor rule */}
-        <div className="mt-4 animate-fade-up [animation-delay:340ms]">
-          <div className="tricolor-rule">
-            <span />
-            <span />
-            <span />
-          </div>
+        <div className="mt-4 tricolor-rule motion-safe:animate-fade-up">
+          <span />
+          <span />
+          <span />
         </div>
 
         {/* Event identity */}
-        <div className="mt-7 flex animate-fade-up flex-wrap items-center gap-x-4 gap-y-2 text-xs uppercase tracking-[0.2em] text-muted [animation-delay:430ms]">
+        <div className="mt-7 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs uppercase tracking-[0.2em] text-muted motion-safe:animate-fade-up">
           <span>Abuja, Nigeria</span>
 
           <span className="h-1 w-1 rounded-full bg-gold" />
@@ -195,7 +202,7 @@ export default function Hero() {
             SLIDESHOW
         ================================================== */}
 
-        <div className="mt-5 min-h-[68px] max-w-xl animate-fade-up [animation-delay:520ms]">
+        <div className="mt-5 min-h-[68px] max-w-xl">
           <div className="relative h-9 sm:h-10">
             {SLIDES.map((slide, i) => (
               <p
@@ -223,15 +230,15 @@ export default function Hero() {
                   slide.color === "text-red"
                     ? "bg-red"
                     : slide.color === "text-gold"
-                      ? "bg-gold"
-                      : "bg-teal"
+                    ? "bg-gold"
+                    : "bg-teal"
                 }
                 state={
                   i < active
                     ? "done"
                     : i === active
-                      ? "active"
-                      : "pending"
+                    ? "active"
+                    : "pending"
                 }
                 duration={SLIDE_DURATION}
               />
@@ -243,7 +250,7 @@ export default function Hero() {
             CTA
         ================================================== */}
 
-        <div className="mt-6 flex animate-fade-up flex-wrap gap-4 [animation-delay:700ms]">
+        <div className="mt-6 flex flex-wrap gap-4 motion-safe:animate-fade-up">
           <Link
             href="/register"
             className="group rounded-full bg-red px-7 py-3.5 text-sm font-medium text-cream shadow-[0_10px_35px_rgba(184,3,25,0.18)] transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:shadow-[0_15px_45px_rgba(184,3,25,0.28)]"
@@ -276,7 +283,7 @@ export default function Hero() {
             LIVE ECOSYSTEM INDICATOR
         ================================================== */}
 
-        <div className="mt-14 hidden animate-fade-up items-center gap-3 text-[10px] uppercase tracking-[0.25em] text-muted [animation-delay:900ms] md:flex">
+        <div className="mt-14 hidden items-center gap-3 text-[10px] uppercase tracking-[0.25em] text-muted md:flex">
           <span className="relative flex h-2 w-2">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-teal opacity-50" />
 
@@ -289,6 +296,8 @@ export default function Hero() {
 
       {/* =====================================================
           MOVING CREATIVE INDUSTRIES TICKER
+          
+          VISIBLE ON DESKTOP + TABLET + MOBILE
       ====================================================== */}
 
       <div className="absolute bottom-0 left-0 z-20 w-full overflow-hidden border-t border-white/10 bg-black/20 backdrop-blur-sm">
@@ -298,42 +307,49 @@ export default function Hero() {
               key={group}
               className="flex items-center whitespace-nowrap"
             >
+              {/* FILM */}
               <span className="mx-5 text-xs uppercase tracking-[0.25em] text-muted">
                 Film
               </span>
 
               <span className="text-gold">✦</span>
 
+              {/* MUSIC */}
               <span className="mx-5 text-xs uppercase tracking-[0.25em] text-muted">
                 Music
               </span>
 
               <span className="text-red">✦</span>
 
+              {/* FASHION */}
               <span className="mx-5 text-xs uppercase tracking-[0.25em] text-muted">
                 Fashion
               </span>
 
               <span className="text-teal">✦</span>
 
+              {/* ART */}
               <span className="mx-5 text-xs uppercase tracking-[0.25em] text-muted">
                 Art
               </span>
 
               <span className="text-gold">✦</span>
 
+              {/* TECHNOLOGY */}
               <span className="mx-5 text-xs uppercase tracking-[0.25em] text-muted">
                 Technology
               </span>
 
               <span className="text-red">✦</span>
 
+              {/* MEDIA */}
               <span className="mx-5 text-xs uppercase tracking-[0.25em] text-muted">
                 Media
               </span>
 
               <span className="text-teal">✦</span>
 
+              {/* CULTURE */}
               <span className="mx-5 text-xs uppercase tracking-[0.25em] text-muted">
                 Culture
               </span>
@@ -343,6 +359,181 @@ export default function Hero() {
           ))}
         </div>
       </div>
+
+      {/* =====================================================
+          ANIMATIONS
+      ====================================================== */}
+
+      <style jsx>{`
+        /* =================================================
+           HERO IMAGE DRIFT
+        ================================================== */
+
+        @keyframes imageDrift {
+          0%,
+          100% {
+            transform: scale(1);
+          }
+
+          50% {
+            transform: scale(1.02);
+          }
+        }
+
+        /* =================================================
+           PARTICLE FLOAT
+        ================================================== */
+
+        @keyframes particleFloat {
+          0%,
+          100% {
+            transform: translate3d(0, 0, 0) rotate(0deg);
+            opacity: 0.2;
+          }
+
+          50% {
+            transform: translate3d(0, -18px, 0) rotate(8deg);
+            opacity: 0.7;
+          }
+        }
+
+        /* =================================================
+           FADE UP
+        ================================================== */
+
+        @keyframes fadeUp {
+          from {
+            opacity: 0;
+            transform: translateY(14px);
+          }
+
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        /* =================================================
+           MARQUEE
+        ================================================== */
+
+        @keyframes marquee {
+          from {
+            transform: translateX(0);
+          }
+
+          to {
+            transform: translateX(-50%);
+          }
+        }
+
+        /* =================================================
+           GLOBAL ANIMATIONS
+        ================================================== */
+
+        :global(.animate-image-drift) {
+          animation: imageDrift 14s ease-in-out infinite;
+          transform-origin: center center;
+          will-change: transform;
+        }
+
+        :global(.animate-fade-up) {
+          animation: fadeUp 0.8s ease-out both;
+        }
+
+        /* =================================================
+           FLOATING PARTICLES
+        ================================================== */
+
+        .hero-particle {
+          position: absolute;
+          z-index: 2;
+          pointer-events: none;
+          font-family: serif;
+          font-size: 18px;
+          color: rgba(255, 255, 255, 0.5);
+          animation: particleFloat 5s ease-in-out infinite;
+        }
+
+        .particle-1 {
+          right: 38%;
+          top: 19%;
+        }
+
+        .particle-2 {
+          right: 12%;
+          top: 28%;
+          color: rgba(229, 146, 0, 0.7);
+          animation-delay: 1.2s;
+        }
+
+        .particle-3 {
+          right: 31%;
+          top: 46%;
+          font-size: 12px;
+          color: rgba(0, 165, 168, 0.7);
+          animation-delay: 2s;
+        }
+
+        .particle-4 {
+          right: 8%;
+          top: 62%;
+          animation-delay: 0.8s;
+        }
+
+        .particle-5 {
+          right: 43%;
+          top: 68%;
+          color: rgba(184, 3, 25, 0.8);
+          animation-delay: 2.5s;
+        }
+
+        .particle-6 {
+          right: 25%;
+          top: 14%;
+          font-size: 11px;
+          animation-delay: 1.7s;
+        }
+
+        .particle-7 {
+          right: 18%;
+          top: 78%;
+          color: rgba(0, 165, 168, 0.7);
+          animation-delay: 3s;
+        }
+
+        /* =================================================
+           MARQUEE ANIMATION
+        ================================================== */
+
+        .hero-marquee {
+          animation: marquee 28s linear infinite;
+          will-change: transform;
+        }
+
+        /* =================================================
+           REDUCED MOTION
+        ================================================== */
+
+        @media (prefers-reduced-motion: reduce) {
+          :global(.animate-image-drift),
+          :global(.animate-fade-up),
+          .hero-particle,
+          .hero-marquee {
+            animation: none !important;
+          }
+        }
+
+        /* =================================================
+           MOBILE
+        ================================================== */
+
+        @media (max-width: 767px) {
+          .hero-particle {
+            display: none;
+          }
+        }
+      `}</style>
     </section>
   );
 }
