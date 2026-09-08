@@ -114,6 +114,7 @@ export default function Hero() {
 
         {/* =================================================
             HERO IMAGE
+        ==================================================
 
             Put your image at:
             /public/images/hero-showcase.jpg
@@ -159,7 +160,12 @@ export default function Hero() {
           CONTENT
       ====================================================== */}
 
-      <div className="relative z-10 mx-auto max-w-6xl px-6 pb-28 pt-16 md:pb-32 md:pt-24">
+      {/* UPDATED:
+          pt-16 / md:pt-24
+          ↓
+          pt-8 / md:pt-12
+      */}
+      <div className="relative z-10 mx-auto max-w-6xl px-6 pb-28 pt-8 md:pb-32 md:pt-12">
         {/* Organizer */}
         <p className="mb-6 text-sm text-muted motion-safe:animate-fade-up">
           Organized by{" "}
@@ -207,7 +213,10 @@ export default function Hero() {
             SLIDESHOW
         ================================================== */}
 
-        <div className="mt-10 min-h-[68px] max-w-xl">
+        {/* UPDATED:
+            mt-10 → mt-5
+        */}
+        <div className="mt-5 min-h-[68px] max-w-xl">
           <div className="relative h-9 sm:h-10">
             {SLIDES.map((slide, i) => (
               <p
@@ -254,7 +263,10 @@ export default function Hero() {
             CTA
         ================================================== */}
 
-        <div className="mt-10 flex flex-wrap gap-4 motion-safe:animate-fade-up">
+        {/* UPDATED:
+            mt-10 → mt-6
+        */}
+        <div className="mt-6 flex flex-wrap gap-4 motion-safe:animate-fade-up">
           <Link
             href="/register"
             className="group rounded-full bg-red px-7 py-3.5 text-sm font-medium text-cream shadow-[0_10px_35px_rgba(184,3,25,0.18)] transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:shadow-[0_15px_45px_rgba(184,3,25,0.28)]"
