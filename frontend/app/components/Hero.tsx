@@ -20,7 +20,7 @@ const SLIDES = [
 
 const SLIDE_DURATION = 3200;
 
-// Add your hero image here.
+// Hero image
 // File location:
 // /public/images/hero-showcase.jpg
 const HERO_IMAGE = "/images/hero-showcase.jpg";
@@ -118,12 +118,12 @@ export default function Hero() {
         ================================================== */}
 
         {HERO_IMAGE && (
-          <div className="absolute inset-0 lg:left-auto lg:w-[58%]">
-            <div
-              className="absolute inset-0 bg-cover bg-center opacity-[0.18] lg:opacity-[0.32] motion-safe:animate-image-drift"
-              style={{
-                backgroundImage: `url(${HERO_IMAGE})`,
-              }}
+          <div className="absolute inset-0 overflow-hidden lg:left-[42%] lg:right-0">
+            <img
+              src={HERO_IMAGE}
+              alt=""
+              aria-hidden="true"
+              className="absolute inset-0 h-full w-full object-cover object-center opacity-[0.18] lg:opacity-[0.32] motion-safe:animate-image-drift"
             />
 
             {/* Left fade */}
@@ -221,6 +221,7 @@ export default function Hero() {
             ))}
           </div>
 
+          {/* Progress indicators */}
           <div className="mt-4 flex w-64 gap-1.5" role="presentation">
             {SLIDES.map((slide, i) => (
               <ProgressSegment
@@ -255,6 +256,7 @@ export default function Hero() {
             className="group rounded-full bg-red px-7 py-3.5 text-sm font-medium text-cream shadow-[0_10px_35px_rgba(184,3,25,0.18)] transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:shadow-[0_15px_45px_rgba(184,3,25,0.28)]"
           >
             Register your interest
+
             <span className="ml-2 inline-block transition-transform duration-300 group-hover:translate-x-1">
               →
             </span>
@@ -270,73 +272,84 @@ export default function Hero() {
             }}
           >
             See the programme
+
             <span className="ml-2 inline-block transition-transform duration-300 group-hover:translate-y-1">
               ↓
             </span>
           </a>
         </div>
 
-        {/* Live ecosystem indicator */}
+        {/* =================================================
+            LIVE ECOSYSTEM INDICATOR
+        ================================================== */}
+
         <div className="mt-14 hidden items-center gap-3 text-[10px] uppercase tracking-[0.25em] text-muted md:flex">
           <span className="relative flex h-2 w-2">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-teal opacity-50" />
+
             <span className="relative inline-flex h-2 w-2 rounded-full bg-teal" />
           </span>
 
-          <span>Connecting Abuja's creative ecosystem</span>
+          <span>Connecting Abuja&apos;s creative ecosystem</span>
         </div>
       </div>
 
       {/* =====================================================
           MOVING CREATIVE INDUSTRIES TICKER
           
-          MOBILE/TABLET: VISIBLE
-          LAPTOP/DESKTOP: HIDDEN
+          VISIBLE ON DESKTOP + TABLET + MOBILE
       ====================================================== */}
 
-      <div className="absolute bottom-0 left-0 z-20 w-full overflow-hidden border-t border-white/10 bg-black/20 backdrop-blur-sm md:hidden">
+      <div className="absolute bottom-0 left-0 z-20 w-full overflow-hidden border-t border-white/10 bg-black/20 backdrop-blur-sm">
         <div className="hero-marquee flex w-max items-center py-3">
           {[...Array(2)].map((_, group) => (
             <div
               key={group}
               className="flex items-center whitespace-nowrap"
             >
+              {/* FILM */}
               <span className="mx-5 text-xs uppercase tracking-[0.25em] text-muted">
                 Film
               </span>
 
               <span className="text-gold">✦</span>
 
+              {/* MUSIC */}
               <span className="mx-5 text-xs uppercase tracking-[0.25em] text-muted">
                 Music
               </span>
 
               <span className="text-red">✦</span>
 
+              {/* FASHION */}
               <span className="mx-5 text-xs uppercase tracking-[0.25em] text-muted">
                 Fashion
               </span>
 
               <span className="text-teal">✦</span>
 
+              {/* ART */}
               <span className="mx-5 text-xs uppercase tracking-[0.25em] text-muted">
                 Art
               </span>
 
               <span className="text-gold">✦</span>
 
+              {/* TECHNOLOGY */}
               <span className="mx-5 text-xs uppercase tracking-[0.25em] text-muted">
                 Technology
               </span>
 
               <span className="text-red">✦</span>
 
+              {/* MEDIA */}
               <span className="mx-5 text-xs uppercase tracking-[0.25em] text-muted">
                 Media
               </span>
 
               <span className="text-teal">✦</span>
 
+              {/* CULTURE */}
               <span className="mx-5 text-xs uppercase tracking-[0.25em] text-muted">
                 Culture
               </span>
@@ -352,6 +365,10 @@ export default function Hero() {
       ====================================================== */}
 
       <style jsx>{`
+        /* =================================================
+           HERO IMAGE DRIFT
+        ================================================== */
+
         @keyframes imageDrift {
           0%,
           100% {
@@ -359,9 +376,13 @@ export default function Hero() {
           }
 
           50% {
-            transform: scale(1.035);
+            transform: scale(1.02);
           }
         }
+
+        /* =================================================
+           PARTICLE FLOAT
+        ================================================== */
 
         @keyframes particleFloat {
           0%,
@@ -376,6 +397,10 @@ export default function Hero() {
           }
         }
 
+        /* =================================================
+           FADE UP
+        ================================================== */
+
         @keyframes fadeUp {
           from {
             opacity: 0;
@@ -388,6 +413,10 @@ export default function Hero() {
           }
         }
 
+        /* =================================================
+           MARQUEE
+        ================================================== */
+
         @keyframes marquee {
           from {
             transform: translateX(0);
@@ -398,13 +427,23 @@ export default function Hero() {
           }
         }
 
+        /* =================================================
+           GLOBAL ANIMATIONS
+        ================================================== */
+
         :global(.animate-image-drift) {
           animation: imageDrift 14s ease-in-out infinite;
+          transform-origin: center center;
+          will-change: transform;
         }
 
         :global(.animate-fade-up) {
           animation: fadeUp 0.8s ease-out both;
         }
+
+        /* =================================================
+           FLOATING PARTICLES
+        ================================================== */
 
         .hero-particle {
           position: absolute;
@@ -463,9 +502,18 @@ export default function Hero() {
           animation-delay: 3s;
         }
 
+        /* =================================================
+           MARQUEE ANIMATION
+        ================================================== */
+
         .hero-marquee {
           animation: marquee 28s linear infinite;
+          will-change: transform;
         }
+
+        /* =================================================
+           REDUCED MOTION
+        ================================================== */
 
         @media (prefers-reduced-motion: reduce) {
           :global(.animate-image-drift),
@@ -475,6 +523,10 @@ export default function Hero() {
             animation: none !important;
           }
         }
+
+        /* =================================================
+           MOBILE
+        ================================================== */
 
         @media (max-width: 767px) {
           .hero-particle {
