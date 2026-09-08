@@ -101,10 +101,7 @@ export default function Hero() {
   const activeHex = SLIDES[active].hex;
 
   return (
-    // FIXED: was `min-h-[calc(100vh-104px)]` (a minimum only, so section height
-    // shifted with content/zoom and dragged the image + ticker with it).
-    // Now a real fixed height with a safety floor for very short viewports.
-    <section className="relative h-[calc(100vh-104px)] min-h-[640px] overflow-hidden border-b border-white/10">
+    <section className="relative min-h-[620px] overflow-hidden border-b border-white/10">
       {/* =====================================================
           BACKGROUND ATMOSPHERE
       ====================================================== */}
@@ -117,29 +114,24 @@ export default function Hero() {
 
         {/* =================================================
             HERO IMAGE
-        ==================================================
 
             Put your image at:
             /public/images/hero-showcase.jpg
 
-            FIXED: previously `hidden lg:block`, so the image
-            never rendered at all on mobile. Now it renders on
-            every screen size:
-              - Mobile: full-bleed background behind the text,
-                low opacity so text stays readable.
-              - lg and up: original right-side 58% panel look.
+            It sits on the RIGHT side and fades naturally
+            into the dark background.
         ================================================== */}
 
         {HERO_IMAGE && (
-          <div className="absolute inset-0 lg:left-auto lg:w-[58%]">
+          <div className="absolute right-0 top-0 hidden h-full w-[58%] lg:block">
             <div
-              className="absolute inset-0 bg-cover bg-center opacity-[0.18] lg:opacity-[0.32] motion-safe:animate-image-drift"
+              className="absolute inset-0 bg-cover bg-center opacity-[0.32] motion-safe:animate-image-drift"
               style={{
                 backgroundImage: `url(${HERO_IMAGE})`,
               }}
             />
 
-            {/* Left fade (mainly relevant on lg, where image is a side panel) */}
+            {/* Left fade */}
             <div className="absolute inset-0 bg-gradient-to-r from-[#110d0d] via-[#110d0d]/60 to-transparent" />
 
             {/* Bottom fade */}
@@ -167,7 +159,7 @@ export default function Hero() {
           CONTENT
       ====================================================== */}
 
-      <div className="relative z-10 mx-auto max-w-6xl px-6 pb-28 pt-8 md:pb-32 md:pt-12">
+      <div className="relative z-10 mx-auto max-w-6xl px-6 pb-24 pt-10 md:pb-28 md:pt-16">
         {/* Organizer */}
         <p className="mb-6 text-sm text-muted motion-safe:animate-fade-up">
           Organized by{" "}
@@ -215,7 +207,7 @@ export default function Hero() {
             SLIDESHOW
         ================================================== */}
 
-        <div className="mt-5 min-h-[68px] max-w-xl">
+        <div className="mt-4 min-h-[52px] max-w-xl">
           <div className="relative h-9 sm:h-10">
             {SLIDES.map((slide, i) => (
               <p
@@ -262,7 +254,7 @@ export default function Hero() {
             CTA
         ================================================== */}
 
-        <div className="mt-6 flex flex-wrap gap-4 motion-safe:animate-fade-up">
+        <div className="mt-5 flex flex-wrap gap-4 motion-safe:animate-fade-up">
           <Link
             href="/register"
             className="group rounded-full bg-red px-7 py-3.5 text-sm font-medium text-cream shadow-[0_10px_35px_rgba(184,3,25,0.18)] transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:shadow-[0_15px_45px_rgba(184,3,25,0.28)]"
@@ -290,7 +282,7 @@ export default function Hero() {
         </div>
 
         {/* Live ecosystem indicator */}
-        <div className="mt-14 hidden items-center gap-3 text-[10px] uppercase tracking-[0.25em] text-muted md:flex">
+        <div className="mt-10 hidden items-center gap-3 text-[10px] uppercase tracking-[0.25em] text-muted md:flex">
           <span className="relative flex h-2 w-2">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-teal opacity-50" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-teal" />
