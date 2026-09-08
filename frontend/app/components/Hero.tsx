@@ -59,6 +59,7 @@ function ProgressSegment({
 
       const raf1 = requestAnimationFrame(() => {
         const raf2 = requestAnimationFrame(() => setFilled(true));
+
         return () => cancelAnimationFrame(raf2);
       });
 
@@ -101,9 +102,6 @@ export default function Hero() {
   const activeHex = SLIDES[active].hex;
 
   return (
-    // FIXED: was `min-h-[calc(100vh-104px)]` (a minimum only, so section height
-    // shifted with content/zoom and dragged the image + ticker with it).
-    // Now a real fixed height with a safety floor for very short viewports.
     <section className="relative h-[calc(100vh-104px)] min-h-[640px] overflow-hidden border-b border-white/10">
       {/* =====================================================
           BACKGROUND ATMOSPHERE
@@ -117,17 +115,6 @@ export default function Hero() {
 
         {/* =================================================
             HERO IMAGE
-        ==================================================
-
-            Put your image at:
-            /public/images/hero-showcase.jpg
-
-            FIXED: previously `hidden lg:block`, so the image
-            never rendered at all on mobile. Now it renders on
-            every screen size:
-              - Mobile: full-bleed background behind the text,
-                low opacity so text stays readable.
-              - lg and up: original right-side 58% panel look.
         ================================================== */}
 
         {HERO_IMAGE && (
@@ -139,7 +126,7 @@ export default function Hero() {
               }}
             />
 
-            {/* Left fade (mainly relevant on lg, where image is a side panel) */}
+            {/* Left fade */}
             <div className="absolute inset-0 bg-gradient-to-r from-[#110d0d] via-[#110d0d]/60 to-transparent" />
 
             {/* Bottom fade */}
@@ -302,9 +289,12 @@ export default function Hero() {
 
       {/* =====================================================
           MOVING CREATIVE INDUSTRIES TICKER
+          
+          MOBILE/TABLET: VISIBLE
+          LAPTOP/DESKTOP: HIDDEN
       ====================================================== */}
 
-      <div className="absolute bottom-0 left-0 z-20 w-full overflow-hidden border-t border-white/10 bg-black/20 backdrop-blur-sm">
+      <div className="absolute bottom-0 left-0 z-20 w-full overflow-hidden border-t border-white/10 bg-black/20 backdrop-blur-sm md:hidden">
         <div className="hero-marquee flex w-max items-center py-3">
           {[...Array(2)].map((_, group) => (
             <div
