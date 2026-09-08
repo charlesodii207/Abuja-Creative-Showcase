@@ -301,7 +301,7 @@ export default function Hero() {
           {[...Array(2)].map((_, group) => (
             <div
               key={group}
-              className="flex items-center whitespace-nowrap"
+              className="flex min-w-full items-center justify-around whitespace-nowrap"
             >
               <span className="mx-5 text-xs uppercase tracking-[0.25em] text-muted">
                 Film
