@@ -6,19 +6,23 @@ import { event } from "@/lib/content";
 
 const SLIDES = [
   { text: "Two Days. One Ecosystem.", color: "text-red", hex: "#B80319" },
-  { text: "Film × Music × Fashion × Tech", color: "text-gold", hex: "#E59200" },
-  { text: "Creativity. Connection. Capital.", color: "text-teal", hex: "#00A5A8" },
+  {
+    text: "Film × Music × Fashion × Tech",
+    color: "text-gold",
+    hex: "#E59200",
+  },
+  {
+    text: "Creativity. Connection. Capital.",
+    color: "text-teal",
+    hex: "#00A5A8",
+  },
 ];
 
 const SLIDE_DURATION = 3200;
 
-// ============================================================
-// HERO IMAGE
-// Put your image here:
+// Add your hero image here.
+// File location:
 // /public/images/hero-showcase.jpg
-//
-// Leave this as an empty string if you don't want the image yet.
-// ============================================================
 const HERO_IMAGE = "/images/hero-showcase.jpg";
 
 function useReducedMotion() {
@@ -26,6 +30,7 @@ function useReducedMotion() {
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+
     setReduced(mq.matches);
 
     const handler = () => setReduced(mq.matches);
@@ -54,7 +59,6 @@ function ProgressSegment({
 
       const raf1 = requestAnimationFrame(() => {
         const raf2 = requestAnimationFrame(() => setFilled(true));
-
         return () => cancelAnimationFrame(raf2);
       });
 
@@ -98,41 +102,48 @@ export default function Hero() {
 
   return (
     <section className="relative min-h-[calc(100vh-104px)] overflow-hidden border-b border-white/10">
-      {/* ======================================================
+      {/* =====================================================
           BACKGROUND ATMOSPHERE
       ====================================================== */}
 
       <div className="pointer-events-none absolute inset-0">
-        {/* Ambient glow */}
-        <div className="absolute -right-40 top-0 h-[700px] w-[700px] rounded-full bg-red/5 blur-[140px]" />
-        <div className="absolute right-0 bottom-0 h-[500px] w-[500px] rounded-full bg-teal/5 blur-[140px]" />
+        {/* Very subtle ambient lighting */}
+        <div className="absolute -right-40 -top-40 h-[650px] w-[650px] rounded-full bg-red/5 blur-[150px]" />
 
-        {/* ==================================================
-            OPTIONAL HERO IMAGE
+        <div className="absolute -bottom-40 right-0 h-[500px] w-[500px] rounded-full bg-teal/5 blur-[150px]" />
 
-            Put:
+        {/* =================================================
+            HERO IMAGE
+
+            Put your image at:
             /public/images/hero-showcase.jpg
 
-            The image sits behind the abstract circles.
+            It sits on the RIGHT side and fades naturally
+            into the dark background.
         ================================================== */}
 
         {HERO_IMAGE && (
           <div className="absolute right-0 top-0 hidden h-full w-[58%] lg:block">
             <div
-              className="absolute inset-0 bg-cover bg-center opacity-[0.20] mix-blend-screen"
+              className="absolute inset-0 bg-cover bg-center opacity-[0.32] motion-safe:animate-image-drift"
               style={{
                 backgroundImage: `url(${HERO_IMAGE})`,
               }}
             />
 
-            {/* Image fade into background */}
-            <div className="absolute inset-0 bg-gradient-to-r from-[#110d0d] via-[#110d0d]/55 to-transparent" />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#110d0d] via-transparent to-[#110d0d]/30" />
+            {/* Left fade */}
+            <div className="absolute inset-0 bg-gradient-to-r from-[#110d0d] via-[#110d0d]/60 to-transparent" />
+
+            {/* Bottom fade */}
+            <div className="absolute inset-0 bg-gradient-to-t from-[#110d0d] via-transparent to-[#110d0d]/20" />
+
+            {/* Slight cinematic wash */}
+            <div className="absolute inset-0 bg-black/15" />
           </div>
         )}
 
-        {/* ==================================================
-            FLOATING CREATIVE SYMBOLS
+        {/* =================================================
+            FLOATING DETAILS
         ================================================== */}
 
         <span className="hero-particle particle-1">✦</span>
@@ -142,38 +153,14 @@ export default function Hero() {
         <span className="hero-particle particle-5">·</span>
         <span className="hero-particle particle-6">+</span>
         <span className="hero-particle particle-7">✦</span>
-
-        {/* ==================================================
-            ABSTRACT CREATIVE ORBS
-        ================================================== */}
-
-        <div className="absolute right-[-120px] top-[40px] h-[620px] w-[620px] md:right-[-40px] md:top-[30px] md:h-[680px] md:w-[680px] lg:right-[20px] lg:top-[20px]">
-          {/* RED */}
-          <div
-            className="absolute left-[90px] top-0 h-[300px] w-[300px] rounded-full bg-red/80 shadow-[0_0_100px_rgba(184,3,25,0.25)] mix-blend-screen motion-safe:animate-orb-a"
-          />
-
-          {/* GOLD */}
-          <div
-            className="absolute left-[270px] top-[125px] h-[300px] w-[300px] rounded-full bg-gold/80 shadow-[0_0_100px_rgba(229,146,0,0.22)] mix-blend-screen motion-safe:animate-orb-b"
-          />
-
-          {/* TEAL */}
-          <div
-            className="absolute left-[75px] top-[255px] h-[300px] w-[300px] rounded-full bg-teal/80 shadow-[0_0_100px_rgba(0,165,168,0.25)] mix-blend-screen motion-safe:animate-orb-c"
-          />
-
-          {/* Soft center glow */}
-          <div className="absolute left-[220px] top-[220px] h-[160px] w-[160px] rounded-full bg-white/10 blur-[60px] motion-safe:animate-breathe" />
-        </div>
       </div>
 
-      {/* ======================================================
-          MAIN CONTENT
+      {/* =====================================================
+          CONTENT
       ====================================================== */}
 
       <div className="relative z-10 mx-auto max-w-6xl px-6 pb-28 pt-16 md:pb-32 md:pt-24">
-        {/* ORGANIZER */}
+        {/* Organizer */}
         <p className="mb-6 text-sm text-muted motion-safe:animate-fade-up">
           Organized by{" "}
           <a
@@ -186,27 +173,24 @@ export default function Hero() {
           </a>
         </p>
 
-        {/* TITLE */}
+        {/* Main heading */}
         <h1 className="max-w-3xl font-display text-5xl leading-[1.05] text-cream motion-safe:animate-fade-up sm:text-6xl md:text-7xl">
           {event.name}
         </h1>
 
-        {/* TAGLINE */}
+        {/* Tagline */}
         <p className="mt-6 max-w-xl font-display text-2xl italic text-gold motion-safe:animate-fade-up sm:text-3xl">
           {event.tagline}
         </p>
 
-        {/* TRICOLOR RULE */}
+        {/* Tricolor rule */}
         <div className="mt-4 tricolor-rule motion-safe:animate-fade-up">
           <span />
           <span />
           <span />
         </div>
 
-        {/* ==================================================
-            EVENT IDENTITY
-        ================================================== */}
-
+        {/* Event identity */}
         <div className="mt-7 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs uppercase tracking-[0.2em] text-muted motion-safe:animate-fade-up">
           <span>Abuja, Nigeria</span>
 
@@ -219,7 +203,7 @@ export default function Hero() {
           <span>2026</span>
         </div>
 
-        {/* ==================================================
+        {/* =================================================
             SLIDESHOW
         ================================================== */}
 
@@ -266,7 +250,7 @@ export default function Hero() {
           </div>
         </div>
 
-        {/* ==================================================
+        {/* =================================================
             CTA
         ================================================== */}
 
@@ -291,16 +275,13 @@ export default function Hero() {
             }}
           >
             See the programme
-            <span className="ml-2 inline-block transition-transform duration-300 group-hover:translate-x-1">
+            <span className="ml-2 inline-block transition-transform duration-300 group-hover:translate-y-1">
               ↓
             </span>
           </a>
         </div>
 
-        {/* ==================================================
-            FLOATING "CREATIVE ECOSYSTEM" LABEL
-        ================================================== */}
-
+        {/* Live ecosystem indicator */}
         <div className="mt-14 hidden items-center gap-3 text-[10px] uppercase tracking-[0.25em] text-muted md:flex">
           <span className="relative flex h-2 w-2">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-teal opacity-50" />
@@ -311,8 +292,8 @@ export default function Hero() {
         </div>
       </div>
 
-      {/* ======================================================
-          MOVING INDUSTRY TICKER
+      {/* =====================================================
+          MOVING CREATIVE INDUSTRIES TICKER
       ====================================================== */}
 
       <div className="absolute bottom-0 left-0 z-20 w-full overflow-hidden border-t border-white/10 bg-black/20 backdrop-blur-sm">
@@ -322,43 +303,43 @@ export default function Hero() {
               key={group}
               className="flex items-center whitespace-nowrap"
             >
-              <span className="mx-5 text-xs font-medium uppercase tracking-[0.25em] text-muted">
+              <span className="mx-5 text-xs uppercase tracking-[0.25em] text-muted">
                 Film
               </span>
 
               <span className="text-gold">✦</span>
 
-              <span className="mx-5 text-xs font-medium uppercase tracking-[0.25em] text-muted">
+              <span className="mx-5 text-xs uppercase tracking-[0.25em] text-muted">
                 Music
               </span>
 
               <span className="text-red">✦</span>
 
-              <span className="mx-5 text-xs font-medium uppercase tracking-[0.25em] text-muted">
+              <span className="mx-5 text-xs uppercase tracking-[0.25em] text-muted">
                 Fashion
               </span>
 
               <span className="text-teal">✦</span>
 
-              <span className="mx-5 text-xs font-medium uppercase tracking-[0.25em] text-muted">
+              <span className="mx-5 text-xs uppercase tracking-[0.25em] text-muted">
                 Art
               </span>
 
               <span className="text-gold">✦</span>
 
-              <span className="mx-5 text-xs font-medium uppercase tracking-[0.25em] text-muted">
+              <span className="mx-5 text-xs uppercase tracking-[0.25em] text-muted">
                 Technology
               </span>
 
               <span className="text-red">✦</span>
 
-              <span className="mx-5 text-xs font-medium uppercase tracking-[0.25em] text-muted">
+              <span className="mx-5 text-xs uppercase tracking-[0.25em] text-muted">
                 Media
               </span>
 
               <span className="text-teal">✦</span>
 
-              <span className="mx-5 text-xs font-medium uppercase tracking-[0.25em] text-muted">
+              <span className="mx-5 text-xs uppercase tracking-[0.25em] text-muted">
                 Culture
               </span>
 
@@ -368,55 +349,19 @@ export default function Hero() {
         </div>
       </div>
 
-      {/* ======================================================
-          LOCAL HERO ANIMATIONS
-          No tailwind.config changes required.
+      {/* =====================================================
+          ANIMATIONS
       ====================================================== */}
 
       <style jsx>{`
-        @keyframes orbA {
+        @keyframes imageDrift {
           0%,
           100% {
-            transform: translate3d(0, 0, 0) scale(1);
+            transform: scale(1);
           }
 
           50% {
-            transform: translate3d(-18px, 20px, 0) scale(1.045);
-          }
-        }
-
-        @keyframes orbB {
-          0%,
-          100% {
-            transform: translate3d(0, 0, 0) scale(1);
-          }
-
-          50% {
-            transform: translate3d(20px, -14px, 0) scale(0.96);
-          }
-        }
-
-        @keyframes orbC {
-          0%,
-          100% {
-            transform: translate3d(0, 0, 0) scale(1);
-          }
-
-          50% {
-            transform: translate3d(15px, 22px, 0) scale(1.04);
-          }
-        }
-
-        @keyframes breathe {
-          0%,
-          100% {
-            transform: scale(0.9);
-            opacity: 0.35;
-          }
-
-          50% {
-            transform: scale(1.15);
-            opacity: 0.7;
+            transform: scale(1.035);
           }
         }
 
@@ -455,20 +400,8 @@ export default function Hero() {
           }
         }
 
-        :global(.animate-orb-a) {
-          animation: orbA 11s ease-in-out infinite;
-        }
-
-        :global(.animate-orb-b) {
-          animation: orbB 14s ease-in-out infinite;
-        }
-
-        :global(.animate-orb-c) {
-          animation: orbC 12s ease-in-out infinite;
-        }
-
-        :global(.animate-breathe) {
-          animation: breathe 7s ease-in-out infinite;
+        :global(.animate-image-drift) {
+          animation: imageDrift 14s ease-in-out infinite;
         }
 
         :global(.animate-fade-up) {
@@ -488,7 +421,6 @@ export default function Hero() {
         .particle-1 {
           right: 38%;
           top: 19%;
-          animation-delay: 0s;
         }
 
         .particle-2 {
@@ -538,10 +470,7 @@ export default function Hero() {
         }
 
         @media (prefers-reduced-motion: reduce) {
-          :global(.animate-orb-a),
-          :global(.animate-orb-b),
-          :global(.animate-orb-c),
-          :global(.animate-breathe),
+          :global(.animate-image-drift),
           :global(.animate-fade-up),
           .hero-particle,
           .hero-marquee {
