@@ -298,10 +298,10 @@ export default function Hero() {
 
       <div className="absolute bottom-0 left-0 z-20 w-full overflow-hidden border-t border-white/10 bg-black/20 backdrop-blur-sm">
         <div className="hero-marquee flex w-max items-center py-3">
-          {[...Array(2)].map((_, group) => (
+          {[...Array(6)].map((_, group) => (
             <div
               key={group}
-              className="flex min-w-full items-center justify-around whitespace-nowrap"
+              className="flex items-center whitespace-nowrap"
             >
               <span className="mx-5 text-xs uppercase tracking-[0.25em] text-muted">
                 Film
@@ -396,7 +396,7 @@ export default function Hero() {
           }
 
           to {
-            transform: translateX(-50%);
+            transform: translateX(-16.6667%);
           }
         }
 
