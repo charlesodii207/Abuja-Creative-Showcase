@@ -5,7 +5,11 @@ import { useEffect, useState } from "react";
 import { event } from "@/lib/content";
 
 const SLIDES = [
-  { text: "Two Days. One Ecosystem.", color: "text-red", hex: "#B80319" },
+  {
+    text: "Two Days. One Ecosystem.",
+    color: "text-red",
+    hex: "#B80319",
+  },
   {
     text: "Film × Music × Fashion × Tech",
     color: "text-gold",
@@ -29,11 +33,14 @@ function useReducedMotion() {
   const [reduced, setReduced] = useState(false);
 
   useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const mq = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    );
 
     setReduced(mq.matches);
 
     const handler = () => setReduced(mq.matches);
+
     mq.addEventListener("change", handler);
 
     return () => mq.removeEventListener("change", handler);
@@ -58,7 +65,9 @@ function ProgressSegment({
       setFilled(false);
 
       const raf1 = requestAnimationFrame(() => {
-        const raf2 = requestAnimationFrame(() => setFilled(true));
+        const raf2 = requestAnimationFrame(() => {
+          setFilled(true);
+        });
 
         return () => cancelAnimationFrame(raf2);
       });
@@ -93,7 +102,9 @@ export default function Hero() {
     if (reducedMotion) return;
 
     const interval = setInterval(() => {
-      setActive((prev) => (prev + 1) % SLIDES.length);
+      setActive(
+        (prev) => (prev + 1) % SLIDES.length
+      );
     }, SLIDE_DURATION);
 
     return () => clearInterval(interval);
@@ -108,9 +119,10 @@ export default function Hero() {
       ====================================================== */}
 
       <div className="pointer-events-none absolute inset-0">
-        {/* Very subtle ambient lighting */}
+        {/* Ambient red light */}
         <div className="absolute -right-40 -top-40 h-[650px] w-[650px] rounded-full bg-red/5 blur-[150px]" />
 
+        {/* Ambient teal light */}
         <div className="absolute -bottom-40 right-0 h-[500px] w-[500px] rounded-full bg-teal/5 blur-[150px]" />
 
         {/* =================================================
@@ -118,22 +130,54 @@ export default function Hero() {
         ================================================== */}
 
         {HERO_IMAGE && (
-          <div className="absolute inset-0 overflow-hidden lg:left-[42%] lg:right-0">
-            <img
-              src={HERO_IMAGE}
-              alt=""
-              aria-hidden="true"
-              className="absolute inset-0 h-full w-full object-cover object-center opacity-[0.18] lg:opacity-[0.32] motion-safe:animate-image-drift"
-            />
+          <div className="absolute inset-0 overflow-hidden">
+            {/* =================================================
+                DESKTOP IMAGE
+                -------------------------------------------------
+                The image occupies the right 58% of the screen.
 
-            {/* Left fade */}
-            <div className="absolute inset-0 bg-gradient-to-r from-[#110d0d] via-[#110d0d]/60 to-transparent" />
+                IMPORTANT:
+                We use object-contain instead of object-cover
+                so the photograph does not become increasingly
+                cropped when the browser viewport changes.
+            ================================================== */}
 
-            {/* Bottom fade */}
-            <div className="absolute inset-0 bg-gradient-to-t from-[#110d0d] via-transparent to-[#110d0d]/20" />
+            <div className="absolute inset-y-0 right-0 hidden w-[58%] lg:block">
+              <img
+                src={HERO_IMAGE}
+                alt=""
+                aria-hidden="true"
+                className="absolute inset-0 h-full w-full object-contain object-right motion-safe:animate-image-drift"
+              />
 
-            {/* Slight cinematic wash */}
-            <div className="absolute inset-0 bg-black/15" />
+              {/* Dark cinematic overlay */}
+              <div className="absolute inset-0 bg-black/20" />
+
+              {/* Fade image into content area */}
+              <div className="absolute inset-0 bg-gradient-to-r from-[#110d0d] via-[#110d0d]/45 to-transparent" />
+
+              {/* Bottom fade */}
+              <div className="absolute inset-0 bg-gradient-to-t from-[#110d0d] via-transparent to-[#110d0d]/20" />
+            </div>
+
+            {/* =================================================
+                MOBILE IMAGE
+            ================================================== */}
+
+            <div className="absolute inset-0 lg:hidden">
+              <img
+                src={HERO_IMAGE}
+                alt=""
+                aria-hidden="true"
+                className="absolute inset-0 h-full w-full object-cover object-center opacity-[0.18]"
+              />
+
+              {/* Mobile dark wash */}
+              <div className="absolute inset-0 bg-black/15" />
+
+              {/* Mobile bottom fade */}
+              <div className="absolute inset-0 bg-gradient-to-t from-[#110d0d] via-[#110d0d]/40 to-transparent" />
+            </div>
           </div>
         )}
 
@@ -141,13 +185,33 @@ export default function Hero() {
             FLOATING DETAILS
         ================================================== */}
 
-        <span className="hero-particle particle-1">✦</span>
-        <span className="hero-particle particle-2">+</span>
-        <span className="hero-particle particle-3">○</span>
-        <span className="hero-particle particle-4">✧</span>
-        <span className="hero-particle particle-5">·</span>
-        <span className="hero-particle particle-6">+</span>
-        <span className="hero-particle particle-7">✦</span>
+        <span className="hero-particle particle-1">
+          ✦
+        </span>
+
+        <span className="hero-particle particle-2">
+          +
+        </span>
+
+        <span className="hero-particle particle-3">
+          ○
+        </span>
+
+        <span className="hero-particle particle-4">
+          ✧
+        </span>
+
+        <span className="hero-particle particle-5">
+          ·
+        </span>
+
+        <span className="hero-particle particle-6">
+          +
+        </span>
+
+        <span className="hero-particle particle-7">
+          ✦
+        </span>
       </div>
 
       {/* =====================================================
@@ -185,7 +249,10 @@ export default function Hero() {
           <span />
         </div>
 
-        {/* Event identity */}
+        {/* =================================================
+            EVENT IDENTITY
+        ================================================== */}
+
         <div className="mt-7 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs uppercase tracking-[0.2em] text-muted motion-safe:animate-fade-up">
           <span>Abuja, Nigeria</span>
 
@@ -222,7 +289,10 @@ export default function Hero() {
           </div>
 
           {/* Progress indicators */}
-          <div className="mt-4 flex w-64 gap-1.5" role="presentation">
+          <div
+            className="mt-4 flex w-64 gap-1.5"
+            role="presentation"
+          >
             {SLIDES.map((slide, i) => (
               <ProgressSegment
                 key={slide.text}
@@ -290,7 +360,9 @@ export default function Hero() {
             <span className="relative inline-flex h-2 w-2 rounded-full bg-teal" />
           </span>
 
-          <span>Connecting Abuja&apos;s creative ecosystem</span>
+          <span>
+            Connecting Abuja&apos;s creative ecosystem
+          </span>
         </div>
       </div>
 
@@ -307,54 +379,68 @@ export default function Hero() {
               key={group}
               className="flex items-center whitespace-nowrap"
             >
-              {/* FILM */}
+              {/* Film */}
               <span className="mx-5 text-xs uppercase tracking-[0.25em] text-muted">
                 Film
               </span>
 
-              <span className="text-gold">✦</span>
+              <span className="text-gold">
+                ✦
+              </span>
 
-              {/* MUSIC */}
+              {/* Music */}
               <span className="mx-5 text-xs uppercase tracking-[0.25em] text-muted">
                 Music
               </span>
 
-              <span className="text-red">✦</span>
+              <span className="text-red">
+                ✦
+              </span>
 
-              {/* FASHION */}
+              {/* Fashion */}
               <span className="mx-5 text-xs uppercase tracking-[0.25em] text-muted">
                 Fashion
               </span>
 
-              <span className="text-teal">✦</span>
+              <span className="text-teal">
+                ✦
+              </span>
 
-              {/* ART */}
+              {/* Art */}
               <span className="mx-5 text-xs uppercase tracking-[0.25em] text-muted">
                 Art
               </span>
 
-              <span className="text-gold">✦</span>
+              <span className="text-gold">
+                ✦
+              </span>
 
-              {/* TECHNOLOGY */}
+              {/* Technology */}
               <span className="mx-5 text-xs uppercase tracking-[0.25em] text-muted">
                 Technology
               </span>
 
-              <span className="text-red">✦</span>
+              <span className="text-red">
+                ✦
+              </span>
 
-              {/* MEDIA */}
+              {/* Media */}
               <span className="mx-5 text-xs uppercase tracking-[0.25em] text-muted">
                 Media
               </span>
 
-              <span className="text-teal">✦</span>
+              <span className="text-teal">
+                ✦
+              </span>
 
-              {/* CULTURE */}
+              {/* Culture */}
               <span className="mx-5 text-xs uppercase tracking-[0.25em] text-muted">
                 Culture
               </span>
 
-              <span className="text-gold">✦</span>
+              <span className="text-gold">
+                ✦
+              </span>
             </div>
           ))}
         </div>
@@ -376,7 +462,7 @@ export default function Hero() {
           }
 
           50% {
-            transform: scale(1.02);
+            transform: scale(1.015);
           }
         }
 
@@ -428,7 +514,7 @@ export default function Hero() {
         }
 
         /* =================================================
-           GLOBAL ANIMATIONS
+           IMAGE ANIMATION
         ================================================== */
 
         :global(.animate-image-drift) {
@@ -436,6 +522,10 @@ export default function Hero() {
           transform-origin: center center;
           will-change: transform;
         }
+
+        /* =================================================
+           FADE UP ANIMATION
+        ================================================== */
 
         :global(.animate-fade-up) {
           animation: fadeUp 0.8s ease-out both;
