@@ -9,12 +9,12 @@
 
 :root {
   /* Base */
-  --ink: #14100e;         /* warm near-black background */
-  --ink-raised: #1d1713;  /* slightly lifted panels on dark */
-  --paper: #faf6f0;       /* warm off-white for light sections */
+  --ink: #14100e;
+  --ink-raised: #1d1713;
+  --paper: #faf6f0;
   --paper-raised: #f1ebe1;
-  --cream: #f5efe6;       /* text on dark */
-  --muted: #b8ada0;       /* secondary text on dark */
+  --cream: #f5efe6;
+  --muted: #b8ada0;
   --muted-on-paper: #6b6259;
 
   /* Brand accents */
@@ -34,6 +34,7 @@
   --color-red: var(--red);
   --color-gold: var(--gold);
   --color-teal: var(--teal);
+
   --font-display: "Fraunces", serif;
   --font-body: "Work Sans", sans-serif;
 }
@@ -47,15 +48,184 @@ body {
   min-height: 100vh;
 }
 
-/* Recurring brand device: a three-colour rule reflecting the ACS palette */
+/* -------------------------------------------------------
+   BRAND ELEMENTS
+------------------------------------------------------- */
+
 .tricolor-rule {
   display: flex;
   height: 4px;
   width: 64px;
+  overflow: hidden;
 }
+
 .tricolor-rule span {
   flex: 1;
 }
-.tricolor-rule span:nth-child(1) { background: var(--red); }
-.tricolor-rule span:nth-child(2) { background: var(--gold); }
-.tricolor-rule span:nth-child(3) { background: var(--teal); }
+
+.tricolor-rule span:nth-child(1) {
+  background: var(--red);
+}
+
+.tricolor-rule span:nth-child(2) {
+  background: var(--gold);
+}
+
+.tricolor-rule span:nth-child(3) {
+  background: var(--teal);
+}
+
+/* -------------------------------------------------------
+   PREMIUM SCROLL REVEAL SYSTEM
+------------------------------------------------------- */
+
+.reveal {
+  opacity: 0;
+  transform: translate3d(0, var(--reveal-distance, 28px), 0);
+
+  transition:
+    opacity var(--reveal-duration, 800ms)
+      cubic-bezier(0.22, 1, 0.36, 1)
+      var(--reveal-delay, 0ms),
+    transform var(--reveal-duration, 800ms)
+      cubic-bezier(0.22, 1, 0.36, 1)
+      var(--reveal-delay, 0ms);
+
+  will-change: opacity, transform;
+}
+
+.reveal-visible {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+/* -------------------------------------------------------
+   REDUCED MOTION
+   Respect users who prefer less animation.
+------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+    will-change: auto;
+  }
+}
+
+/* -------------------------------------------------------
+   HERO IMAGE MOTION
+------------------------------------------------------- */
+
+@keyframes imageDrift {
+  from {
+    transform: scale(1);
+  }
+
+  to {
+    transform: scale(1.015);
+  }
+}
+
+.motion-safe\:animate-image-drift {
+  animation: imageDrift 18s ease-out forwards;
+}
+
+/* -------------------------------------------------------
+   HERO ATMOSPHERE
+------------------------------------------------------- */
+
+@keyframes particleFloat {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+    opacity: 0.35;
+  }
+
+  50% {
+    transform: translate3d(0, -12px, 0);
+    opacity: 0.55;
+  }
+}
+
+.animate-particle-float {
+  animation: particleFloat 7s ease-in-out infinite;
+}
+
+/* -------------------------------------------------------
+   HERO TEXT ENTRANCE
+------------------------------------------------------- */
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 24px, 0);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.animate-fade-up {
+  animation: fadeUp 800ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* -------------------------------------------------------
+   HERO MARQUEE
+------------------------------------------------------- */
+
+@keyframes marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.hero-marquee {
+  animation: marquee 28s linear infinite;
+  will-change: transform;
+}
+
+/* -------------------------------------------------------
+   INTERACTION REFINEMENT
+------------------------------------------------------- */
+
+a,
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Keep transforms smooth without forcing every element
+   into its own compositor layer. */
+.transition-transform,
+.transition-all {
+  backface-visibility: hidden;
+}
+
+/* -------------------------------------------------------
+   ACCESSIBILITY / REDUCED MOTION
+------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .motion-safe\:animate-image-drift,
+  .animate-particle-float,
+  .animate-fade-up,
+  .hero-marquee {
+    animation: none !important;
+  }
+}
+
+/* -------------------------------------------------------
+   MOBILE PERFORMANCE
+------------------------------------------------------- */
+
+@media (max-width: 767px) {
+  .animate-particle-float {
+    display: none;
+  }
+}
