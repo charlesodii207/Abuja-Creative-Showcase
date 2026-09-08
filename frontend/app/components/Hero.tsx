@@ -123,7 +123,7 @@ export default function Hero() {
         ================================================== */}
 
         {HERO_IMAGE && (
-          <div className="absolute inset-x-0 top-0 h-[calc(100vh-104px)] lg:inset-y-0 lg:left-auto lg:right-0 lg:h-full lg:w-[58%]">
+          <div className="absolute inset-x-0 top-0 h-[calc(100vh-104px)] lg:left-auto lg:right-0 lg:w-[58%]">
             <div
               className="absolute inset-0 bg-cover bg-center opacity-[0.18] lg:opacity-[0.32] motion-safe:animate-image-drift"
               style={{
