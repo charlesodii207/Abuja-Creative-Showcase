@@ -98,13 +98,13 @@ export const participationCategories = [
   {
     name: "Exhibitor",
     blurb: "Showcase your creative business, sell products, and connect with buyers and brands at the Creative Market.",
-    note: "Application required — spots not guaranteed.",
+    note: "Application required",
     guaranteed: false,
   },
   {
     name: "Speaker",
     blurb: "Share your expertise on an industry panel, masterclass, or conversation.",
-    note: "Application required — spots not guaranteed.",
+    note: "Application required",
     guaranteed: false,
   },
   {
@@ -116,7 +116,7 @@ export const participationCategories = [
   {
     name: "Pitching Participant",
     blurb: "Pitch your project directly to investors, commissioners, brands, and distributors in the Deal Room.",
-    note: "Application required — spots not guaranteed.",
+    note: "Application required",
     guaranteed: false,
   },
 ];
