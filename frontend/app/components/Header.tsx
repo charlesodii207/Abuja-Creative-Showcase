@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { event } from "@/lib/content";
 
@@ -17,13 +18,18 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-ink/90 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <Link href="/" className="flex items-baseline gap-2">
-          <span className="font-display text-xl font-semibold tracking-tight">
-            <span className="text-red">A</span>
-            <span className="text-gold">C</span>
-            <span className="text-teal">S</span>
-          </span>
+        <Link href="/" className="flex items-center gap-3">
+          {/* ACS Logo */}
+          <Image
+            src="/images/acs-logo.png"
+            alt="ACS"
+            width={36}
+            height={36}
+            className="h-9 w-9 object-contain"
+            priority
+          />
 
+          {/* Event name */}
           <span className="hidden text-sm text-muted sm:inline">
             {event.name}
           </span>
@@ -56,35 +62,29 @@ export default function Header() {
             aria-label="Toggle menu"
             aria-expanded={menuOpen}
           >
-            {menuOpen ? (
-              <svg
-                viewBox="0 0 24 24"
-                className="h-5 w-5"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                aria-hidden="true"
-              >
-                <path
-                  d="M6 6 L18 18 M18 6 L6 18"
-                  strokeLinecap="round"
-                />
-              </svg>
-            ) : (
-              <svg
-                viewBox="0 0 24 24"
-                className="h-5 w-5"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                aria-hidden="true"
-              >
-                <path
-                  d="M4 7h16M4 12h16M4 17h16"
-                  strokeLinecap="round"
-                />
-              </svg>
-            )}
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              aria-hidden="true"
+            >
+              {menuOpen ? (
+                <>
+                  <path d="M6 6l12 12" />
+                  <path d="M18 6L6 18" />
+                </>
+              ) : (
+                <>
+                  <path d="M4 7h16" />
+                  <path d="M4 12h16" />
+                  <path d="M4 17h16" />
+                </>
+              )}
+            </svg>
           </button>
         </div>
       </div>
