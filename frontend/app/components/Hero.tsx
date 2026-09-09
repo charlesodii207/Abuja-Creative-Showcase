@@ -251,7 +251,7 @@ export default function Hero() {
             href="/register"
             className="group rounded-full bg-red px-7 py-3.5 text-sm font-medium text-cream shadow-[0_10px_35px_rgba(184,3,25,0.18)] transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:shadow-[0_15px_45px_rgba(184,3,25,0.28)]"
           >
-            Register your interest
+            Register
 
             <span className="ml-2 inline-block transition-transform duration-300 group-hover:translate-x-1">
               →
