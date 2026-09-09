@@ -5,7 +5,7 @@ export const event = {
   name: "Abuja Creative Showcase",
   shortName: "ACS",
   tagline: "Where Creativity Meets Opportunity",
-  dates: "Dates to be announced", // swap for a real date once confirmed
+  dates: "December 4–5, 2026", // swap for a real date once confirmed
   venue: "Venue to be announced, Abuja, FCT",
   organizer: "AFRIGOS Film & Media Academy",
 };

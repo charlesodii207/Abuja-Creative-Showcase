@@ -185,17 +185,13 @@ export default function Hero() {
           <span />
         </div>
 
-        {/* Event identity */}
+        {/* Event date */}
         <div className="mt-7 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs uppercase tracking-[0.2em] text-muted motion-safe:animate-fade-up">
           <span>Abuja, Nigeria</span>
 
           <span className="h-1 w-1 rounded-full bg-gold" />
 
-          <span>Creative Industries</span>
-
-          <span className="h-1 w-1 rounded-full bg-teal" />
-
-          <span>2026</span>
+          <span>December 4–5, 2026</span>
         </div>
 
         {/* =================================================
