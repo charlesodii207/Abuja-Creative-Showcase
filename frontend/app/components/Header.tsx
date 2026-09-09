@@ -18,23 +18,25 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-ink/90 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+        {/* Logo + Event Name */}
         <Link href="/" className="flex items-center gap-3">
-          {/* ACS Logo */}
           <Image
             src="/images/acs-logo.png"
-            alt="ACS"
-            width={36}
-            height={36}
-            className="h-9 w-9 object-contain"
+            alt="Abuja Creative Showcase"
+            width={32}
+            height={32}
+            className="h-8 w-8 object-contain"
             priority
           />
 
-          {/* Event name */}
-          <span className="hidden text-sm text-muted sm:inline">
-            {event.name}
+          <span className="font-display text-lg font-semibold tracking-tight sm:text-xl">
+            <span className="text-red">Abuja</span>{" "}
+            <span className="text-gold">Creative</span>{" "}
+            <span className="text-teal">Showcase</span>
           </span>
         </Link>
 
+        {/* Desktop Navigation */}
         <nav className="hidden items-center gap-8 text-sm text-muted md:flex">
           {navLinks.map((link) => (
             <a
@@ -47,6 +49,7 @@ export default function Header() {
           ))}
         </nav>
 
+        {/* Actions */}
         <div className="flex items-center gap-3">
           <Link
             href="/register"
@@ -55,6 +58,7 @@ export default function Header() {
             Register
           </Link>
 
+          {/* Mobile Menu Button */}
           <button
             type="button"
             onClick={() => setMenuOpen((open) => !open)}
@@ -89,6 +93,7 @@ export default function Header() {
         </div>
       </div>
 
+      {/* Mobile Navigation */}
       {menuOpen && (
         <nav className="relative z-[55] border-t border-white/10 px-6 py-4 md:hidden">
           <div className="flex flex-col gap-4 text-sm text-muted">
