@@ -5,7 +5,7 @@ export const event = {
   name: "Abuja Creative Showcase",
   shortName: "ACS",
   tagline: "Where Creativity Meets Opportunity",
-  dates: "December 4–5, 2026", // swap for a real date once confirmed
+  dates: "December 4–5, 2026",
   venue: "Venue to be announced, Abuja, FCT",
   organizer: "AFRIGOS Film & Media Academy",
 };
@@ -67,11 +67,11 @@ export const faqs = [
   },
   {
     q: "How do I take part?",
-    a: "Registration opens soon. General audience tickets will be open registration. Exhibitor, speaker, press and pitching spots go through an application and review process.",
+    a: "Registration is open. General Pass and Attendee tickets are open registration. Exhibitor, Press, Pitching, and Investor spots go through an application and review process.",
   },
   {
     q: "Is there a fee to attend?",
-    a: "General and VIP ticket pricing will be announced closer to the event. Masterclasses are sold as a separate pass.",
+    a: "General Pass is free. Attendee ticket pricing (General/VIP) will be announced closer to the event. Masterclasses are sold as a separate pass.",
   },
   {
     q: "Can my organization exhibit or sponsor?",
@@ -90,32 +90,44 @@ export const sponsorshipTiers = [
 
 export const participationCategories = [
   {
-    name: "Visitor",
-    blurb: "Come experience the Showcase — screenings, performances, the creative market, and more.",
-    note: "General and VIP tickets available.",
+    name: "General Pass",
+    slug: "attendee",
+    blurb: "Free entry to the Showcase. Register and confirm your ticket by email — no payment required.",
+    note: "Free — upgrade anytime.",
+    guaranteed: true,
+  },
+  {
+    name: "Attendee",
+    slug: "attendee",
+    blurb: "Full access with a General or VIP ticket. Add a Masterclass Pass if you'd like one.",
+    note: "Paid ticket — General or VIP.",
     guaranteed: true,
   },
   {
     name: "Exhibitor",
+    slug: "exhibitor",
     blurb: "Showcase your creative business, sell products, and connect with buyers and brands at the Creative Market.",
     note: "Application required",
     guaranteed: false,
   },
   {
-    name: "Speaker",
-    blurb: "Share your expertise on an industry panel, masterclass, or conversation.",
-    note: "Application required",
-    guaranteed: false,
-  },
-  {
     name: "Press",
+    slug: "press",
     blurb: "Cover the Showcase — interviews, behind-the-scenes access, and press briefings.",
     note: "Accreditation required — not guaranteed.",
     guaranteed: false,
   },
   {
     name: "Pitching Participant",
+    slug: "pitcher",
     blurb: "Pitch your project directly to investors, commissioners, brands, and distributors in the Deal Room.",
+    note: "Application required",
+    guaranteed: false,
+  },
+  {
+    name: "Investor",
+    slug: "investor",
+    blurb: "Meet curated pitching participants and discover investable creative projects in the Deal Room.",
     note: "Application required",
     guaranteed: false,
   },
