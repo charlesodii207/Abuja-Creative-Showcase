@@ -2,11 +2,11 @@ from pydantic import BaseModel, EmailStr
 from app.models import TicketType
 
 
-class VisitorRegistrationRequest(BaseModel):
+class AttendeeRegistrationRequest(BaseModel):
     full_name: str
     email: EmailStr
     phone: str
-    ticket_type: TicketType
+    ticket_type: TicketType = TicketType.general_pass
     wants_masterclass: bool = False
 
 
@@ -19,15 +19,6 @@ class ExhibitorRegistrationRequest(BaseModel):
     what_bringing: str | None = None
     portfolio_url: str | None = None
     goal: str | None = None
-
-
-class SpeakerRegistrationRequest(BaseModel):
-    full_name: str
-    email: EmailStr
-    phone: str
-    topic: str
-    bio: str | None = None
-    headshot_url: str | None = None
 
 
 class PressRegistrationRequest(BaseModel):
@@ -49,6 +40,16 @@ class PitcherRegistrationRequest(BaseModel):
     work_sample_url: str | None = None
 
 
+class InvestorRegistrationRequest(BaseModel):
+    full_name: str
+    email: EmailStr
+    phone: str
+    organization_name: str
+    investment_interest: str | None = None
+    budget_range: str | None = None
+    portfolio_url: str | None = None
+
+
 class RegistrationResponse(BaseModel):
     reference_number: str
     message: str
@@ -63,6 +64,17 @@ class LookupResponse(BaseModel):
     category: str
     status: str
     reference_number: str
+
+
+class UpgradeRequest(BaseModel):
+    reference_number: str
+    ticket_type: TicketType
+
+
+class UpgradeResponse(BaseModel):
+    reference_number: str
+    ticket_type: str
+    message: str
 
 
 class RegistrantSummary(BaseModel):
@@ -88,8 +100,8 @@ class StatsResponse(BaseModel):
     total_registrants: int
     by_category: dict[str, int]
     by_status: dict[str, int]
-    visitors_paid: int
-    visitors_unpaid: int
+    attendees_paid: int
+    attendees_unpaid: int
     exhibitors_paid: int
     exhibitors_unpaid: int
 

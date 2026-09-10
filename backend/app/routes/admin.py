@@ -125,8 +125,8 @@ def get_stats(db: Session = Depends(get_db)):
     )
     by_status = {k.value: v for k, v in status_counts.items()}
 
-    visitors_paid = db.query(models.VisitorDetail).filter(models.VisitorDetail.is_paid == True).count()
-    visitors_unpaid = db.query(models.VisitorDetail).filter(models.VisitorDetail.is_paid == False).count()
+    attendees_paid = db.query(models.AttendeeDetail).filter(models.AttendeeDetail.is_paid == True).count()
+    attendees_unpaid = db.query(models.AttendeeDetail).filter(models.AttendeeDetail.is_paid == False).count()
     exhibitors_paid = db.query(models.ExhibitorDetail).filter(models.ExhibitorDetail.is_paid == True).count()
     exhibitors_unpaid = db.query(models.ExhibitorDetail).filter(models.ExhibitorDetail.is_paid == False).count()
 
@@ -134,8 +134,8 @@ def get_stats(db: Session = Depends(get_db)):
         total_registrants=total,
         by_category=by_category,
         by_status=by_status,
-        visitors_paid=visitors_paid,
-        visitors_unpaid=visitors_unpaid,
+        attendees_paid=attendees_paid,
+        attendees_unpaid=attendees_unpaid,
         exhibitors_paid=exhibitors_paid,
         exhibitors_unpaid=exhibitors_unpaid,
     )
