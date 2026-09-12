@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 
+const PITCHER_FEE = "₦100,000";
+
 export default function PitcherRegistrationPage() {
   const [form, setForm] = useState({
     full_name: "",
@@ -14,6 +16,8 @@ export default function PitcherRegistrationPage() {
     work_sample_url: "",
   });
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
+  const [payment, setPayment] = useState<{ amount_kobo: number; authorization_url: string } | null>(null);
+  const [referenceNumber, setReferenceNumber] = useState("");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -28,40 +32,51 @@ export default function PitcherRegistrationPage() {
 
       if (!res.ok) throw new Error("Request failed");
 
+      const data = await res.json();
+      setReferenceNumber(data.reference_number);
+      setPayment({
+        amount_kobo: data.amount_kobo,
+        authorization_url: data.paystack_authorization_url,
+      });
       setStatus("success");
     } catch {
       setStatus("error");
     }
   }
 
-  if (status === "success") {
+  if (status === "success" && payment) {
+    const amountNaira = (payment.amount_kobo / 100).toLocaleString();
     return (
       <main className="mx-auto max-w-2xl px-6 py-20 text-center md:py-28">
         <div className="tricolor-rule mx-auto mb-6">
           <span /><span /><span />
         </div>
         <h1 className="font-display text-3xl text-cream sm:text-4xl">
-          Application Submitted
+          Complete Your Payment
         </h1>
         <div className="mt-8 rounded-2xl border border-gold/30 bg-ink-raised px-8 py-10">
-          <p className="text-muted">Check your email at</p>
-          <p className="mt-2 font-display text-xl text-gold">{form.email}</p>
+          <p className="text-muted">Reference number</p>
+          <p className="mt-2 font-display text-xl text-gold">{referenceNumber}</p>
           <p className="mt-4 text-muted">
-            for your reference number. Your application is pending review — applying does not guarantee a pitching slot.
+            Your spot in the Deal Room is reserved but not yet confirmed. Complete payment of
+          </p>
+          <p className="mt-1 font-display text-2xl text-cream">₦{amountNaira}</p>
+          <p className="mt-4 text-muted">
+            to secure it — you&apos;ll receive an email confirmation once payment is received.
           </p>
         </div>
         <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-          <Link
-            href="/register/lookup"
+          <a
+            href={payment.authorization_url}
             className="rounded-full bg-gold px-7 py-3.5 text-sm font-medium text-ink transition-transform hover:scale-105"
           >
-            Check Status Later
-          </Link>
+            Complete Payment
+          </a>
           <Link
-            href="/"
+            href="/register/lookup"
             className="rounded-full border border-white/20 px-7 py-3.5 text-sm font-medium text-cream transition-colors hover:border-white/40"
           >
-            Back to homepage
+            Check Status Later
           </Link>
         </div>
       </main>
@@ -74,10 +89,10 @@ export default function PitcherRegistrationPage() {
         <span /><span /><span />
       </div>
       <h1 className="font-display text-3xl text-cream sm:text-4xl">
-        Pitching Application
+        Pitching Registration
       </h1>
       <p className="mt-3 text-muted">
-        Pitch your project in the Deal Room. Applying does not guarantee a pitching slot.
+        Pitch your project in the Deal Room. Fill in your details below to reserve your spot.
       </p>
 
       <form onSubmit={handleSubmit} className="mt-10 rounded-2xl border border-gold/20 bg-ink-raised px-6 py-8 sm:px-8 sm:py-10">
@@ -164,6 +179,11 @@ export default function PitcherRegistrationPage() {
             />
           </div>
 
+          <div className="rounded-lg border border-gold/30 bg-ink px-4 py-3 text-center">
+            <p className="text-xs text-muted">Amount due</p>
+            <p className="font-display text-lg text-gold">{PITCHER_FEE}</p>
+          </div>
+
           {status === "error" && (
             <p className="text-sm text-red">Something went wrong — please try again.</p>
           )}
@@ -173,7 +193,7 @@ export default function PitcherRegistrationPage() {
             disabled={status === "submitting"}
             className="w-full rounded-full bg-gold px-7 py-3.5 text-sm font-medium text-ink transition-transform hover:scale-105 disabled:opacity-50"
           >
-            {status === "submitting" ? "Submitting..." : "Submit Application"}
+            {status === "submitting" ? "Submitting..." : "Continue to Payment"}
           </button>
         </div>
       </form>
