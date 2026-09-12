@@ -1,5 +1,5 @@
-from pydantic import BaseModel, EmailStr
-from app.models import TicketType, BoothSize
+from pydantic import BaseModel, EmailStr, model_validator
+from app.models import TicketType, BoothSize, ExhibitType
 
 
 class AttendeeRegistrationRequest(BaseModel):
@@ -7,7 +7,6 @@ class AttendeeRegistrationRequest(BaseModel):
     email: EmailStr
     phone: str
     ticket_type: TicketType = TicketType.general
-    wants_masterclass: bool = False
 
 
 class ExhibitorRegistrationRequest(BaseModel):
@@ -19,9 +18,17 @@ class ExhibitorRegistrationRequest(BaseModel):
     what_bringing: str | None = None
     portfolio_url: str | None = None
     goal: str | None = None
-    booth_size: BoothSize | None = None
-    wants_auction: bool = False
-    auction_item_description: str | None = None
+    exhibit_type: ExhibitType
+    booth_size: BoothSize | None = None            # required if exhibit_type == booth
+    auction_item_description: str | None = None    # required if exhibit_type == auction
+
+    @model_validator(mode="after")
+    def check_exhibit_fields(self):
+        if self.exhibit_type == ExhibitType.booth and not self.booth_size:
+            raise ValueError("booth_size is required when exhibit_type is 'booth'")
+        if self.exhibit_type == ExhibitType.auction and not self.auction_item_description:
+            raise ValueError("auction_item_description is required when exhibit_type is 'auction'")
+        return self
 
 
 class PressRegistrationRequest(BaseModel):
@@ -56,6 +63,8 @@ class InvestorRegistrationRequest(BaseModel):
 class RegistrationResponse(BaseModel):
     reference_number: str
     message: str
+    amount_kobo: int | None = None          # present when this category requires payment
+    paystack_authorization_url: str | None = None  # present once payment is initialized
 
 
 class LookupRequest(BaseModel):
@@ -78,6 +87,8 @@ class UpgradeResponse(BaseModel):
     reference_number: str
     ticket_type: str
     message: str
+    amount_kobo: int | None = None
+    paystack_authorization_url: str | None = None
 
 
 class RegistrantSummary(BaseModel):
@@ -130,4 +141,26 @@ class ContactInquiryRequest(BaseModel):
 
 
 class ContactInquiryResponse(BaseModel):
+    message: str
+
+
+# --- Paystack ---
+
+class PaystackInitializeRequest(BaseModel):
+    reference_number: str
+
+
+class PaystackInitializeResponse(BaseModel):
+    authorization_url: str
+    access_code: str
+    reference: str
+
+
+class PaystackVerifyRequest(BaseModel):
+    reference_number: str
+
+
+class PaystackVerifyResponse(BaseModel):
+    reference_number: str
+    status: str          # "confirmed" or "failed"
     message: str

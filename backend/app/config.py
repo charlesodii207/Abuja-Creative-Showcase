@@ -8,6 +8,8 @@ class Settings(BaseSettings):
     resend_api_key: str
     email_from: str = "Abuja Creative Showcase <noreply@abujacreativeshowcase.com>"
     sponsor_inquiry_email: str = "info@abujacreativeshowcase.com"
+    paystack_secret_key: str
+    paystack_public_key: str
 
     class Config:
         env_file = ".env"

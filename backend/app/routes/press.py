@@ -37,14 +37,14 @@ def register_press(payload: schemas.PressRegistrationRequest, db: Session = Depe
         subject="Your Abuja Creative Showcase Press Accreditation",
         html=f"""
         <p>Hi {payload.full_name},</p>
-        <p>Thanks for applying for press accreditation at the Abuja Creative Showcase!</p>
+        <p>Thank you for applying for press accreditation at the Abuja Creative Showcase.</p>
         <p>Your reference number is: <strong>{reference_number}</strong></p>
-        <p>Your application is pending review. We'll email you once a decision is made.
-        Applying does not guarantee accreditation.</p>
+        <p>We've received your application. A member of our team will reach out to you
+        soon to finalize the details.</p>
         """,
     )
 
     return schemas.RegistrationResponse(
         reference_number=reference_number,
-        message="Application submitted — pending review.",
+        message="Application received — our team will be in touch to finalize details.",
     )

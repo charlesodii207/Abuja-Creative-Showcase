@@ -2,7 +2,7 @@ import enum
 import uuid
 
 from sqlalchemy import (
-    Column, String, Boolean, DateTime, ForeignKey, Enum, Text, func
+    Column, String, Boolean, DateTime, ForeignKey, Enum, Text, Integer, func
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
@@ -19,20 +19,27 @@ class RegistrantCategory(str, enum.Enum):
 
 
 class RegistrantStatus(str, enum.Enum):
-    pending = "pending"
-    approved = "approved"
-    rejected = "rejected"
-    confirmed = "confirmed"
+    pending = "pending"              # Press / Investor: submitted, awaiting team review
+    awaiting_payment = "awaiting_payment"  # Attendee / Exhibitor / Pitcher: registered, not yet paid
+    approved = "approved"            # Press / Investor: reviewed and accepted
+    rejected = "rejected"            # Press / Investor: reviewed and declined
+    confirmed = "confirmed"          # Attendee / Exhibitor / Pitcher: payment received
 
 
 class TicketType(str, enum.Enum):
     general = "general"
     vip = "vip"
+    masterclass = "masterclass"  # top tier — includes everything VIP includes, plus more
 
 
 class BoothSize(str, enum.Enum):
     small = "small"
     big = "big"
+
+
+class ExhibitType(str, enum.Enum):
+    booth = "booth"      # Buy a booth (small or big)
+    auction = "auction"  # Auction a piece of art/fashion instead of buying a booth
 
 
 class Registrant(Base):
@@ -61,8 +68,12 @@ class AttendeeDetail(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     registrant_id = Column(UUID(as_uuid=True), ForeignKey("registrants.id"), nullable=False, unique=True)
     ticket_type = Column(Enum(TicketType), nullable=False, default=TicketType.general)
-    wants_masterclass = Column(Boolean, default=False)
+    wants_masterclass = Column(Boolean, default=False)  # deprecated — masterclass is now its own ticket_type tier
     is_paid = Column(Boolean, default=False)
+    amount_kobo = Column(Integer, nullable=True)
+    paystack_reference = Column(String, nullable=True, unique=True)
+    pending_upgrade_ticket_type = Column(Enum(TicketType), nullable=True)  # set while an upgrade payment is in progress
+    pending_upgrade_reference = Column(String, nullable=True, unique=True)  # Paystack reference for that upgrade payment
 
     registrant = relationship("Registrant", back_populates="attendee_detail")
 
@@ -77,10 +88,12 @@ class ExhibitorDetail(Base):
     what_bringing = Column(Text)
     portfolio_url = Column(String)
     goal = Column(String)
-    booth_size = Column(Enum(BoothSize), nullable=True)
-    wants_auction = Column(Boolean, default=False)
-    auction_item_description = Column(Text, nullable=True)
+    exhibit_type = Column(Enum(ExhibitType), nullable=False)
+    booth_size = Column(Enum(BoothSize), nullable=True)          # set only when exhibit_type == booth
+    auction_item_description = Column(Text, nullable=True)       # set only when exhibit_type == auction
     is_paid = Column(Boolean, default=False)
+    amount_kobo = Column(Integer, nullable=True)
+    paystack_reference = Column(String, nullable=True, unique=True)
 
     registrant = relationship("Registrant", back_populates="exhibitor_detail")
 
@@ -106,6 +119,9 @@ class PitcherDetail(Base):
     category = Column(String, nullable=False)
     pitch_summary = Column(Text)
     work_sample_url = Column(String)
+    is_paid = Column(Boolean, default=False)
+    amount_kobo = Column(Integer, nullable=True)
+    paystack_reference = Column(String, nullable=True, unique=True)
 
     registrant = relationship("Registrant", back_populates="pitcher_detail")
 

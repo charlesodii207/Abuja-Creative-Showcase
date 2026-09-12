@@ -38,14 +38,14 @@ def register_investor(payload: schemas.InvestorRegistrationRequest, db: Session 
         subject="Your Abuja Creative Showcase Investor Application",
         html=f"""
         <p>Hi {payload.full_name},</p>
-        <p>Thanks for applying as an Investor at the Abuja Creative Showcase!</p>
+        <p>Thank you for applying to be an Investor at the Abuja Creative Showcase.</p>
         <p>Your reference number is: <strong>{reference_number}</strong></p>
-        <p>Your application is pending review. We'll email you once a decision is made.
-        Applying does not guarantee access.</p>
+        <p>We've received your application and are grateful for your interest.
+        A member of our team will reach out to you soon to finalize the details.</p>
         """,
     )
 
     return schemas.RegistrationResponse(
         reference_number=reference_number,
-        message="Application submitted — pending review.",
+        message="Application received — our team will be in touch to finalize details.",
     )
