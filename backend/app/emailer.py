@@ -5,11 +5,11 @@ from app.config import settings
 resend.api_key = settings.resend_api_key
 
 
-def send_email(to: str, subject: str, html: str) -> None:
+def send_email(to: list[str], subject: str, html: str) -> None:
     try:
         resend.Emails.send({
             "from": settings.email_from,
-            "to": [to],
+            "to": to,
             "subject": subject,
             "html": html,
         })

@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     environment: str = "development"
     resend_api_key: str
     email_from: str = "Abuja Creative Showcase <noreply@abujacreativeshowcase.com>"
-    sponsor_inquiry_email: str = "charlesodii207@gmail.com"
+    sponsor_inquiry_email: str = "info@abujacreativeshowcase.com"
 
     class Config:
         env_file = ".env"

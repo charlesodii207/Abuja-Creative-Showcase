@@ -10,7 +10,10 @@ router = APIRouter(prefix="/contact", tags=["contact"])
 @router.post("/inquiry", response_model=schemas.ContactInquiryResponse)
 def submit_contact_inquiry(payload: schemas.ContactInquiryRequest):
     send_email(
-        to=settings.sponsor_inquiry_email,
+        to=[
+            settings.sponsor_inquiry_email,
+            "admin@abujacreativeshowcase.com",
+        ],
         subject=f"New Contact Form Question — {payload.full_name}",
         html=f"""
         <p>New question received via the contact form:</p>
