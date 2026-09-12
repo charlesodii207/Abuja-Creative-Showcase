@@ -6,7 +6,7 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:5173"
     environment: str = "development"
     resend_api_key: str
-    email_from: str = "onboarding@resend.dev"
+    email_from: str = "Abuja Creative Showcase <noreply@abujacreativeshowcase.com>"
     sponsor_inquiry_email: str = "charlesodii207@gmail.com"
 
     class Config:
