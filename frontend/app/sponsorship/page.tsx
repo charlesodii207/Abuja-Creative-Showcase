@@ -1,4 +1,14 @@
+import type { Metadata } from "next";
 import { sponsorshipTiers } from "@/lib/content";
+
+export const metadata: Metadata = {
+  title: "Sponsorship & Partnership Packages",
+  description:
+    "Partner with Abuja Creative Showcase 2026. Six sponsorship tiers, from Bronze to Title Partner, connecting your brand with Abuja's creative industry.",
+  alternates: {
+    canonical: "/sponsorship",
+  },
+};
 
 type TierVisual = { icon: (color: string) => React.ReactNode; color: string; benefitsCount: number };
 

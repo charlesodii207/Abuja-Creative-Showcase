@@ -8,6 +8,7 @@ import { event } from "@/lib/content";
 const navLinks = [
   { href: "/#about", label: "About" },
   { href: "/#programme", label: "Programme" },
+  { href: "/countdown", label: "Countdown" },
   { href: "/#sponsors", label: "Sponsors" },
   { href: "/#faq", label: "FAQ" },
 ];
@@ -37,13 +38,13 @@ export default function Header() {
 
         <nav className="hidden items-center gap-8 text-sm text-muted md:flex">
           {navLinks.map((link) => (
-            <a
+            <Link
               key={link.href}
               href={link.href}
               className="transition-colors hover:text-cream"
             >
               {link.label}
-            </a>
+            </Link>
           ))}
         </nav>
 
@@ -93,14 +94,14 @@ export default function Header() {
         <nav className="relative z-[55] border-t border-white/10 px-6 py-4 md:hidden">
           <div className="flex flex-col gap-4 text-sm text-muted">
             {navLinks.map((link) => (
-              <a
+              <Link
                 key={link.href}
                 href={link.href}
                 className="block cursor-pointer touch-manipulation py-1 transition-colors hover:text-cream"
                 onClick={() => setMenuOpen(false)}
               >
                 {link.label}
-              </a>
+              </Link>
             ))}
 
             <Link

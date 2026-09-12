@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { event, socials } from "@/lib/content";
 import { TikTokIcon, FacebookIcon, InstagramIcon } from "./SocialIcons";
 
@@ -34,6 +35,13 @@ export default function Footer() {
                 {event.organizer}
               </a>
             </p>
+
+            <Link
+              href="/countdown"
+              className="mt-2 inline-block text-sm text-teal underline underline-offset-4 transition-colors hover:text-cream"
+            >
+              See countdown to ACS 2026 →
+            </Link>
           </div>
 
           <div className="flex flex-col gap-4 sm:items-end">
