@@ -1,6 +1,10 @@
 import Link from "next/link";
 import { event, socials } from "@/lib/content";
-import { TikTokIcon, FacebookIcon, InstagramIcon } from "./SocialIcons";
+import {
+  TikTokIcon,
+  FacebookIcon,
+  InstagramIcon,
+} from "./SocialIcons";
 
 const iconMap = {
   tiktok: TikTokIcon,
@@ -41,6 +45,20 @@ export default function Footer() {
               className="mt-2 inline-block text-sm text-teal underline underline-offset-4 transition-colors hover:text-cream"
             >
               See countdown to ACS 2026 →
+            </Link>
+
+            <Link
+              href="/creative-finance"
+              className="mt-1 block text-sm text-gold underline underline-offset-4 transition-colors hover:text-cream"
+            >
+              Investment & pitching opportunities →
+            </Link>
+
+            <Link
+              href="/film"
+              className="mt-1 block text-sm text-muted underline underline-offset-4 transition-colors hover:text-cream"
+            >
+              Film industry & networking →
             </Link>
           </div>
 

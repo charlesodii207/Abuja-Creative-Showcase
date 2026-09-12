@@ -44,6 +44,10 @@ export const metadata: Metadata = {
     canonical: "/",
   },
 
+  verification: {
+    google: "BQBpC9A6IKW3hpbB0HgoUBuSywB_q4yscboZT6qp8Do",
+  },
+
   openGraph: {
     type: "website",
     url: "https://www.abujacreativeshowcase.com/",
