@@ -1,12 +1,12 @@
 from pydantic import BaseModel, EmailStr
-from app.models import TicketType
+from app.models import TicketType, BoothSize
 
 
 class AttendeeRegistrationRequest(BaseModel):
     full_name: str
     email: EmailStr
     phone: str
-    ticket_type: TicketType = TicketType.general_pass
+    ticket_type: TicketType = TicketType.general
     wants_masterclass: bool = False
 
 
@@ -19,6 +19,9 @@ class ExhibitorRegistrationRequest(BaseModel):
     what_bringing: str | None = None
     portfolio_url: str | None = None
     goal: str | None = None
+    booth_size: BoothSize | None = None
+    wants_auction: bool = False
+    auction_item_description: str | None = None
 
 
 class PressRegistrationRequest(BaseModel):

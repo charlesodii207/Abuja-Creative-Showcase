@@ -26,9 +26,13 @@ class RegistrantStatus(str, enum.Enum):
 
 
 class TicketType(str, enum.Enum):
-    general_pass = "general_pass"
     general = "general"
     vip = "vip"
+
+
+class BoothSize(str, enum.Enum):
+    small = "small"
+    big = "big"
 
 
 class Registrant(Base):
@@ -56,7 +60,7 @@ class AttendeeDetail(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     registrant_id = Column(UUID(as_uuid=True), ForeignKey("registrants.id"), nullable=False, unique=True)
-    ticket_type = Column(Enum(TicketType), nullable=False, default=TicketType.general_pass)
+    ticket_type = Column(Enum(TicketType), nullable=False, default=TicketType.general)
     wants_masterclass = Column(Boolean, default=False)
     is_paid = Column(Boolean, default=False)
 
@@ -73,6 +77,9 @@ class ExhibitorDetail(Base):
     what_bringing = Column(Text)
     portfolio_url = Column(String)
     goal = Column(String)
+    booth_size = Column(Enum(BoothSize), nullable=True)
+    wants_auction = Column(Boolean, default=False)
+    auction_item_description = Column(Text, nullable=True)
     is_paid = Column(Boolean, default=False)
 
     registrant = relationship("Registrant", back_populates="exhibitor_detail")

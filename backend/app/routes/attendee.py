@@ -23,8 +23,6 @@ def register_attendee(payload: schemas.AttendeeRegistrationRequest, db: Session 
     db.add(registrant)
     db.flush()
 
-    is_free = payload.ticket_type == models.TicketType.general_pass
-
     attendee_detail = models.AttendeeDetail(
         registrant_id=registrant.id,
         ticket_type=payload.ticket_type,
@@ -34,26 +32,15 @@ def register_attendee(payload: schemas.AttendeeRegistrationRequest, db: Session 
     db.add(attendee_detail)
     db.commit()
 
-    if is_free:
-        html_body = f"""
-        <p>Hi {payload.full_name},</p>
-        <p>Thanks for registering for the Abuja Creative Showcase!</p>
-        <p>Your reference number is: <strong>{reference_number}</strong></p>
-        <p>Keep this safe — you'll need it to confirm your General Pass, and if you ever want to
-        upgrade your ticket later.</p>
-        """
-    else:
-        html_body = f"""
+    send_email(
+        to=payload.email,
+        subject="Your Abuja Creative Showcase Reference Number",
+        html=f"""
         <p>Hi {payload.full_name},</p>
         <p>Thanks for registering for the Abuja Creative Showcase!</p>
         <p>Your reference number is: <strong>{reference_number}</strong></p>
         <p>Keep this safe — you'll need it to check your status and proceed to payment.</p>
-        """
-
-    send_email(
-        to=payload.email,
-        subject="Your Abuja Creative Showcase Reference Number",
-        html=html_body,
+        """,
     )
 
     return schemas.RegistrationResponse(

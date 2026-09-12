@@ -27,11 +27,7 @@ def upgrade_ticket(payload: schemas.UpgradeRequest, db: Session = Depends(get_db
 
     old_ticket_type = attendee_detail.ticket_type.value
     attendee_detail.ticket_type = payload.ticket_type
-
-    # Moving off the free General Pass tier requires payment.
-    if payload.ticket_type != models.TicketType.general_pass:
-        attendee_detail.is_paid = False
-
+    attendee_detail.is_paid = False
     db.commit()
 
     send_email(
@@ -41,7 +37,7 @@ def upgrade_ticket(payload: schemas.UpgradeRequest, db: Session = Depends(get_db
         <p>Hi {registrant.full_name},</p>
         <p>Your ticket (reference <strong>{registrant.reference_number}</strong>) has been updated
         from <strong>{old_ticket_type}</strong> to <strong>{payload.ticket_type.value}</strong>.</p>
-        <p>{'Payment is required to complete this upgrade — we will notify you once payment is open.' if payload.ticket_type != models.TicketType.general_pass else ''}</p>
+        <p>Payment is required to complete this upgrade — we will notify you once payment is open.</p>
         """,
     )
 

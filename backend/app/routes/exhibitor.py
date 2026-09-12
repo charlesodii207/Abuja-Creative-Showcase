@@ -30,6 +30,9 @@ def register_exhibitor(payload: schemas.ExhibitorRegistrationRequest, db: Sessio
         what_bringing=payload.what_bringing,
         portfolio_url=payload.portfolio_url,
         goal=payload.goal,
+        booth_size=payload.booth_size,
+        wants_auction=payload.wants_auction,
+        auction_item_description=payload.auction_item_description,
     )
     db.add(exhibitor_detail)
     db.commit()

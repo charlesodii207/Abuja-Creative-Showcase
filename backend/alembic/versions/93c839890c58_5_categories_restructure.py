@@ -1,8 +1,8 @@
-"""initial schema
+"""5 categories restructure
 
-Revision ID: 08231a3ab204
+Revision ID: 93c839890c58
 Revises: 
-Create Date: 2026-09-09 21:51:48.027399
+Create Date: 2026-09-12 17:24:28.925502
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '08231a3ab204'
+revision: str = '93c839890c58'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -38,7 +38,7 @@ def upgrade() -> None:
     op.create_table('attendee_details',
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('registrant_id', sa.UUID(), nullable=False),
-    sa.Column('ticket_type', sa.Enum('general_pass', 'general', 'vip', name='tickettype'), nullable=False),
+    sa.Column('ticket_type', sa.Enum('general', 'vip', name='tickettype'), nullable=False),
     sa.Column('wants_masterclass', sa.Boolean(), nullable=True),
     sa.Column('is_paid', sa.Boolean(), nullable=True),
     sa.ForeignKeyConstraint(['registrant_id'], ['registrants.id'], ),
@@ -53,6 +53,9 @@ def upgrade() -> None:
     sa.Column('what_bringing', sa.Text(), nullable=True),
     sa.Column('portfolio_url', sa.String(), nullable=True),
     sa.Column('goal', sa.String(), nullable=True),
+    sa.Column('booth_size', sa.Enum('small', 'big', name='boothsize'), nullable=True),
+    sa.Column('wants_auction', sa.Boolean(), nullable=True),
+    sa.Column('auction_item_description', sa.Text(), nullable=True),
     sa.Column('is_paid', sa.Boolean(), nullable=True),
     sa.ForeignKeyConstraint(['registrant_id'], ['registrants.id'], ),
     sa.PrimaryKeyConstraint('id'),
