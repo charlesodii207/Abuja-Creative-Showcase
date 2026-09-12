@@ -1,3 +1,4 @@
+import CountdownBanner from "./components/CountdownBanner";
 import Hero from "./components/Hero";
 import AboutSection from "./components/AboutSection";
 import ParticipationSection from "./components/ParticipationSection";
@@ -43,6 +44,7 @@ export default function Home() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(eventJsonLd) }}
       />
+      <CountdownBanner />
       <Hero />
       <AboutSection />
       <ParticipationSection />
