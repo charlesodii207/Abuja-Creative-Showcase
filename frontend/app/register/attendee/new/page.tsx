@@ -5,7 +5,7 @@ import Link from "next/link";
 
 type TicketType = "general" | "vip";
 
-export default function VisitorNewRegistrationPage() {
+export default function AttendeeNewRegistrationPage() {
   const [form, setForm] = useState({
     full_name: "",
     email: "",
@@ -20,7 +20,7 @@ export default function VisitorNewRegistrationPage() {
     setStatus("submitting");
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/register/visitor`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/register/attendee`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
@@ -76,7 +76,7 @@ export default function VisitorNewRegistrationPage() {
         <span /><span /><span />
       </div>
       <h1 className="font-display text-3xl text-cream sm:text-4xl">
-        Visitor Registration
+        Attendee Registration
       </h1>
       <p className="mt-3 text-muted">
         Fill in your details to get your reference number.

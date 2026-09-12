@@ -13,6 +13,9 @@ export default function ExhibitorRegistrationPage() {
     what_bringing: "",
     portfolio_url: "",
     goal: "",
+    booth_size: "",
+    wants_auction: false,
+    auction_item_description: "",
   });
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
 
@@ -21,10 +24,16 @@ export default function ExhibitorRegistrationPage() {
     setStatus("submitting");
 
     try {
+      const payload = {
+        ...form,
+        // Don't send a stale description if the user unchecked the auction option
+        auction_item_description: form.wants_auction ? form.auction_item_description : "",
+      };
+
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/register/exhibitor`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) throw new Error("Request failed");
@@ -174,6 +183,55 @@ export default function ExhibitorRegistrationPage() {
               onChange={(e) => setForm({ ...form, goal: e.target.value })}
               className="mt-1 w-full rounded-lg border border-white/10 bg-ink px-4 py-3 text-cream placeholder:text-muted/50 outline-none focus:border-gold"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm text-muted">Booth Size</label>
+            <select
+              required
+              value={form.booth_size}
+              onChange={(e) => setForm({ ...form, booth_size: e.target.value })}
+              className="mt-1 w-full rounded-lg border border-white/10 bg-ink px-4 py-3 text-cream outline-none focus:border-gold"
+            >
+              <option value="" disabled>
+                Select a booth size
+              </option>
+              <option value="small">Small — ₦250,000</option>
+              <option value="big">Big — ₦500,000</option>
+            </select>
+          </div>
+
+          <div className="rounded-lg border border-white/10 bg-ink px-4 py-3">
+            <label className="flex items-center gap-3 text-sm text-cream">
+              <input
+                type="checkbox"
+                checked={form.wants_auction}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    wants_auction: e.target.checked,
+                    // Clear any previously entered description if unchecked
+                    auction_item_description: e.target.checked ? form.auction_item_description : "",
+                  })
+                }
+                className="h-4 w-4 rounded border-white/20 bg-ink accent-gold"
+              />
+              Include an auction of my own items
+            </label>
+
+            {form.wants_auction && (
+              <div className="mt-4">
+                <label className="block text-sm text-muted">Auction Item Description</label>
+                <textarea
+                  required
+                  rows={3}
+                  placeholder="Describe the item(s) you'd like to auction"
+                  value={form.auction_item_description}
+                  onChange={(e) => setForm({ ...form, auction_item_description: e.target.value })}
+                  className="mt-1 w-full rounded-lg border border-white/10 bg-ink px-4 py-3 text-cream placeholder:text-muted/50 outline-none focus:border-gold"
+                />
+              </div>
+            )}
           </div>
 
           {status === "error" && (

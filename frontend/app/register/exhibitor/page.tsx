@@ -21,8 +21,8 @@ export default function ExhibitorRegisterPage() {
         are reviewed and accepted as they come in, so applying early genuinely improves your chances.
         You&apos;ll be asked about your company, what you plan to bring, a short work sample or
         portfolio link, and your main goal at the market — whether that&apos;s selling, showcasing, or
-        networking. A modest exhibitor fee applies once your application is approved, with the
-        exact amount announced closer to the event.
+        networking. Booths come in two sizes — small (₦250,000) and big (₦500,000) — and you can
+        optionally include an auction of your own items as part of your space.
       </p>
 
       <div className="mt-10 flex flex-col gap-4 sm:mx-auto sm:max-w-sm">

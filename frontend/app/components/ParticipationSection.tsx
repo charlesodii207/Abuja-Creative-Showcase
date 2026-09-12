@@ -20,7 +20,7 @@ export default function ParticipationSection() {
 
         <Reveal delay={140}>
           <p className="mt-3 max-w-xl text-muted">
-            Six ways to be part of the Showcase — pick the one that fits you.
+            Five ways to be part of the Showcase — pick the one that fits you.
           </p>
         </Reveal>
 

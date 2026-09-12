@@ -67,15 +67,15 @@ export const faqs = [
   },
   {
     q: "How do I take part?",
-    a: "Registration is open. General Pass and Attendee tickets are open registration. Exhibitor, Press, Pitching, and Investor spots go through an application and review process.",
+    a: "Registration is open. Attendee tickets are open registration. Exhibitor, Press, Pitching, and Investor spots go through an application and review process.",
   },
   {
     q: "Is there a fee to attend?",
-    a: "General Pass is free. Attendee ticket pricing (General/VIP) will be announced closer to the event. Masterclasses are sold as a separate pass.",
+    a: "Attendee ticket pricing starts at ₦5,000 (General/VIP). Masterclasses are sold as a separate pass.",
   },
   {
     q: "Can my organization exhibit or sponsor?",
-    a: "Yes. Exhibitor applications and sponsorship packages will open ahead of the event — check back here or use the contact details in the footer.",
+    a: "Yes. Exhibitor booths are available in small (₦250,000) and big (₦500,000) sizes, with an option to include an auction of items. Sponsorship packages are also available — check back here or use the contact details in the footer.",
   },
 ];
 
@@ -90,24 +90,17 @@ export const sponsorshipTiers = [
 
 export const participationCategories = [
   {
-    name: "General Pass",
-    slug: "attendee",
-    blurb: "Free entry to the Showcase. Register and confirm your ticket by email — no payment required.",
-    note: "Free — upgrade anytime.",
-    guaranteed: true,
-  },
-  {
     name: "Attendee",
     slug: "attendee",
     blurb: "Full access with a General or VIP ticket. Add a Masterclass Pass if you'd like one.",
-    note: "Paid ticket — General or VIP.",
+    note: "From ₦5,000 — General or VIP.",
     guaranteed: true,
   },
   {
     name: "Exhibitor",
     slug: "exhibitor",
-    blurb: "Showcase your creative business, sell products, and connect with buyers and brands at the Creative Market.",
-    note: "Application required",
+    blurb: "Showcase your creative business, sell products, and connect with buyers and brands at the Creative Market. Optionally include an auction of your own items.",
+    note: "Small booth ₦250,000 · Big booth ₦500,000",
     guaranteed: false,
   },
   {
