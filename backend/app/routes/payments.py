@@ -4,15 +4,12 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app import models, schemas, utils
 from app.paystack import verify_transaction, PaystackError
-from app.tickets import issue_ticket_and_email  # <-- added
+from app.tickets import issue_ticket_and_email
 
 router = APIRouter(prefix="/payments", tags=["payments"])
 
 
 def _get_paid_detail(registrant: models.Registrant):
-    """Returns the category-specific detail row for a registrant that
-    actually goes through payment (Attendee, Exhibitor, Pitcher). Returns
-    None for categories that don't (Press, Investor)."""
     if registrant.category == models.RegistrantCategory.attendee:
         return registrant.attendee_detail
     if registrant.category == models.RegistrantCategory.exhibitor:
@@ -53,8 +50,6 @@ def verify_payment(payload: schemas.PaystackVerifyRequest, db: Session = Depends
                 message="Upgrade payment was not successful.",
             )
 
-        # Recompute the expected diff to double check, in case pricing
-        # changed between initiating and verifying the upgrade.
         expected_diff = None
         try:
             expected_diff = utils.get_upgrade_amount_kobo(
@@ -74,7 +69,6 @@ def verify_payment(payload: schemas.PaystackVerifyRequest, db: Session = Depends
                 ),
             )
 
-        # Finalize the upgrade now that payment is confirmed
         new_tier = upgrade_detail.pending_upgrade_ticket_type
         upgrade_detail.ticket_type = new_tier
         upgrade_detail.amount_kobo = (upgrade_detail.amount_kobo or 0) + paid_amount
@@ -88,7 +82,46 @@ def verify_payment(payload: schemas.PaystackVerifyRequest, db: Session = Depends
             message=f"Upgrade confirmed — ticket is now {new_tier.value}.",
         )
 
-    # --- Case 2: normal registration payment (original ticket / booth / pitch fee) ---
+    # --- Case 2: this reference belongs to a resumed (retried) original payment ---
+    resume_detail = db.query(models.AttendeeDetail).filter(
+        models.AttendeeDetail.pending_payment_reference == reference
+    ).first()
+
+    if resume_detail:
+        registrant = resume_detail.registrant
+
+        success_txn, txn = _verify_with_paystack(reference)
+        if not success_txn:
+            return schemas.PaystackVerifyResponse(
+                reference_number=registrant.reference_number,
+                status="failed",
+                message="Payment was not successful.",
+            )
+
+        paid_amount = txn.get("amount")
+        if resume_detail.amount_kobo is not None and paid_amount != resume_detail.amount_kobo:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Amount mismatch: expected {resume_detail.amount_kobo} kobo, "
+                    f"Paystack reports {paid_amount} kobo. Payment not confirmed."
+                ),
+            )
+
+        resume_detail.is_paid = True
+        resume_detail.pending_payment_reference = None
+        registrant.status = models.RegistrantStatus.confirmed
+        db.commit()
+
+        issue_ticket_and_email(db, registrant)
+
+        return schemas.PaystackVerifyResponse(
+            reference_number=registrant.reference_number,
+            status="confirmed",
+            message="Payment confirmed — registration complete.",
+        )
+
+    # --- Case 3: normal registration payment (original ticket / booth / pitch fee) ---
     registrant = db.query(models.Registrant).filter(
         models.Registrant.reference_number == reference
     ).first()
@@ -131,7 +164,7 @@ def verify_payment(payload: schemas.PaystackVerifyRequest, db: Session = Depends
     registrant.status = models.RegistrantStatus.confirmed
     db.commit()
 
-    issue_ticket_and_email(db, registrant)  # <-- added
+    issue_ticket_and_email(db, registrant)
 
     return schemas.PaystackVerifyResponse(
         reference_number=registrant.reference_number,

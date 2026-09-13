@@ -31,6 +31,18 @@ def generate_upgrade_reference(base_reference: str) -> str:
     return f"{base_reference}-UPG-{suffix}"
 
 
+def generate_resume_reference(base_reference: str) -> str:
+    """
+    Generates a unique reference for resuming an original (unpaid)
+    registration payment — used when someone lost their first payment
+    link and wants to try again via /register/attendee/finish. Paystack
+    rejects reused references, so this mirrors generate_upgrade_reference.
+    """
+    characters = string.ascii_uppercase + string.digits
+    suffix = "".join(random.choices(characters, k=4))
+    return f"{base_reference}-PAY-{suffix}"
+
+
 def generate_ticket_number(db: Session, length: int = 10) -> str:
     """
     Generates a unique ticket number for check-in. Deliberately plain —

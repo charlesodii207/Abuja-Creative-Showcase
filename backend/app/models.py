@@ -19,17 +19,17 @@ class RegistrantCategory(str, enum.Enum):
 
 
 class RegistrantStatus(str, enum.Enum):
-    pending = "pending"              # Press / Investor: submitted, awaiting team review
-    awaiting_payment = "awaiting_payment"  # Attendee / Exhibitor / Pitcher: registered, not yet paid
-    approved = "approved"            # Press / Investor: reviewed and accepted
-    rejected = "rejected"            # Press / Investor: reviewed and declined
-    confirmed = "confirmed"          # Attendee / Exhibitor / Pitcher: payment received
+    pending = "pending"
+    awaiting_payment = "awaiting_payment"
+    approved = "approved"
+    rejected = "rejected"
+    confirmed = "confirmed"
 
 
 class TicketType(str, enum.Enum):
     general = "general"
     vip = "vip"
-    masterclass = "masterclass"  # top tier — includes everything VIP includes, plus more
+    masterclass = "masterclass"
 
 
 class BoothSize(str, enum.Enum):
@@ -38,40 +38,9 @@ class BoothSize(str, enum.Enum):
 
 
 class ExhibitType(str, enum.Enum):
-    booth = "booth"      # Buy a booth (small or big)
-    auction = "auction"  # Auction a piece of art/fashion instead of buying a booth
+    booth = "booth"
+    auction = "auction"
 
-
-# ---------------------------------------------------------------------------
-# NEW: Admin auth
-# ---------------------------------------------------------------------------
-
-class AdminRole(str, enum.Enum):
-    system_owner = "system_owner"
-    super_admin = "super_admin"
-    admin = "admin"
-
-
-class Admin(Base):
-    __tablename__ = "admins"
-
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    full_name = Column(String, nullable=False)
-    username = Column(String, unique=True, nullable=False, index=True)
-    password_hash = Column(String, nullable=False)
-    role = Column(Enum(AdminRole), nullable=False)
-    must_change_password = Column(Boolean, default=True, nullable=False)
-    is_active = Column(Boolean, default=True, nullable=False)
-    created_by = Column(UUID(as_uuid=True), ForeignKey("admins.id"), nullable=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    last_login_at = Column(DateTime(timezone=True), nullable=True)
-
-    creator = relationship("Admin", remote_side=[id])
-
-
-# ---------------------------------------------------------------------------
-# Existing registrant models (unchanged)
-# ---------------------------------------------------------------------------
 
 class Registrant(Base):
     __tablename__ = "registrants"
@@ -99,12 +68,13 @@ class AttendeeDetail(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     registrant_id = Column(UUID(as_uuid=True), ForeignKey("registrants.id"), nullable=False, unique=True)
     ticket_type = Column(Enum(TicketType), nullable=False, default=TicketType.general)
-    wants_masterclass = Column(Boolean, default=False)  # deprecated — masterclass is now its own ticket_type tier
+    wants_masterclass = Column(Boolean, default=False)
     is_paid = Column(Boolean, default=False)
     amount_kobo = Column(Integer, nullable=True)
     paystack_reference = Column(String, nullable=True, unique=True)
-    pending_upgrade_ticket_type = Column(Enum(TicketType), nullable=True)  # set while an upgrade payment is in progress
-    pending_upgrade_reference = Column(String, nullable=True, unique=True)  # Paystack reference for that upgrade payment
+    pending_upgrade_ticket_type = Column(Enum(TicketType), nullable=True)
+    pending_upgrade_reference = Column(String, nullable=True, unique=True)
+    pending_payment_reference = Column(String, nullable=True, unique=True)  # <-- added: tracks a resumed (retried) original payment attempt
 
     registrant = relationship("Registrant", back_populates="attendee_detail")
 
@@ -120,9 +90,9 @@ class ExhibitorDetail(Base):
     portfolio_url = Column(String)
     goal = Column(String)
     exhibit_type = Column(Enum(ExhibitType), nullable=False)
-    booth_size = Column(Enum(BoothSize), nullable=True)          # set only when exhibit_type == booth
-    auction_item_description = Column(Text, nullable=True)       # set only when exhibit_type == auction
-    auction_quantity = Column(Integer, nullable=True)             # set only when exhibit_type == auction
+    booth_size = Column(Enum(BoothSize), nullable=True)
+    auction_item_description = Column(Text, nullable=True)
+    auction_quantity = Column(Integer, nullable=True)
     is_paid = Column(Boolean, default=False)
     amount_kobo = Column(Integer, nullable=True)
     paystack_reference = Column(String, nullable=True, unique=True)

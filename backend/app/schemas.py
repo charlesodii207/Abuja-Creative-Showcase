@@ -211,7 +211,7 @@ class CheckinResponse(BaseModel):
     message: str
 
 
-# --- Admin auth (NEW) ---
+# --- Admin auth ---
 
 class LoginRequest(BaseModel):
     username: str
@@ -245,3 +245,28 @@ class AdminSummary(BaseModel):
     is_active: bool
     must_change_password: bool
     last_login_at: str | None
+
+
+# --- Attendee status / resume payment ---
+
+class AttendeeStatusRequest(BaseModel):
+    reference_number: str
+
+
+class AttendeeStatusResponse(BaseModel):
+    reference_number: str
+    full_name: str
+    ticket_type: str
+    is_paid: bool
+    message: str
+
+
+class ResumePaymentRequest(BaseModel):
+    reference_number: str
+
+
+class ResumePaymentResponse(BaseModel):
+    reference_number: str
+    amount_kobo: int
+    paystack_authorization_url: str
+    message: str
