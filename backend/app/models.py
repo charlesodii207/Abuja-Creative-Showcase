@@ -42,6 +42,37 @@ class ExhibitType(str, enum.Enum):
     auction = "auction"  # Auction a piece of art/fashion instead of buying a booth
 
 
+# ---------------------------------------------------------------------------
+# NEW: Admin auth
+# ---------------------------------------------------------------------------
+
+class AdminRole(str, enum.Enum):
+    system_owner = "system_owner"
+    super_admin = "super_admin"
+    admin = "admin"
+
+
+class Admin(Base):
+    __tablename__ = "admins"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    full_name = Column(String, nullable=False)
+    username = Column(String, unique=True, nullable=False, index=True)
+    password_hash = Column(String, nullable=False)
+    role = Column(Enum(AdminRole), nullable=False)
+    must_change_password = Column(Boolean, default=True, nullable=False)
+    is_active = Column(Boolean, default=True, nullable=False)
+    created_by = Column(UUID(as_uuid=True), ForeignKey("admins.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    last_login_at = Column(DateTime(timezone=True), nullable=True)
+
+    creator = relationship("Admin", remote_side=[id])
+
+
+# ---------------------------------------------------------------------------
+# Existing registrant models (unchanged)
+# ---------------------------------------------------------------------------
+
 class Registrant(Base):
     __tablename__ = "registrants"
 

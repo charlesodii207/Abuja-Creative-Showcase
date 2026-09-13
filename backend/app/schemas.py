@@ -116,6 +116,31 @@ class AdminActionResponse(BaseModel):
     message: str
 
 
+class TicketInfo(BaseModel):
+    ticket_number: str | None
+    checked_in: bool
+    checked_in_at: datetime | None
+
+
+class RegistrantDetail(BaseModel):
+    id: str
+    full_name: str
+    email: str
+    phone: str
+    category: str
+    reference_number: str
+    status: str
+    created_at: datetime | None
+    details: dict  # category-specific fields (varies by category)
+    ticket: TicketInfo | None = None
+
+
+class EditRegistrantRequest(BaseModel):
+    full_name: str | None = None
+    email: EmailStr | None = None
+    phone: str | None = None
+
+
 class StatsResponse(BaseModel):
     total_registrants: int
     by_category: dict[str, int]
@@ -184,3 +209,39 @@ class CheckinResponse(BaseModel):
     category_tag: str
     checked_in_at: datetime | None
     message: str
+
+
+# --- Admin auth (NEW) ---
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+class LoginResponse(BaseModel):
+    token: str
+    must_change_password: bool
+    full_name: str
+    role: str
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+
+class CreateAdminRequest(BaseModel):
+    full_name: str
+    username: str
+    temp_password: str
+    role: str  # "super_admin" or "admin"
+
+
+class AdminSummary(BaseModel):
+    id: str
+    full_name: str
+    username: str
+    role: str
+    is_active: bool
+    must_change_password: bool
+    last_login_at: str | None

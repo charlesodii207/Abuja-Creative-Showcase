@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     paystack_secret_key: str
     paystack_public_key: str
     frontend_url: str = "http://localhost:5173"
+    jwt_secret: str
 
     class Config:
         env_file = ".env"
