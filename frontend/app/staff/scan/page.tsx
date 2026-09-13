@@ -53,25 +53,34 @@ export default function StaffScanPage() {
   useEffect(() => {
     if (!scanning) return;
 
-    const scanner = new Html5Qrcode("qr-reader");
-    scannerRef.current = scanner;
+    let cancelled = false;
 
-    scanner
-      .start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: 250 },
-        (decodedText) => {
-          // Stop the camera entirely on a successful scan — no auto-resume,
-          // no re-scanning the same code in a loop. Staff must explicitly
-          // start the camera again for the next person.
-          submitCode(decodedText.trim().toUpperCase());
-          stopCamera();
-        },
-        () => {}
-      )
-      .catch(() => setError("Could not access camera. Use manual entry below instead."));
+    (async () => {
+      try {
+        const scanner = new Html5Qrcode("qr-reader");
+        scannerRef.current = scanner;
+
+        await scanner.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: 250 },
+          (decodedText) => {
+            submitCode(decodedText.trim().toUpperCase());
+            stopCamera();
+          },
+          () => {}
+        );
+      } catch (err) {
+        if (!cancelled) {
+          setError(
+            `Camera error: ${err instanceof Error ? err.message : String(err)}`
+          );
+          setScanning(false);
+        }
+      }
+    })();
 
     return () => {
+      cancelled = true;
       if (scannerRef.current) {
         scannerRef.current.stop().catch(() => {});
       }
@@ -98,7 +107,11 @@ export default function StaffScanPage() {
           </button>
         ) : (
           <>
-            <div id="qr-reader" className="mx-auto w-full max-w-sm overflow-hidden rounded-2xl" />
+            <div
+              id="qr-reader"
+              className="mx-auto w-full max-w-sm overflow-hidden rounded-2xl"
+              style={{ minHeight: 300 }}
+            />
             <button
               onClick={stopCamera}
               className="mt-4 w-full rounded-full border border-white/20 px-7 py-3 text-sm text-cream"
