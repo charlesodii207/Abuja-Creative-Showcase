@@ -3,8 +3,7 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { login, saveSession } from "@/lib/admin/api";
-import { ApiError } from "@/lib/admin/api";
+import { login, saveSession, ApiError } from "../../../lib/admin/api";
 
 export default function AdminLoginPage() {
   const router = useRouter();

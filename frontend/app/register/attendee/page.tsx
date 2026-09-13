@@ -11,7 +11,9 @@ export default function AttendeeRegisterPage() {
       </h1>
       <p className="mt-3 text-muted">
         Come experience the Showcase — screenings, performances, the creative market, and more.
-        General and VIP tickets start from ₦5,000.
+      </p>
+      <p className="mt-4 text-sm text-teal">
+        General ₦5,000 · VIP ₦10,000 · Masterclass ₦25,000
       </p>
 
       <div className="mt-12 flex flex-col gap-4 sm:mx-auto sm:max-w-sm">
@@ -25,7 +27,7 @@ export default function AttendeeRegisterPage() {
           href="/register/attendee/finish"
           className="rounded-full border border-white/20 px-7 py-3.5 text-sm font-medium text-cream transition-colors hover:border-white/40"
         >
-          Already Registered? Proceed to Payment
+          Check Status, Pay, or Upgrade
         </Link>
       </div>
     </main>

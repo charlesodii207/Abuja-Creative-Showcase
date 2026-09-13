@@ -9,7 +9,7 @@ import {
   getAdminProfile,
   saveSession,
   ApiError,
-} from "@/lib/admin/api";
+} from "../../../lib/admin/api";
 
 export default function ChangePasswordPage() {
   const router = useRouter();

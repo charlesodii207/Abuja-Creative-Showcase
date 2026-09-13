@@ -111,3 +111,125 @@ export async function changePassword(
     }
   );
 }
+
+export function logout() {
+  clearSession();
+}
+
+// --- Stats ---
+
+export type StatsResponse = {
+  total_registrants: number;
+  by_category: Record<string, number>;
+  by_status: Record<string, number>;
+  attendees_paid: number;
+  attendees_unpaid: number;
+  exhibitors_paid: number;
+  exhibitors_unpaid: number;
+};
+
+export async function getStats() {
+  return adminFetch<StatsResponse>("/admin/stats");
+}
+
+// --- Registrants ---
+
+export type RegistrantCategory =
+  | "attendee"
+  | "exhibitor"
+  | "press"
+  | "pitcher"
+  | "investor";
+
+export type RegistrantStatus =
+  | "pending"
+  | "awaiting_payment"
+  | "approved"
+  | "rejected"
+  | "confirmed";
+
+export type RegistrantSummary = {
+  id: string;
+  full_name: string;
+  email: string;
+  phone: string;
+  category: RegistrantCategory;
+  reference_number: string;
+  status: RegistrantStatus;
+};
+
+export type TicketInfo = {
+  ticket_number: string | null;
+  checked_in: boolean;
+  checked_in_at: string | null;
+};
+
+export type RegistrantDetail = {
+  id: string;
+  full_name: string;
+  email: string;
+  phone: string;
+  category: RegistrantCategory;
+  reference_number: string;
+  status: RegistrantStatus;
+  created_at: string | null;
+  details: Record<string, unknown>;
+  ticket: TicketInfo | null;
+};
+
+export async function listRegistrants(filters?: {
+  category?: string;
+  status?: string;
+}) {
+  const params = new URLSearchParams();
+  if (filters?.category) params.set("category", filters.category);
+  if (filters?.status) params.set("status", filters.status);
+  const qs = params.toString();
+  return adminFetch<RegistrantSummary[]>(
+    `/admin/registrants${qs ? `?${qs}` : ""}`
+  );
+}
+
+export async function getRegistrantDetail(referenceNumber: string) {
+  return adminFetch<RegistrantDetail>(
+    `/admin/registrants/${encodeURIComponent(referenceNumber)}`
+  );
+}
+
+export async function editRegistrant(
+  referenceNumber: string,
+  payload: { full_name?: string; email?: string; phone?: string }
+) {
+  return adminFetch<{ id: string; status: string; message: string }>(
+    `/admin/registrants/${encodeURIComponent(referenceNumber)}`,
+    { method: "PATCH", body: JSON.stringify(payload) }
+  );
+}
+
+export async function approveRegistrant(referenceNumber: string) {
+  return adminFetch<{ id: string; status: string; message: string }>(
+    `/admin/registrants/${encodeURIComponent(referenceNumber)}/approve`,
+    { method: "PATCH" }
+  );
+}
+
+export async function rejectRegistrant(referenceNumber: string) {
+  return adminFetch<{ id: string; status: string; message: string }>(
+    `/admin/registrants/${encodeURIComponent(referenceNumber)}/reject`,
+    { method: "PATCH" }
+  );
+}
+
+export async function markRegistrantPaid(referenceNumber: string) {
+  return adminFetch<{ id: string; status: string; message: string }>(
+    `/admin/registrants/${encodeURIComponent(referenceNumber)}/mark-paid`,
+    { method: "PATCH" }
+  );
+}
+
+export async function resendRegistrantEmail(referenceNumber: string) {
+  return adminFetch<{ id: string; status: string; message: string }>(
+    `/admin/registrants/${encodeURIComponent(referenceNumber)}/resend-email`,
+    { method: "POST" }
+  );
+}
