@@ -39,17 +39,17 @@ export default function ParticipationSection() {
 
             return (
               <Reveal key={category.name} delay={80 + index * 90}>
-                <div className="flex h-full flex-col rounded-2xl border border-white/10 bg-ink px-6 py-8 transition-colors duration-300 hover:border-gold/30">
-                  {Icon && <Icon className="h-8 w-8 text-gold" strokeWidth={1.5} />}
+                <div className="flex h-full flex-col rounded-2xl border border-white/10 bg-ink px-6 py-8 transition-colors duration-300 hover:border-teal/30">
+                  {Icon && <Icon className="h-8 w-8 text-teal" strokeWidth={1.5} />}
                   <p className="mt-4 font-display text-lg text-cream">{category.name}</p>
                   <p className="mt-3 flex-1 text-sm text-muted">{category.blurb}</p>
                   {category.note && (
-                    <p className="mt-4 text-xs text-gold">{category.note}</p>
+                    <p className="mt-4 text-xs text-teal">{category.note}</p>
                   )}
 
                   <Link
                     href={`/register/${category.slug}`}
-                    className="mt-6 rounded-full bg-gold px-5 py-3 text-center text-sm font-medium text-ink transition-all duration-300 hover:-translate-y-0.5"
+                    className="mt-6 rounded-full bg-teal px-5 py-3 text-center text-sm font-medium text-ink transition-all duration-300 hover:-translate-y-0.5"
                   >
                     Continue
                   </Link>
