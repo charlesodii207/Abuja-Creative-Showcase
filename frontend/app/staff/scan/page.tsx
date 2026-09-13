@@ -11,16 +11,19 @@ type CheckinResult = {
   message: string;
 };
 
+type Phase = "idle" | "scanning" | "checking" | "result";
+
 export default function StaffScanPage() {
   const [manualCode, setManualCode] = useState("");
   const [result, setResult] = useState<CheckinResult | null>(null);
   const [error, setError] = useState("");
-  const [scanning, setScanning] = useState(false);
+  const [phase, setPhase] = useState<Phase>("idle");
   const scannerRef = useRef<Html5Qrcode | null>(null);
 
   async function submitCode(code: string) {
     setError("");
     setResult(null);
+    setPhase("checking");
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/tickets/checkin`, {
         method: "POST",
@@ -30,11 +33,14 @@ export default function StaffScanPage() {
       const data = await res.json();
       if (!res.ok) {
         setError(data.detail || "Ticket not found.");
+        setPhase("idle");
         return;
       }
       setResult(data);
+      setPhase("result");
     } catch {
       setError("Something went wrong checking that ticket.");
+      setPhase("idle");
     }
   }
 
@@ -47,11 +53,16 @@ export default function StaffScanPage() {
       }
       scannerRef.current = null;
     }
-    setScanning(false);
+  }
+
+  function startScanning() {
+    setResult(null);
+    setError("");
+    setPhase("scanning");
   }
 
   useEffect(() => {
-    if (!scanning) return;
+    if (phase !== "scanning") return;
 
     let cancelled = false;
     let handledOnce = false;
@@ -65,34 +76,30 @@ export default function StaffScanPage() {
           { facingMode: "environment" },
           { fps: 10, qrbox: 250 },
           async (decodedText) => {
-            // Guard against the callback firing multiple times for the
-            // same scan before we've had a chance to stop the camera.
             if (handledOnce) return;
             handledOnce = true;
 
-            await submitCode(decodedText.trim().toUpperCase());
             await stopCamera();
+            if (!cancelled) {
+              await submitCode(decodedText.trim().toUpperCase());
+            }
           },
           () => {}
         );
       } catch (err) {
         if (!cancelled) {
-          setError(
-            `Camera error: ${err instanceof Error ? err.message : String(err)}`
-          );
-          setScanning(false);
+          setError(`Camera error: ${err instanceof Error ? err.message : String(err)}`);
+          setPhase("idle");
         }
       }
     })();
 
     return () => {
       cancelled = true;
-      if (scannerRef.current) {
-        scannerRef.current.stop().catch(() => {});
-      }
+      stopCamera();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scanning]);
+  }, [phase]);
 
   return (
     <main className="mx-auto max-w-xl px-6 py-16">
@@ -100,18 +107,16 @@ export default function StaffScanPage() {
       <p className="mt-2 text-muted">Scan a ticket QR code, or type the ticket number manually.</p>
 
       <div className="mt-8">
-        {!scanning ? (
+        {phase === "idle" && (
           <button
-            onClick={() => {
-              setResult(null);
-              setError("");
-              setScanning(true);
-            }}
+            onClick={startScanning}
             className="w-full rounded-full bg-teal px-7 py-3.5 text-sm font-medium text-ink"
           >
-            {result ? "Scan Next Person" : "Start Camera Scan"}
+            Start Camera Scan
           </button>
-        ) : (
+        )}
+
+        {phase === "scanning" && (
           <>
             <div
               id="qr-reader"
@@ -119,12 +124,44 @@ export default function StaffScanPage() {
               style={{ minHeight: 300 }}
             />
             <button
-              onClick={stopCamera}
+              onClick={() => {
+                stopCamera();
+                setPhase("idle");
+              }}
               className="mt-4 w-full rounded-full border border-white/20 px-7 py-3 text-sm text-cream"
             >
               Stop Camera
             </button>
           </>
+        )}
+
+        {phase === "checking" && (
+          <div className="mx-auto flex w-full max-w-sm flex-col items-center justify-center rounded-2xl border border-white/10 bg-ink-raised py-16">
+            <div className="h-10 w-10 animate-spin rounded-full border-4 border-teal/30 border-t-teal" />
+            <p className="mt-4 text-muted">Checking ticket...</p>
+          </div>
+        )}
+
+        {phase === "result" && result && (
+          <div
+            className={`rounded-2xl border px-6 py-8 text-center ${
+              result.result === "approved" ? "border-teal/40 bg-ink-raised" : "border-gold/40 bg-ink-raised"
+            }`}
+          >
+            <p className="font-display text-2xl text-cream">
+              {result.result === "approved" ? "✅ Approved" : "⚠️ Already Arrived"}
+            </p>
+            <p className="mt-3 text-cream">{result.full_name}</p>
+            <p className="text-teal">{result.category_tag}</p>
+            <p className="mt-3 text-muted">{result.message}</p>
+
+            <button
+              onClick={startScanning}
+              className="mt-6 w-full rounded-full bg-teal px-7 py-3.5 text-sm font-medium text-ink"
+            >
+              Scan Next Person
+            </button>
+          </div>
         )}
       </div>
 
@@ -146,22 +183,7 @@ export default function StaffScanPage() {
         </button>
       </form>
 
-      {error && <p className="mt-6 text-red">{error}</p>}
-
-      {result && (
-        <div
-          className={`mt-6 rounded-2xl border px-6 py-8 text-center ${
-            result.result === "approved" ? "border-teal/40 bg-ink-raised" : "border-gold/40 bg-ink-raised"
-          }`}
-        >
-          <p className="font-display text-2xl text-cream">
-            {result.result === "approved" ? "✅ Approved" : "⚠️ Already Arrived"}
-          </p>
-          <p className="mt-3 text-cream">{result.full_name}</p>
-          <p className="text-teal">{result.category_tag}</p>
-          <p className="mt-3 text-muted">{result.message}</p>
-        </div>
-      )}
+      {error && phase === "idle" && <p className="mt-6 text-red">{error}</p>}
     </main>
   );
 }
