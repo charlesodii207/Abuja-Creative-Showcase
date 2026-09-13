@@ -52,11 +52,13 @@ TICKET_PRICES_KOBO = {
 }
 
 
-def get_exhibitor_amount_kobo(exhibit_type: ExhibitType, booth_size: BoothSize | None) -> int:
+def get_exhibitor_amount_kobo(
+    exhibit_type: ExhibitType, booth_size: BoothSize | None, auction_quantity: int | None = None
+) -> int:
     """
     Returns the amount (in kobo) an exhibitor owes, based on whether
-    they're buying a booth (priced by size) or auctioning an item
-    (flat placeholder price).
+    they're buying a booth (priced by size) or auctioning items
+    (per-item placeholder price × quantity).
     """
     if exhibit_type == ExhibitType.booth:
         if booth_size is None:
@@ -64,7 +66,9 @@ def get_exhibitor_amount_kobo(exhibit_type: ExhibitType, booth_size: BoothSize |
         return BOOTH_PRICES_KOBO[booth_size]
 
     if exhibit_type == ExhibitType.auction:
-        return AUCTION_PRICE_KOBO
+        if not auction_quantity or auction_quantity < 1:
+            raise ValueError("auction_quantity must be at least 1 when exhibit_type is 'auction'")
+        return AUCTION_PRICE_KOBO * auction_quantity
 
     raise ValueError(f"Unknown exhibit_type: {exhibit_type}")
 

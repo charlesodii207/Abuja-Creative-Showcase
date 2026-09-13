@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     sponsor_inquiry_email: str = "info@abujacreativeshowcase.com"
     paystack_secret_key: str
     paystack_public_key: str
+    frontend_url: str = "http://localhost:5173"
 
     class Config:
         env_file = ".env"

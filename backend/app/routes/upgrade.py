@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.database import get_db
 from app import models, schemas, utils
 from app.emailer import send_email
@@ -41,12 +42,14 @@ def upgrade_ticket(payload: schemas.UpgradeRequest, db: Session = Depends(get_db
         raise HTTPException(status_code=400, detail=str(e))
 
     upgrade_reference = utils.generate_upgrade_reference(registrant.reference_number)
+    callback_url = f"{settings.frontend_url}/register/payment-callback"
 
     try:
         transaction = initialize_transaction(
             email=registrant.email,
             amount_kobo=diff_amount_kobo,
             reference=upgrade_reference,
+            callback_url=callback_url,
         )
     except PaystackError as e:
         raise HTTPException(status_code=502, detail=f"Could not start upgrade payment: {e}")

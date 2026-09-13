@@ -21,13 +21,17 @@ class ExhibitorRegistrationRequest(BaseModel):
     exhibit_type: ExhibitType
     booth_size: BoothSize | None = None            # required if exhibit_type == booth
     auction_item_description: str | None = None    # required if exhibit_type == auction
+    auction_quantity: int | None = None            # required if exhibit_type == auction, min 1
 
     @model_validator(mode="after")
     def check_exhibit_fields(self):
         if self.exhibit_type == ExhibitType.booth and not self.booth_size:
             raise ValueError("booth_size is required when exhibit_type is 'booth'")
-        if self.exhibit_type == ExhibitType.auction and not self.auction_item_description:
-            raise ValueError("auction_item_description is required when exhibit_type is 'auction'")
+        if self.exhibit_type == ExhibitType.auction:
+            if not self.auction_item_description:
+                raise ValueError("auction_item_description is required when exhibit_type is 'auction'")
+            if not self.auction_quantity or self.auction_quantity < 1:
+                raise ValueError("auction_quantity must be at least 1 when exhibit_type is 'auction'")
         return self
 
 

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.database import get_db
 from app import models, schemas, utils
 from app.emailer import send_email
@@ -32,11 +33,14 @@ def register_attendee(payload: schemas.AttendeeRegistrationRequest, db: Session 
     )
     db.add(attendee_detail)
 
+    callback_url = f"{settings.frontend_url}/register/payment-callback"
+
     try:
         transaction = initialize_transaction(
             email=payload.email,
             amount_kobo=amount_kobo,
             reference=reference_number,
+            callback_url=callback_url,
         )
     except PaystackError as e:
         db.rollback()

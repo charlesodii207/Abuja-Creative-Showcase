@@ -10,7 +10,7 @@ class PaystackError(Exception):
     pass
 
 
-def initialize_transaction(email: str, amount_kobo: int, reference: str) -> dict:
+def initialize_transaction(email: str, amount_kobo: int, reference: str, callback_url: str | None = None) -> dict:
     """
     Starts a Paystack transaction. Returns a dict with authorization_url,
     access_code, and reference — the frontend redirects the user to
@@ -18,6 +18,12 @@ def initialize_transaction(email: str, amount_kobo: int, reference: str) -> dict
 
     amount_kobo must be in kobo (i.e. Naira amount * 100), since that's
     the smallest currency unit Paystack expects.
+
+    callback_url, if given, is where Paystack redirects the user's browser
+    after payment (success or failure), with ?reference=... appended. Point
+    this at a frontend page that calls /payments/verify on load, so the
+    registration is confirmed automatically rather than only when someone
+    manually checks their status later.
     """
     headers = {
         "Authorization": f"Bearer {settings.paystack_secret_key}",
@@ -28,6 +34,8 @@ def initialize_transaction(email: str, amount_kobo: int, reference: str) -> dict
         "amount": amount_kobo,
         "reference": reference,
     }
+    if callback_url:
+        payload["callback_url"] = callback_url
 
     response = httpx.post(
         f"{PAYSTACK_BASE_URL}/transaction/initialize",

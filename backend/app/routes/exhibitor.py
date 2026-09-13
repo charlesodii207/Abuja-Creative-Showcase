@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.database import get_db
 from app import models, schemas, utils
 from app.emailer import send_email
@@ -12,7 +13,9 @@ router = APIRouter(prefix="/register/exhibitor", tags=["exhibitor"])
 @router.post("", response_model=schemas.RegistrationResponse)
 def register_exhibitor(payload: schemas.ExhibitorRegistrationRequest, db: Session = Depends(get_db)):
     reference_number = utils.generate_reference_number(db)
-    amount_kobo = utils.get_exhibitor_amount_kobo(payload.exhibit_type, payload.booth_size)
+    amount_kobo = utils.get_exhibitor_amount_kobo(
+        payload.exhibit_type, payload.booth_size, payload.auction_quantity
+    )
 
     registrant = models.Registrant(
         full_name=payload.full_name,
@@ -35,15 +38,19 @@ def register_exhibitor(payload: schemas.ExhibitorRegistrationRequest, db: Sessio
         exhibit_type=payload.exhibit_type,
         booth_size=payload.booth_size,
         auction_item_description=payload.auction_item_description,
+        auction_quantity=payload.auction_quantity,
         amount_kobo=amount_kobo,
     )
     db.add(exhibitor_detail)
+
+    callback_url = f"{settings.frontend_url}/register/payment-callback"
 
     try:
         transaction = initialize_transaction(
             email=payload.email,
             amount_kobo=amount_kobo,
             reference=reference_number,
+            callback_url=callback_url,
         )
     except PaystackError as e:
         db.rollback()

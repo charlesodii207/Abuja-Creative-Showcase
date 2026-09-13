@@ -91,6 +91,7 @@ class ExhibitorDetail(Base):
     exhibit_type = Column(Enum(ExhibitType), nullable=False)
     booth_size = Column(Enum(BoothSize), nullable=True)          # set only when exhibit_type == booth
     auction_item_description = Column(Text, nullable=True)       # set only when exhibit_type == auction
+    auction_quantity = Column(Integer, nullable=True)             # set only when exhibit_type == auction
     is_paid = Column(Boolean, default=False)
     amount_kobo = Column(Integer, nullable=True)
     paystack_reference = Column(String, nullable=True, unique=True)
