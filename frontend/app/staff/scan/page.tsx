@@ -54,6 +54,7 @@ export default function StaffScanPage() {
     if (!scanning) return;
 
     let cancelled = false;
+    let handledOnce = false;
 
     (async () => {
       try {
@@ -63,9 +64,14 @@ export default function StaffScanPage() {
         await scanner.start(
           { facingMode: "environment" },
           { fps: 10, qrbox: 250 },
-          (decodedText) => {
-            submitCode(decodedText.trim().toUpperCase());
-            stopCamera();
+          async (decodedText) => {
+            // Guard against the callback firing multiple times for the
+            // same scan before we've had a chance to stop the camera.
+            if (handledOnce) return;
+            handledOnce = true;
+
+            await submitCode(decodedText.trim().toUpperCase());
+            await stopCamera();
           },
           () => {}
         );
