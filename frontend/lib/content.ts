@@ -93,14 +93,14 @@ export const participationCategories = [
     name: "Attendee",
     slug: "attendee",
     blurb: "Full access with a General or VIP ticket. Add a Masterclass Pass if you'd like one.",
-    note: "From ₦5,000 — General or VIP.",
+    note: "",
     guaranteed: true,
   },
   {
     name: "Exhibitor",
     slug: "exhibitor",
     blurb: "Showcase your creative business, sell products, and connect with buyers and brands at the Creative Market. Optionally include an auction of your own items.",
-    note: "Small booth ₦250,000 · Big booth ₦500,000",
+    note: "",
     guaranteed: false,
   },
   {
@@ -114,14 +114,14 @@ export const participationCategories = [
     name: "Pitching Participant",
     slug: "pitcher",
     blurb: "Pitch your project directly to investors, commissioners, brands, and distributors in the Deal Room.",
-    note: "Application required",
+    note: "",
     guaranteed: false,
   },
   {
     name: "Investor",
     slug: "investor",
     blurb: "Meet curated pitching participants and discover investable creative projects in the Deal Room.",
-    note: "Application required",
+    note: "",
     guaranteed: false,
   },
 ];
