@@ -11,7 +11,7 @@ const BOOTH_PRICES: Record<BoothSize, string> = {
   big: "₦500,000",
 };
 
-const AUCTION_PRICE = "₦10,000";
+const AUCTION_PRICE_PER_ITEM = 10000;
 
 export default function ExhibitorRegistrationPage() {
   const [exhibitType, setExhibitType] = useState<ExhibitType | null>(null);
@@ -27,11 +27,11 @@ export default function ExhibitorRegistrationPage() {
     goal: "",
     booth_size: "" as BoothSize | "",
     auction_item_description: "",
+    auction_quantity: 1,
   });
 
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [payment, setPayment] = useState<{ amount_kobo: number; authorization_url: string } | null>(null);
-  const [referenceNumber, setReferenceNumber] = useState("");
 
   const priceLabel =
     exhibitType === "booth"
@@ -39,7 +39,7 @@ export default function ExhibitorRegistrationPage() {
         ? BOOTH_PRICES[form.booth_size as BoothSize]
         : null
       : exhibitType === "auction"
-      ? AUCTION_PRICE
+      ? `₦${(AUCTION_PRICE_PER_ITEM * form.auction_quantity).toLocaleString()} (${form.auction_quantity} × ₦${AUCTION_PRICE_PER_ITEM.toLocaleString()})`
       : null;
 
   async function handleSubmit(e: React.FormEvent) {
@@ -59,6 +59,7 @@ export default function ExhibitorRegistrationPage() {
         exhibit_type: exhibitType,
         booth_size: exhibitType === "booth" ? form.booth_size : null,
         auction_item_description: exhibitType === "auction" ? form.auction_item_description : null,
+        auction_quantity: exhibitType === "auction" ? form.auction_quantity : null,
       };
 
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/register/exhibitor`, {
@@ -70,7 +71,6 @@ export default function ExhibitorRegistrationPage() {
       if (!res.ok) throw new Error("Request failed");
 
       const data = await res.json();
-      setReferenceNumber(data.reference_number);
       setPayment({
         amount_kobo: data.amount_kobo,
         authorization_url: data.paystack_authorization_url,
@@ -93,14 +93,13 @@ export default function ExhibitorRegistrationPage() {
           Complete Your Payment
         </h1>
         <div className="mt-8 rounded-2xl border border-gold/30 bg-ink-raised px-8 py-10">
-          <p className="text-muted">Reference number</p>
-          <p className="mt-2 font-display text-xl text-gold">{referenceNumber}</p>
-          <p className="mt-4 text-muted">
+          <p className="text-muted">
             Your spot is reserved but not yet confirmed. Complete payment of
           </p>
           <p className="mt-1 font-display text-2xl text-cream">₦{amountNaira}</p>
           <p className="mt-4 text-muted">
-            to secure it — you&apos;ll receive an email confirmation once payment is received.
+            to secure it. Check your email for your reference number — you&apos;ll need it to
+            check your status, and you&apos;ll get a confirmation once payment is received.
           </p>
         </div>
         <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
@@ -156,7 +155,7 @@ export default function ExhibitorRegistrationPage() {
           >
             <p className="font-display text-xl text-cream">Auction Your Work</p>
             <p className="mt-3 text-sm text-muted">
-              No booth needed — put a single piece of art or fashion up for auction at
+              No booth needed — put one or more pieces of art or fashion up for auction at
               the Showcase instead.
             </p>
             <p className="mt-4 text-xs text-gold">₦10,000 per item</p>
@@ -300,17 +299,34 @@ export default function ExhibitorRegistrationPage() {
               </select>
             </div>
           ) : (
-            <div>
-              <label className="block text-sm text-muted">Auction Item Description</label>
-              <textarea
-                required
-                rows={3}
-                placeholder="Describe the item you'd like to auction"
-                value={form.auction_item_description}
-                onChange={(e) => setForm({ ...form, auction_item_description: e.target.value })}
-                className="mt-1 w-full rounded-lg border border-white/10 bg-ink px-4 py-3 text-cream placeholder:text-muted/50 outline-none focus:border-gold"
-              />
-            </div>
+            <>
+              <div>
+                <label className="block text-sm text-muted">Auction Item Description</label>
+                <textarea
+                  required
+                  rows={3}
+                  placeholder="Describe the item(s) you'd like to auction"
+                  value={form.auction_item_description}
+                  onChange={(e) => setForm({ ...form, auction_item_description: e.target.value })}
+                  className="mt-1 w-full rounded-lg border border-white/10 bg-ink px-4 py-3 text-cream placeholder:text-muted/50 outline-none focus:border-gold"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm text-muted">How Many Items?</label>
+                <input
+                  required
+                  type="number"
+                  min={1}
+                  value={form.auction_quantity}
+                  onChange={(e) =>
+                    setForm({ ...form, auction_quantity: Math.max(1, Number(e.target.value)) })
+                  }
+                  className="mt-1 w-full rounded-lg border border-white/10 bg-ink px-4 py-3 text-cream outline-none focus:border-gold"
+                />
+                <p className="mt-1 text-xs text-muted">₦10,000 per item</p>
+              </div>
+            </>
           )}
 
           {priceLabel && (

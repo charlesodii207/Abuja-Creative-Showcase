@@ -35,7 +35,6 @@ export default function AttendeeNewRegistrationPage() {
   });
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [payment, setPayment] = useState<{ amount_kobo: number; authorization_url: string } | null>(null);
-  const [referenceNumber, setReferenceNumber] = useState("");
 
   const selectedTier = TIERS.find((t) => t.value === form.ticket_type)!;
 
@@ -53,7 +52,6 @@ export default function AttendeeNewRegistrationPage() {
       if (!res.ok) throw new Error("Request failed");
 
       const data = await res.json();
-      setReferenceNumber(data.reference_number);
       setPayment({
         amount_kobo: data.amount_kobo,
         authorization_url: data.paystack_authorization_url,
@@ -75,14 +73,13 @@ export default function AttendeeNewRegistrationPage() {
           Complete Your Payment
         </h1>
         <div className="mt-8 rounded-2xl border border-teal/30 bg-ink-raised px-8 py-10">
-          <p className="text-muted">Reference number</p>
-          <p className="mt-2 font-display text-xl text-teal">{referenceNumber}</p>
-          <p className="mt-4 text-muted">
+          <p className="text-muted">
             Your {selectedTier.label} ticket is reserved but not yet confirmed. Complete payment of
           </p>
           <p className="mt-1 font-display text-2xl text-cream">₦{amountNaira}</p>
           <p className="mt-4 text-muted">
-            to confirm it — you&apos;ll receive an email once payment is received.
+            to confirm it. Check your email for your reference number — you&apos;ll need it to
+            check your status, and you&apos;ll get a confirmation once payment is received.
           </p>
         </div>
         <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
