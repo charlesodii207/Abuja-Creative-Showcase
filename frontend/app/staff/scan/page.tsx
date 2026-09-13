@@ -38,6 +38,18 @@ export default function StaffScanPage() {
     }
   }
 
+  async function stopCamera() {
+    if (scannerRef.current) {
+      try {
+        await scannerRef.current.stop();
+      } catch {
+        // camera may already be stopped — safe to ignore
+      }
+      scannerRef.current = null;
+    }
+    setScanning(false);
+  }
+
   useEffect(() => {
     if (!scanning) return;
 
@@ -49,17 +61,22 @@ export default function StaffScanPage() {
         { facingMode: "environment" },
         { fps: 10, qrbox: 250 },
         (decodedText) => {
+          // Stop the camera entirely on a successful scan — no auto-resume,
+          // no re-scanning the same code in a loop. Staff must explicitly
+          // start the camera again for the next person.
           submitCode(decodedText.trim().toUpperCase());
-          scanner.pause(true);
-          setTimeout(() => scanner.resume(), 2000);
+          stopCamera();
         },
         () => {}
       )
       .catch(() => setError("Could not access camera. Use manual entry below instead."));
 
     return () => {
-      scanner.stop().catch(() => {});
+      if (scannerRef.current) {
+        scannerRef.current.stop().catch(() => {});
+      }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scanning]);
 
   return (
@@ -70,16 +87,20 @@ export default function StaffScanPage() {
       <div className="mt-8">
         {!scanning ? (
           <button
-            onClick={() => setScanning(true)}
+            onClick={() => {
+              setResult(null);
+              setError("");
+              setScanning(true);
+            }}
             className="w-full rounded-full bg-teal px-7 py-3.5 text-sm font-medium text-ink"
           >
-            Start Camera Scan
+            {result ? "Scan Next Person" : "Start Camera Scan"}
           </button>
         ) : (
           <>
             <div id="qr-reader" className="mx-auto w-full max-w-sm overflow-hidden rounded-2xl" />
             <button
-              onClick={() => setScanning(false)}
+              onClick={stopCamera}
               className="mt-4 w-full rounded-full border border-white/20 px-7 py-3 text-sm text-cream"
             >
               Stop Camera
