@@ -13,6 +13,7 @@ from app.routes.admin import router as admin_router
 from app.routes.sponsors import router as sponsors_router
 from app.routes.contact import router as contact_router
 from app.routes.payments import router as payments_router
+from app.routes.tickets import router as tickets_router  # <-- added
 
 app = FastAPI(title="Abuja Creative Showcase API")
 
@@ -35,6 +36,7 @@ app.include_router(admin_router)
 app.include_router(sponsors_router)
 app.include_router(contact_router)
 app.include_router(payments_router)
+app.include_router(tickets_router)  # <-- added
 
 
 @app.get("/")

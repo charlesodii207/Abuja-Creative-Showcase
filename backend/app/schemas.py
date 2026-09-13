@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic import BaseModel, EmailStr, model_validator
 from app.models import TicketType, BoothSize, ExhibitType
 
@@ -167,4 +169,18 @@ class PaystackVerifyRequest(BaseModel):
 class PaystackVerifyResponse(BaseModel):
     reference_number: str
     status: str          # "confirmed" or "failed"
+    message: str
+
+
+# --- Tickets ---
+
+class CheckinRequest(BaseModel):
+    ticket_number: str
+
+
+class CheckinResponse(BaseModel):
+    result: str  # "approved" or "already_checked_in"
+    full_name: str
+    category_tag: str
+    checked_in_at: datetime | None
     message: str

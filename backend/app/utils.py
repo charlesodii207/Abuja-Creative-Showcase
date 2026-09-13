@@ -31,6 +31,48 @@ def generate_upgrade_reference(base_reference: str) -> str:
     return f"{base_reference}-UPG-{suffix}"
 
 
+def generate_ticket_number(db: Session, length: int = 10) -> str:
+    """
+    Generates a unique ticket number for check-in. Deliberately plain —
+    no "ACS" prefix, no dashes — so door staff can type it in by hand as
+    a fallback if QR scanning fails, without fumbling over punctuation.
+    """
+    characters = string.ascii_uppercase + string.digits
+    while True:
+        candidate = "".join(random.choices(characters, k=length))
+        exists = db.query(models.Ticket).filter(
+            models.Ticket.ticket_number == candidate
+        ).first()
+        if not exists:
+            return candidate
+
+
+def get_ticket_tag(registrant: "models.Registrant") -> str:
+    """
+    Returns a short human-readable label so door staff know which
+    physical tag/wristband to hand out for this ticket.
+    """
+    if registrant.category == models.RegistrantCategory.attendee:
+        tier_display = {
+            models.TicketType.general: "General",
+            models.TicketType.vip: "VIP",
+            models.TicketType.masterclass: "Masterclass",
+        }
+        return f"Attendee - {tier_display[registrant.attendee_detail.ticket_type]}"
+
+    if registrant.category == models.RegistrantCategory.exhibitor:
+        detail = registrant.exhibitor_detail
+        if detail.exhibit_type == models.ExhibitType.booth:
+            size_display = {models.BoothSize.small: "Small", models.BoothSize.big: "Big"}
+            return f"Exhibitor - Booth ({size_display[detail.booth_size]})"
+        return "Exhibitor - Auction"
+
+    if registrant.category == models.RegistrantCategory.pitcher:
+        return "Pitching Participant"
+
+    return registrant.category.value.title()
+
+
 # --- Pricing ---
 # All amounts are stored in kobo (Naira * 100), since that's the smallest
 # unit Paystack's API expects. Keeping pricing centralized here means no

@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app import models, schemas, utils
 from app.paystack import verify_transaction, PaystackError
+from app.tickets import issue_ticket_and_email  # <-- added
 
 router = APIRouter(prefix="/payments", tags=["payments"])
 
@@ -129,6 +130,8 @@ def verify_payment(payload: schemas.PaystackVerifyRequest, db: Session = Depends
     detail.is_paid = True
     registrant.status = models.RegistrantStatus.confirmed
     db.commit()
+
+    issue_ticket_and_email(db, registrant)  # <-- added
 
     return schemas.PaystackVerifyResponse(
         reference_number=registrant.reference_number,
