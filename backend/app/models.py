@@ -42,6 +42,37 @@ class ExhibitType(str, enum.Enum):
     auction = "auction"
 
 
+# ---------------------------------------------------------------------------
+# Admin auth
+# ---------------------------------------------------------------------------
+
+class AdminRole(str, enum.Enum):
+    system_owner = "system_owner"
+    super_admin = "super_admin"
+    admin = "admin"
+
+
+class Admin(Base):
+    __tablename__ = "admins"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    full_name = Column(String, nullable=False)
+    username = Column(String, unique=True, nullable=False, index=True)
+    password_hash = Column(String, nullable=False)
+    role = Column(Enum(AdminRole), nullable=False)
+    must_change_password = Column(Boolean, default=True, nullable=False)
+    is_active = Column(Boolean, default=True, nullable=False)
+    created_by = Column(UUID(as_uuid=True), ForeignKey("admins.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    last_login_at = Column(DateTime(timezone=True), nullable=True)
+
+    creator = relationship("Admin", remote_side=[id])
+
+
+# ---------------------------------------------------------------------------
+# Registrants
+# ---------------------------------------------------------------------------
+
 class Registrant(Base):
     __tablename__ = "registrants"
 
@@ -74,7 +105,7 @@ class AttendeeDetail(Base):
     paystack_reference = Column(String, nullable=True, unique=True)
     pending_upgrade_ticket_type = Column(Enum(TicketType), nullable=True)
     pending_upgrade_reference = Column(String, nullable=True, unique=True)
-    pending_payment_reference = Column(String, nullable=True, unique=True)  # <-- added: tracks a resumed (retried) original payment attempt
+    pending_payment_reference = Column(String, nullable=True, unique=True)  # tracks a resumed (retried) original payment attempt
 
     registrant = relationship("Registrant", back_populates="attendee_detail")
 
