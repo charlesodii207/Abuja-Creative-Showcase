@@ -285,3 +285,19 @@ export async function checkinTicket(ticketNumber: string) {
     body: JSON.stringify({ ticket_number: ticketNumber }),
   });
 }
+
+// --- Admin logs ---
+
+export type AdminLogSummary = {
+  id: string;
+  admin_name: string | null;
+  action: string;
+  target_type: string | null;
+  target_reference: string | null;
+  detail: string | null;
+  created_at: string | null;
+};
+
+export async function listAdminLogs(limit = 100) {
+  return adminFetch<AdminLogSummary[]>(`/admin/logs?limit=${limit}`);
+}
