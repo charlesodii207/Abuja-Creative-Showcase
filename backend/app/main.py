@@ -10,14 +10,17 @@ from app.routes.investor import router as investor_router
 from app.routes.lookup import router as lookup_router
 from app.routes.upgrade import router as upgrade_router
 from app.routes.admin import router as admin_router
-from app.routes.admin_auth import router as admin_auth_router  # <-- restored
+from app.routes.admin_auth import router as admin_auth_router
 from app.routes.sponsors import router as sponsors_router
 from app.routes.contact import router as contact_router
+from app.routes.messages import router as messages_router
 from app.routes.payments import router as payments_router
 from app.routes.tickets import router as tickets_router
 from app.routes.attendee_status import router as attendee_status_router
 
+
 app = FastAPI(title="Abuja Creative Showcase API")
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -27,6 +30,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 app.include_router(attendee_router)
 app.include_router(exhibitor_router)
 app.include_router(press_router)
@@ -35,9 +39,10 @@ app.include_router(investor_router)
 app.include_router(lookup_router)
 app.include_router(upgrade_router)
 app.include_router(admin_router)
-app.include_router(admin_auth_router)  # <-- restored
+app.include_router(admin_auth_router)
 app.include_router(sponsors_router)
 app.include_router(contact_router)
+app.include_router(messages_router)
 app.include_router(payments_router)
 app.include_router(tickets_router)
 app.include_router(attendee_status_router)
@@ -45,4 +50,7 @@ app.include_router(attendee_status_router)
 
 @app.get("/")
 def root():
-    return {"status": "ok", "environment": settings.environment}
+    return {
+        "status": "ok",
+        "environment": settings.environment,
+    }

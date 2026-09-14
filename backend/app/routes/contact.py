@@ -1,14 +1,63 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
 
-from app import schemas
+from app import schemas, models
+from app.database import get_db
 from app.emailer import send_email
 from app.config import settings
 
-router = APIRouter(prefix="/contact", tags=["contact"])
+
+router = APIRouter(
+    prefix="/contact",
+    tags=["contact"],
+)
 
 
-@router.post("/inquiry", response_model=schemas.ContactInquiryResponse)
-def submit_contact_inquiry(payload: schemas.ContactInquiryRequest):
+@router.post(
+    "/inquiry",
+    response_model=schemas.ContactInquiryResponse,
+)
+def submit_contact_inquiry(
+    payload: schemas.ContactInquiryRequest,
+    db: Session = Depends(get_db),
+):
+    # ------------------------------------------------------------------
+    # Create the conversation thread
+    # ------------------------------------------------------------------
+
+    thread = models.ContactThread(
+        sender_name=payload.full_name,
+        sender_email=str(payload.email),
+        sender_phone=payload.phone,
+        subject=f"Contact Form Question — {payload.full_name}",
+        status="open",
+        is_replied=False,
+    )
+
+    db.add(thread)
+    db.flush()
+
+    # ------------------------------------------------------------------
+    # Store the visitor's first message
+    # ------------------------------------------------------------------
+
+    message = models.ContactMessage(
+        thread_id=thread.id,
+        sender_type="visitor",
+        sender_name=payload.full_name,
+        sender_email=str(payload.email),
+        subject=thread.subject,
+        body=payload.question,
+        is_read=False,
+    )
+
+    db.add(message)
+    db.commit()
+
+    # ------------------------------------------------------------------
+    # Keep the existing notification email unchanged
+    # ------------------------------------------------------------------
+
     send_email(
         to=[
             settings.sponsor_inquiry_email,
@@ -25,5 +74,8 @@ def submit_contact_inquiry(payload: schemas.ContactInquiryRequest):
     )
 
     return schemas.ContactInquiryResponse(
-        message="Thanks for reaching out! We'll get back to you shortly — keep an eye on your email for our response."
+        message=(
+            "Thanks for reaching out! We'll get back to you shortly — "
+            "keep an eye on your email for our response."
+        )
     )

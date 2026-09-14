@@ -21,9 +21,9 @@ class ExhibitorRegistrationRequest(BaseModel):
     portfolio_url: str | None = None
     goal: str | None = None
     exhibit_type: ExhibitType
-    booth_size: BoothSize | None = None            # required if exhibit_type == booth
-    auction_item_description: str | None = None    # required if exhibit_type == auction
-    auction_quantity: int | None = None            # required if exhibit_type == auction, min 1
+    booth_size: BoothSize | None = None
+    auction_item_description: str | None = None
+    auction_quantity: int | None = None
 
     @model_validator(mode="after")
     def check_exhibit_fields(self):
@@ -31,9 +31,13 @@ class ExhibitorRegistrationRequest(BaseModel):
             raise ValueError("booth_size is required when exhibit_type is 'booth'")
         if self.exhibit_type == ExhibitType.auction:
             if not self.auction_item_description:
-                raise ValueError("auction_item_description is required when exhibit_type is 'auction'")
+                raise ValueError(
+                    "auction_item_description is required when exhibit_type is 'auction'"
+                )
             if not self.auction_quantity or self.auction_quantity < 1:
-                raise ValueError("auction_quantity must be at least 1 when exhibit_type is 'auction'")
+                raise ValueError(
+                    "auction_quantity must be at least 1 when exhibit_type is 'auction'"
+                )
         return self
 
 
@@ -69,8 +73,8 @@ class InvestorRegistrationRequest(BaseModel):
 class RegistrationResponse(BaseModel):
     reference_number: str
     message: str
-    amount_kobo: int | None = None          # present when this category requires payment
-    paystack_authorization_url: str | None = None  # present once payment is initialized
+    amount_kobo: int | None = None
+    paystack_authorization_url: str | None = None
 
 
 class LookupRequest(BaseModel):
@@ -131,7 +135,7 @@ class RegistrantDetail(BaseModel):
     reference_number: str
     status: str
     created_at: datetime | None
-    details: dict  # category-specific fields (varies by category)
+    details: dict
     ticket: TicketInfo | None = None
 
 
@@ -175,6 +179,71 @@ class ContactInquiryResponse(BaseModel):
     message: str
 
 
+# ---------------------------------------------------------------------------
+# Contact messaging
+# ---------------------------------------------------------------------------
+
+class ContactMessageSummary(BaseModel):
+    id: str
+    sender_type: str
+    sender_name: str
+    sender_email: str
+    subject: str
+    body: str
+    admin_id: str | None = None
+    is_read: bool
+    created_at: datetime | None
+
+    class Config:
+        from_attributes = True
+
+
+class ContactThreadSummary(BaseModel):
+    id: str
+    sender_name: str
+    sender_email: str
+    sender_phone: str | None = None
+    subject: str
+    status: str
+    is_replied: bool
+    unread_count: int
+    created_at: datetime | None
+    updated_at: datetime | None
+    latest_message: ContactMessageSummary | None = None
+
+    class Config:
+        from_attributes = True
+
+
+class ContactThreadDetail(BaseModel):
+    id: str
+    sender_name: str
+    sender_email: str
+    sender_phone: str | None = None
+    subject: str
+    status: str
+    is_replied: bool
+    unread_count: int
+    created_at: datetime | None
+    updated_at: datetime | None
+    messages: list[ContactMessageSummary]
+
+    class Config:
+        from_attributes = True
+
+
+class ContactReplyRequest(BaseModel):
+    body: str
+
+
+class ContactReplyResponse(BaseModel):
+    message: ContactMessageSummary
+
+
+class ContactUnreadCountResponse(BaseModel):
+    unread_count: int
+
+
 # --- Paystack ---
 
 class PaystackInitializeRequest(BaseModel):
@@ -193,7 +262,7 @@ class PaystackVerifyRequest(BaseModel):
 
 class PaystackVerifyResponse(BaseModel):
     reference_number: str
-    status: str          # "confirmed" or "failed"
+    status: str
     message: str
 
 
@@ -204,7 +273,7 @@ class CheckinRequest(BaseModel):
 
 
 class CheckinResponse(BaseModel):
-    result: str  # "approved" or "already_checked_in"
+    result: str
     full_name: str
     category_tag: str
     checked_in_at: datetime | None
@@ -234,7 +303,7 @@ class CreateAdminRequest(BaseModel):
     full_name: str
     username: str
     temp_password: str
-    role: str  # "super_admin" or "admin"
+    role: str
 
 
 class AdminSummary(BaseModel):

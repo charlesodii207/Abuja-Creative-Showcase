@@ -62,11 +62,22 @@ class Admin(Base):
     role = Column(Enum(AdminRole), nullable=False)
     must_change_password = Column(Boolean, default=True, nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
-    created_by = Column(UUID(as_uuid=True), ForeignKey("admins.id", ondelete="SET NULL"), nullable=True)
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey("admins.id", ondelete="SET NULL"),
+        nullable=True,
+    )
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     last_login_at = Column(DateTime(timezone=True), nullable=True)
 
     creator = relationship("Admin", remote_side=[id])
+
+    # Messaging: replies sent by this admin.
+    contact_messages = relationship(
+        "ContactMessage",
+        foreign_keys="ContactMessage.admin_id",
+        back_populates="admin",
+    )
 
 
 class AdminLog(Base):
@@ -78,16 +89,103 @@ class AdminLog(Base):
     no human actor. admin_id also goes NULL if the acting admin is later
     deleted; admin_name is a snapshot and stays intact either way.
     """
+
     __tablename__ = "admin_logs"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    admin_id = Column(UUID(as_uuid=True), ForeignKey("admins.id", ondelete="SET NULL"), nullable=True)
-    admin_name = Column(String, nullable=True)  # snapshot at time of action
-    action = Column(String, nullable=False)  # e.g. "approve_registrant"
-    target_type = Column(String, nullable=True)  # "registrant" | "admin" | None
-    target_reference = Column(String, nullable=True)  # reference_number, username, etc.
+    admin_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("admins.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    admin_name = Column(String, nullable=True)
+    action = Column(String, nullable=False)
+    target_type = Column(String, nullable=True)
+    target_reference = Column(String, nullable=True)
     detail = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+# ---------------------------------------------------------------------------
+# Contact messaging
+# ---------------------------------------------------------------------------
+
+class ContactThread(Base):
+    __tablename__ = "contact_threads"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+
+    sender_name = Column(String, nullable=False)
+    sender_email = Column(String, nullable=False, index=True)
+    sender_phone = Column(String, nullable=True)
+
+    subject = Column(String, nullable=False)
+
+    # Admin-controlled conversation state.
+    status = Column(String, nullable=False, default="open")
+
+    # Automatically becomes True once ACS sends a reply.
+    is_replied = Column(Boolean, nullable=False, default=False)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
+
+    messages = relationship(
+        "ContactMessage",
+        back_populates="thread",
+        cascade="all, delete-orphan",
+        order_by="ContactMessage.created_at",
+    )
+
+
+class ContactMessage(Base):
+    __tablename__ = "contact_messages"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+
+    thread_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("contact_threads.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    # "visitor" or "admin"
+    sender_type = Column(String, nullable=False)
+
+    sender_name = Column(String, nullable=False)
+    sender_email = Column(String, nullable=False)
+
+    subject = Column(String, nullable=False)
+    body = Column(Text, nullable=False)
+
+    # Only populated when sender_type == "admin".
+    admin_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("admins.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+
+    # Read/unread belongs to individual messages.
+    is_read = Column(Boolean, nullable=False, default=False)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    thread = relationship(
+        "ContactThread",
+        back_populates="messages",
+    )
+
+    admin = relationship(
+        "Admin",
+        foreign_keys=[admin_id],
+        back_populates="contact_messages",
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -103,23 +201,60 @@ class Registrant(Base):
     phone = Column(String, nullable=False, index=True)
     category = Column(Enum(RegistrantCategory), nullable=False)
     reference_number = Column(String, unique=True, nullable=False, index=True)
-    status = Column(Enum(RegistrantStatus), nullable=False, default=RegistrantStatus.pending)
+    status = Column(
+        Enum(RegistrantStatus),
+        nullable=False,
+        default=RegistrantStatus.pending,
+    )
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    attendee_detail = relationship("AttendeeDetail", back_populates="registrant", uselist=False)
-    exhibitor_detail = relationship("ExhibitorDetail", back_populates="registrant", uselist=False)
-    press_detail = relationship("PressDetail", back_populates="registrant", uselist=False)
-    pitcher_detail = relationship("PitcherDetail", back_populates="registrant", uselist=False)
-    investor_detail = relationship("InvestorDetail", back_populates="registrant", uselist=False)
-    ticket = relationship("Ticket", back_populates="registrant", uselist=False)
+    attendee_detail = relationship(
+        "AttendeeDetail",
+        back_populates="registrant",
+        uselist=False,
+    )
+    exhibitor_detail = relationship(
+        "ExhibitorDetail",
+        back_populates="registrant",
+        uselist=False,
+    )
+    press_detail = relationship(
+        "PressDetail",
+        back_populates="registrant",
+        uselist=False,
+    )
+    pitcher_detail = relationship(
+        "PitcherDetail",
+        back_populates="registrant",
+        uselist=False,
+    )
+    investor_detail = relationship(
+        "InvestorDetail",
+        back_populates="registrant",
+        uselist=False,
+    )
+    ticket = relationship(
+        "Ticket",
+        back_populates="registrant",
+        uselist=False,
+    )
 
 
 class AttendeeDetail(Base):
     __tablename__ = "attendee_details"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    registrant_id = Column(UUID(as_uuid=True), ForeignKey("registrants.id"), nullable=False, unique=True)
-    ticket_type = Column(Enum(TicketType), nullable=False, default=TicketType.general)
+    registrant_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("registrants.id"),
+        nullable=False,
+        unique=True,
+    )
+    ticket_type = Column(
+        Enum(TicketType),
+        nullable=False,
+        default=TicketType.general,
+    )
     wants_masterclass = Column(Boolean, default=False)
     is_paid = Column(Boolean, default=False)
     amount_kobo = Column(Integer, nullable=True)
@@ -128,14 +263,22 @@ class AttendeeDetail(Base):
     pending_upgrade_reference = Column(String, nullable=True, unique=True)
     pending_payment_reference = Column(String, nullable=True, unique=True)
 
-    registrant = relationship("Registrant", back_populates="attendee_detail")
+    registrant = relationship(
+        "Registrant",
+        back_populates="attendee_detail",
+    )
 
 
 class ExhibitorDetail(Base):
     __tablename__ = "exhibitor_details"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    registrant_id = Column(UUID(as_uuid=True), ForeignKey("registrants.id"), nullable=False, unique=True)
+    registrant_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("registrants.id"),
+        nullable=False,
+        unique=True,
+    )
     company_name = Column(String, nullable=False)
     category = Column(String, nullable=False)
     what_bringing = Column(Text)
@@ -149,26 +292,42 @@ class ExhibitorDetail(Base):
     amount_kobo = Column(Integer, nullable=True)
     paystack_reference = Column(String, nullable=True, unique=True)
 
-    registrant = relationship("Registrant", back_populates="exhibitor_detail")
+    registrant = relationship(
+        "Registrant",
+        back_populates="exhibitor_detail",
+    )
 
 
 class PressDetail(Base):
     __tablename__ = "press_details"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    registrant_id = Column(UUID(as_uuid=True), ForeignKey("registrants.id"), nullable=False, unique=True)
+    registrant_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("registrants.id"),
+        nullable=False,
+        unique=True,
+    )
     outlet_name = Column(String, nullable=False)
     proof_type = Column(String)
     proof_url = Column(String)
 
-    registrant = relationship("Registrant", back_populates="press_detail")
+    registrant = relationship(
+        "Registrant",
+        back_populates="press_detail",
+    )
 
 
 class PitcherDetail(Base):
     __tablename__ = "pitcher_details"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    registrant_id = Column(UUID(as_uuid=True), ForeignKey("registrants.id"), nullable=False, unique=True)
+    registrant_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("registrants.id"),
+        nullable=False,
+        unique=True,
+    )
     project_name = Column(String, nullable=False)
     category = Column(String, nullable=False)
     pitch_summary = Column(Text)
@@ -177,30 +336,49 @@ class PitcherDetail(Base):
     amount_kobo = Column(Integer, nullable=True)
     paystack_reference = Column(String, nullable=True, unique=True)
 
-    registrant = relationship("Registrant", back_populates="pitcher_detail")
+    registrant = relationship(
+        "Registrant",
+        back_populates="pitcher_detail",
+    )
 
 
 class InvestorDetail(Base):
     __tablename__ = "investor_details"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    registrant_id = Column(UUID(as_uuid=True), ForeignKey("registrants.id"), nullable=False, unique=True)
+    registrant_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("registrants.id"),
+        nullable=False,
+        unique=True,
+    )
     organization_name = Column(String, nullable=False)
     investment_interest = Column(Text)
     budget_range = Column(String)
     portfolio_url = Column(String)
 
-    registrant = relationship("Registrant", back_populates="investor_detail")
+    registrant = relationship(
+        "Registrant",
+        back_populates="investor_detail",
+    )
 
 
 class Ticket(Base):
     __tablename__ = "tickets"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    registrant_id = Column(UUID(as_uuid=True), ForeignKey("registrants.id"), nullable=False, unique=True)
+    registrant_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("registrants.id"),
+        nullable=False,
+        unique=True,
+    )
     qr_code = Column(String, unique=True)
     ticket_number = Column(String, unique=True)
     checked_in = Column(Boolean, default=False)
     checked_in_at = Column(DateTime(timezone=True))
 
-    registrant = relationship("Registrant", back_populates="ticket")
+    registrant = relationship(
+        "Registrant",
+        back_populates="ticket",
+    )
