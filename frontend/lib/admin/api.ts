@@ -269,6 +269,13 @@ export async function deactivateAdmin(adminId: string) {
   );
 }
 
+export async function deleteAdmin(adminId: string) {
+  return adminFetch<{ id: string; status: string; message: string }>(
+    `/admin/auth/admins/${encodeURIComponent(adminId)}`,
+    { method: "DELETE" }
+  );
+}
+
 // --- Ticket check-in ---
 
 export type CheckinResult = {

@@ -6,6 +6,7 @@ import {
   listAdmins,
   createAdmin,
   deactivateAdmin,
+  deleteAdmin,
   getAdminProfile,
   ApiError,
   type AdminSummary,
@@ -26,6 +27,7 @@ export default function AdminsPage() {
 
   const myProfile = getAdminProfile();
   const canCreateSuperAdmin = myProfile?.role === "system_owner";
+  const isSystemOwner = myProfile?.role === "system_owner";
 
   function loadAdmins() {
     setLoading(true);
@@ -81,6 +83,22 @@ export default function AdminsPage() {
       loadAdmins();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Couldn't deactivate admin.");
+    }
+  }
+
+  async function handleDelete(admin: AdminSummary) {
+    if (
+      !confirm(
+        `Permanently delete ${admin.full_name}? This can't be undone. Their username ("${admin.username}") will become available for reuse. Their name will still appear in past admin logs.`
+      )
+    ) {
+      return;
+    }
+    try {
+      await deleteAdmin(admin.id);
+      loadAdmins();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Couldn't delete admin.");
     }
   }
 
@@ -205,13 +223,21 @@ export default function AdminsPage() {
                       <span className="text-teal">Active</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="px-4 py-3 text-right space-x-3">
                     {a.is_active && a.role !== "system_owner" && (
                       <button
                         onClick={() => handleDeactivate(a)}
                         className="font-body text-xs text-red hover:underline"
                       >
                         Deactivate
+                      </button>
+                    )}
+                    {isSystemOwner && a.role !== "system_owner" && (
+                      <button
+                        onClick={() => handleDelete(a)}
+                        className="font-body text-xs text-red hover:underline"
+                      >
+                        Delete
                       </button>
                     )}
                   </td>
