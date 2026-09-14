@@ -5,12 +5,19 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app import models, schemas, utils
+from app.dependencies import require_role
 
 router = APIRouter(prefix="/tickets", tags=["tickets"])
 
+CHECKIN_ROLES = ("system_owner", "super_admin", "admin")
+
 
 @router.post("/checkin", response_model=schemas.CheckinResponse)
-def checkin_ticket(payload: schemas.CheckinRequest, db: Session = Depends(get_db)):
+def checkin_ticket(
+    payload: schemas.CheckinRequest,
+    db: Session = Depends(get_db),
+    _admin: models.Admin = Depends(require_role(*CHECKIN_ROLES)),
+):
     ticket_number = payload.ticket_number.strip().upper()
 
     ticket = db.query(models.Ticket).filter(
