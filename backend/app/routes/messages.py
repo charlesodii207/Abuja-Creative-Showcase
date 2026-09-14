@@ -1,4 +1,3 @@
-```python
 from datetime import datetime, timezone
 from html import escape
 from uuid import UUID
