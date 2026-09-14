@@ -30,6 +30,18 @@ def checkin_ticket(
     registrant = ticket.registrant
     tag = utils.get_ticket_tag(registrant)
 
+    # A ticket existing doesn't mean the registrant is still cleared for entry —
+    # someone can be rejected (or otherwise fall out of good standing) after
+    # their ticket was already issued. Only "confirmed" registrants get in.
+    if registrant.status != models.RegistrantStatus.confirmed:
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                f"{registrant.full_name}'s registration is '{registrant.status.value}', "
+                "not confirmed — do not admit. Check with an organizer."
+            ),
+        )
+
     if ticket.checked_in:
         return schemas.CheckinResponse(
             result="already_checked_in",
