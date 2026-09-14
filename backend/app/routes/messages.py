@@ -1,3 +1,4 @@
+```python
 from datetime import datetime, timezone
 from html import escape
 from uuid import UUID
@@ -164,21 +165,33 @@ def list_message_threads(
             detail="Status must be 'open' or 'closed'.",
         )
 
+    # Build the query first.
     query = (
         db.query(models.ContactThread)
         .options(
             selectinload(models.ContactThread.messages)
         )
-        .order_by(
-            models.ContactThread.updated_at.desc()
-        )
-        .limit(limit)
     )
 
+    # IMPORTANT:
+    # Apply filters BEFORE limit/offset.
+    #
+    # SQLAlchemy does not allow:
+    # query.limit(...).filter(...)
+    #
+    # It requires:
+    # query.filter(...).limit(...)
     if status:
         query = query.filter(
             models.ContactThread.status == status
         )
+
+    # Apply ordering and limit after filtering.
+    query = (
+        query
+        .order_by(models.ContactThread.updated_at.desc())
+        .limit(limit)
+    )
 
     threads = query.all()
 
@@ -540,3 +553,4 @@ def reopen_message_thread(
         status="open",
         message="Conversation reopened.",
     )
+```
