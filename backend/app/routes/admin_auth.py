@@ -170,3 +170,40 @@ def deactivate_admin(
         status="deactivated",
         message=f"{target.full_name} has been deactivated.",
     )
+
+
+@router.delete("/admins/{admin_id}", response_model=schemas.AdminActionResponse)
+def delete_admin(
+    admin_id: str,
+    db: Session = Depends(get_db),
+    current_admin: models.Admin = Depends(require_role("system_owner")),
+):
+    target = db.query(models.Admin).filter(models.Admin.id == admin_id).first()
+    if not target:
+        raise HTTPException(status_code=404, detail="Admin not found.")
+
+    if target.id == current_admin.id:
+        raise HTTPException(status_code=400, detail="You can't delete your own account.")
+
+    if target.role == models.AdminRole.system_owner:
+        raise HTTPException(status_code=403, detail="The System Owner account can't be deleted.")
+
+    deleted_name = target.full_name
+    deleted_username = target.username
+    deleted_role = target.role.value
+
+    log_action(
+        db, current_admin, "delete_admin",
+        target_type="admin",
+        target_reference=deleted_username,
+        detail=f"Deleted {deleted_name} ({deleted_role})",
+    )
+
+    db.delete(target)
+    db.commit()
+
+    return schemas.AdminActionResponse(
+        id=admin_id,
+        status="deleted",
+        message=f"{deleted_name} has been deleted. Their username is now available for reuse.",
+    )

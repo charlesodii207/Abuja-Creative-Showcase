@@ -62,7 +62,7 @@ class Admin(Base):
     role = Column(Enum(AdminRole), nullable=False)
     must_change_password = Column(Boolean, default=True, nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
-    created_by = Column(UUID(as_uuid=True), ForeignKey("admins.id"), nullable=True)
+    created_by = Column(UUID(as_uuid=True), ForeignKey("admins.id", ondelete="SET NULL"), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     last_login_at = Column(DateTime(timezone=True), nullable=True)
 
@@ -72,15 +72,16 @@ class Admin(Base):
 class AdminLog(Base):
     """
     Audit trail. Records both manual admin actions (approve, reject, edit,
-    mark-paid, resend-email, create/deactivate admin, login) and
+    mark-paid, resend-email, create/deactivate/delete admin, login) and
     system-triggered events (e.g. automatic status-change emails), so
     admin_id is nullable and admin_name falls back to "System" when there's
-    no human actor.
+    no human actor. admin_id also goes NULL if the acting admin is later
+    deleted; admin_name is a snapshot and stays intact either way.
     """
     __tablename__ = "admin_logs"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    admin_id = Column(UUID(as_uuid=True), ForeignKey("admins.id"), nullable=True)
+    admin_id = Column(UUID(as_uuid=True), ForeignKey("admins.id", ondelete="SET NULL"), nullable=True)
     admin_name = Column(String, nullable=True)  # snapshot at time of action
     action = Column(String, nullable=False)  # e.g. "approve_registrant"
     target_type = Column(String, nullable=True)  # "registrant" | "admin" | None
