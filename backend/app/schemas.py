@@ -247,6 +247,16 @@ class AdminSummary(BaseModel):
     last_login_at: str | None
 
 
+class AdminLogSummary(BaseModel):
+    id: str
+    admin_name: str | None
+    action: str
+    target_type: str | None
+    target_reference: str | None
+    detail: str | None
+    created_at: datetime | None
+
+
 # --- Attendee status / resume payment ---
 
 class AttendeeStatusRequest(BaseModel):

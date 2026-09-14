@@ -7,6 +7,7 @@ from app.database import get_db
 from app import models, schemas
 from app.auth import hash_password, verify_password, create_access_token
 from app.dependencies import get_current_admin_allow_password_change, require_role
+from app.audit import log_action
 
 router = APIRouter(prefix="/admin/auth", tags=["admin-auth"])
 
@@ -23,6 +24,8 @@ def login(payload: schemas.LoginRequest, db: Session = Depends(get_db)):
 
     admin.last_login_at = datetime.now(timezone.utc)
     db.commit()
+
+    log_action(db, admin, "login", target_type="admin", target_reference=admin.username)
 
     token = create_access_token(
         admin_id=str(admin.id),
@@ -67,7 +70,6 @@ def create_admin(
     db: Session = Depends(get_db),
     current_admin: models.Admin = Depends(require_role("system_owner", "super_admin")),
 ):
-    # Permission rule: super_admin can only create "admin", never "super_admin" or "system_owner"
     if current_admin.role == models.AdminRole.super_admin and payload.role != "admin":
         raise HTTPException(status_code=403, detail="Super Admins can only create Admin accounts.")
 
@@ -89,6 +91,13 @@ def create_admin(
     db.add(new_admin)
     db.commit()
     db.refresh(new_admin)
+
+    log_action(
+        db, current_admin, "create_admin",
+        target_type="admin",
+        target_reference=new_admin.username,
+        detail=f"Created as {new_admin.role.value}",
+    )
 
     return schemas.AdminSummary(
         id=str(new_admin.id),
@@ -143,6 +152,12 @@ def deactivate_admin(
 
     target.is_active = False
     db.commit()
+
+    log_action(
+        db, current_admin, "deactivate_admin",
+        target_type="admin",
+        target_reference=target.username,
+    )
 
     return schemas.AdminActionResponse(
         id=str(target.id),

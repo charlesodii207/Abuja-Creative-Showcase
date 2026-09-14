@@ -69,6 +69,26 @@ class Admin(Base):
     creator = relationship("Admin", remote_side=[id])
 
 
+class AdminLog(Base):
+    """
+    Audit trail. Records both manual admin actions (approve, reject, edit,
+    mark-paid, resend-email, create/deactivate admin, login) and
+    system-triggered events (e.g. automatic status-change emails), so
+    admin_id is nullable and admin_name falls back to "System" when there's
+    no human actor.
+    """
+    __tablename__ = "admin_logs"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    admin_id = Column(UUID(as_uuid=True), ForeignKey("admins.id"), nullable=True)
+    admin_name = Column(String, nullable=True)  # snapshot at time of action
+    action = Column(String, nullable=False)  # e.g. "approve_registrant"
+    target_type = Column(String, nullable=True)  # "registrant" | "admin" | None
+    target_reference = Column(String, nullable=True)  # reference_number, username, etc.
+    detail = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
 # ---------------------------------------------------------------------------
 # Registrants
 # ---------------------------------------------------------------------------
@@ -105,7 +125,7 @@ class AttendeeDetail(Base):
     paystack_reference = Column(String, nullable=True, unique=True)
     pending_upgrade_ticket_type = Column(Enum(TicketType), nullable=True)
     pending_upgrade_reference = Column(String, nullable=True, unique=True)
-    pending_payment_reference = Column(String, nullable=True, unique=True)  # tracks a resumed (retried) original payment attempt
+    pending_payment_reference = Column(String, nullable=True, unique=True)
 
     registrant = relationship("Registrant", back_populates="attendee_detail")
 
