@@ -57,6 +57,12 @@ def change_password(
     admin.must_change_password = False
     db.commit()
 
+    log_action(
+        db, admin, "change_password",
+        target_type="admin",
+        target_reference=admin.username,
+    )
+
     return schemas.AdminActionResponse(
         id=str(admin.id),
         status="password_changed",

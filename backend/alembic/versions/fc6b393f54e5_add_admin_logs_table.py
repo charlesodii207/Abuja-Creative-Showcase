@@ -1,7 +1,7 @@
 """add admin_logs table
 
 Revision ID: fc6b393f54e5
-Revises: 55dcf94b01e9
+Revises: a9f3c7d21b44
 Create Date: 2026-09-14 01:49:22.337057
 
 """
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = 'fc6b393f54e5'
-down_revision: Union[str, Sequence[str], None] = '55dcf94b01e9'
+down_revision: Union[str, Sequence[str], None] = 'a9f3c7d21b44'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
