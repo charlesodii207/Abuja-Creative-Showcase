@@ -233,3 +233,55 @@ export async function resendRegistrantEmail(referenceNumber: string) {
     { method: "POST" }
   );
 }
+
+// --- Admin management ---
+
+export type AdminSummary = {
+  id: string;
+  full_name: string;
+  username: string;
+  role: "system_owner" | "super_admin" | "admin";
+  is_active: boolean;
+  must_change_password: boolean;
+  last_login_at: string | null;
+};
+
+export async function listAdmins() {
+  return adminFetch<AdminSummary[]>("/admin/auth/admins");
+}
+
+export async function createAdmin(payload: {
+  full_name: string;
+  username: string;
+  temp_password: string;
+  role: "super_admin" | "admin";
+}) {
+  return adminFetch<AdminSummary>("/admin/auth/create-admin", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deactivateAdmin(adminId: string) {
+  return adminFetch<{ id: string; status: string; message: string }>(
+    `/admin/auth/admins/${encodeURIComponent(adminId)}/deactivate`,
+    { method: "PATCH" }
+  );
+}
+
+// --- Ticket check-in ---
+
+export type CheckinResult = {
+  result: "approved" | "already_checked_in";
+  full_name: string;
+  category_tag: string;
+  checked_in_at: string | null;
+  message: string;
+};
+
+export async function checkinTicket(ticketNumber: string) {
+  return adminFetch<CheckinResult>("/tickets/checkin", {
+    method: "POST",
+    body: JSON.stringify({ ticket_number: ticketNumber }),
+  });
+}

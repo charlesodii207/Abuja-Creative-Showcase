@@ -27,7 +27,7 @@ export default function AdminLoginPage() {
       if (result.must_change_password) {
         router.push("/admin/change-password");
       } else {
-        router.push("/admin/dashboard");
+        router.push("/admin/overview");
       }
     } catch (err) {
       if (err instanceof ApiError) {

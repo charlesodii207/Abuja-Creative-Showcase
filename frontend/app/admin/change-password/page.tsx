@@ -54,7 +54,7 @@ export default function ChangePasswordPage() {
         saveSession(token, profile);
       }
 
-      router.push("/admin/dashboard");
+      router.push("/admin/overview");
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.message);
