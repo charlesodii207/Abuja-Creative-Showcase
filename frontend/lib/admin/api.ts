@@ -308,3 +308,88 @@ export type AdminLogSummary = {
 export async function listAdminLogs(limit = 100) {
   return adminFetch<AdminLogSummary[]>(`/admin/logs?limit=${limit}`);
 }
+
+// --- Messages ---
+
+export type MessageThreadStatus = "open" | "closed";
+export type MessageSenderType = "visitor" | "admin";
+
+export type Message = {
+  id: string;
+  sender: MessageSenderType;
+  body: string;
+  created_at: string;
+};
+
+export type MessageThreadSummary = {
+  id: string;
+  sender_name: string;
+  sender_email: string;
+  status: MessageThreadStatus;
+  is_replied: boolean;
+  unread_count: number;
+  latest_message: Message;
+};
+
+export type MessageThreadDetail = {
+  id: string;
+  sender_name: string;
+  sender_email: string;
+  status: MessageThreadStatus;
+  is_replied: boolean;
+  messages: Message[];
+};
+
+export async function listMessageThreads(filters?: {
+  status?: MessageThreadStatus;
+}) {
+  const params = new URLSearchParams();
+  if (filters?.status) params.set("status", filters.status);
+  const qs = params.toString();
+  return adminFetch<MessageThreadSummary[]>(
+    `/admin/messages${qs ? `?${qs}` : ""}`
+  );
+}
+
+export async function getMessageThread(threadId: string) {
+  return adminFetch<MessageThreadDetail>(
+    `/admin/messages/${encodeURIComponent(threadId)}`
+  );
+}
+
+export async function markThreadRead(threadId: string) {
+  return adminFetch<{ id: string; status: string; message: string }>(
+    `/admin/messages/${encodeURIComponent(threadId)}/read`,
+    { method: "PATCH" }
+  );
+}
+
+export async function replyToThread(threadId: string, body: string) {
+  return adminFetch<{ id: string; status: string; message: string }>(
+    `/admin/messages/${encodeURIComponent(threadId)}/reply`,
+    { method: "POST", body: JSON.stringify({ body }) }
+  );
+}
+
+export async function closeThread(threadId: string) {
+  return adminFetch<{ id: string; status: string; message: string }>(
+    `/admin/messages/${encodeURIComponent(threadId)}/close`,
+    { method: "PATCH" }
+  );
+}
+
+export async function reopenThread(threadId: string) {
+  return adminFetch<{ id: string; status: string; message: string }>(
+    `/admin/messages/${encodeURIComponent(threadId)}/reopen`,
+    { method: "PATCH" }
+  );
+}
+
+/**
+ * There's no dedicated unread-count endpoint yet, so this derives the
+ * sidebar badge total from the open-thread list itself.
+ */
+export async function getUnreadMessageCount() {
+  const threads = await listMessageThreads({ status: "open" });
+  return threads.reduce((sum, t) => sum + t.unread_count, 0);
+}

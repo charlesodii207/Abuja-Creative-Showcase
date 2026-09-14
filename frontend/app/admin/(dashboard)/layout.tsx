@@ -7,6 +7,7 @@ import Link from "next/link";
 import {
   getToken,
   getAdminProfile,
+  getUnreadMessageCount,
   logout,
   type AdminProfile,
 } from "../../../lib/admin/api";
@@ -14,11 +15,14 @@ import {
 const NAV_ITEMS = [
   { label: "Overview", href: "/admin/overview" },
   { label: "Registrants", href: "/admin/registrants" },
+  { label: "Messages", href: "/admin/messages" },
   { label: "Admins", href: "/admin/admins", roles: ["system_owner", "super_admin"] },
   { label: "Analytics", href: "/admin/analytics" },
   { label: "Event scan", href: "/admin/scan" },
   { label: "Admin logs", href: "/admin/logs" },
 ];
+
+const UNREAD_POLL_MS = 30000;
 
 export default function DashboardLayout({
   children,
@@ -30,6 +34,7 @@ export default function DashboardLayout({
   const [checking, setChecking] = useState(true);
   const [profile, setProfile] = useState<AdminProfile | null>(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     if (!getToken()) {
@@ -44,6 +49,30 @@ export default function DashboardLayout({
   useEffect(() => {
     setMobileNavOpen(false);
   }, [pathname]);
+
+  // Poll the unread message count so the sidebar badge stays current
+  useEffect(() => {
+    if (checking) return;
+
+    let cancelled = false;
+
+    function refresh() {
+      getUnreadMessageCount()
+        .then((count) => {
+          if (!cancelled) setUnreadCount(count);
+        })
+        .catch(() => {
+          // silent — badge just won't update this cycle
+        });
+    }
+
+    refresh();
+    const interval = setInterval(refresh, UNREAD_POLL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [checking, pathname]);
 
   function handleLogout() {
     logout();
@@ -137,17 +166,23 @@ export default function DashboardLayout({
         <nav className="flex-1 px-3 overflow-y-auto">
           {visibleNav.map((item) => {
             const active = pathname?.startsWith(item.href);
+            const showBadge = item.href === "/admin/messages" && unreadCount > 0;
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`block font-body text-sm px-3 py-2.5 rounded-sm mb-0.5 transition-colors ${
+                className={`flex items-center justify-between font-body text-sm px-3 py-2.5 rounded-sm mb-0.5 transition-colors ${
                   active
                     ? "bg-ink-raised text-cream"
                     : "text-muted hover:text-cream hover:bg-ink-raised/50"
                 }`}
               >
-                {item.label}
+                <span>{item.label}</span>
+                {showBadge && (
+                  <span className="font-body text-xs bg-gold text-ink rounded-full min-w-[1.25rem] h-5 px-1.5 flex items-center justify-center">
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                )}
               </Link>
             );
           })}
