@@ -24,7 +24,11 @@ app = FastAPI(title="Abuja Creative Showcase API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.cors_origins],
+    allow_origins=[
+        origin.strip()
+        for origin in settings.cors_origins.split(",")
+        if origin.strip()
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
