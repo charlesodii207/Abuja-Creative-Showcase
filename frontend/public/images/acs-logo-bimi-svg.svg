@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg version="1.2" baseProfile="tiny-ps" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="100%" height="100%">
+  <title>Africa Creative Showcase Logo</title>
+  <defs>
+    <style type="text/css">
+      .bg { fill: #FFFFFF; }
+      .top-left { fill: #001A4C; }
+      .top-right { fill: #E88E00; }
+      .bottom-left { fill: #0099A8; }
+      .bottom-right { fill: #C4001A; }
+      .ring-orange { fill: #E88E00; }
+    </style>
+  </defs>
+
+  <!-- Solid Background Canvas for BIMI compatibility -->
+  <rect class="bg" width="500" height="500"/>
+
+  <!-- Logo Diamond Segments -->
+  <g id="logo-segments">
+    <!-- Top-Left Segment (Dark Navy Blue) -->
+    <path class="top-left" d="M 243,51 L 52,242 L 243,242 Z"/>
+
+    <!-- Top-Right Segment (Warm Orange) -->
+    <path class="top-right" d="M 257,51 L 257,242 L 448,242 Z"/>
+
+    <!-- Bottom-Left Segment (Teal/Cyan) -->
+    <path class="bottom-left" d="M 52,258 L 243,449 L 243,258 Z"/>
+
+    <!-- Bottom-Right Segment (Crimson Red) -->
+    <path class="bottom-right" d="M 257,258 L 257,449 L 448,258 Z"/>
+
+    <!-- Center Ring & Cutout -->
+    <path class="bg" d="M 250,180 A 70,70 0 1,0 250,320 A 70,70 0 1,0 250,180 Z"/>
+    <path class="ring-orange" d="M 250,192 A 58,58 0 1,0 250,308 A 58,58 0 1,0 250,192 Z"/>
+    <path class="bg" d="M 250,210 A 40,40 0 1,0 250,290 A 40,40 0 1,0 250,210 Z"/>
+  </g>
+</svg>
