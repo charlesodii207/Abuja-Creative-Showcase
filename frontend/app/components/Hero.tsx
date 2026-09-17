@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { event } from "@/lib/content";
@@ -119,6 +120,59 @@ export default function Hero() {
   const [active, setActive] = useState(0);
   const reducedMotion = useReducedMotion();
 
+  // =====================================================
+  // PROGRESSIVE HERO IMAGE LOADING
+  //
+  // All 6 slides used to render an <img> with `src` set
+  // unconditionally, so the browser fetched all ~15MB on
+  // mount regardless of which slide was visible. Instead,
+  // only the slide that's currently on screen gets its
+  // <Image> mounted immediately. The next slide is queued
+  // in almost right away (so it's ready well before its
+  // 5200ms turn), and the remaining slides trickle in over
+  // the following couple of seconds so they never compete
+  // with the critical first paint.
+  //
+  // Manually jumping to a slide via the side navigation
+  // also marks that slide "ready" immediately, so there's
+  // never a stall waiting on the scheduled queue.
+  // =====================================================
+  const [readyIndices, setReadyIndices] = useState<Set<number>>(
+    () => new Set([0])
+  );
+
+  const markReady = (index: number) => {
+    setReadyIndices((prev) => {
+      if (prev.has(index)) return prev;
+      const next = new Set(prev);
+      next.add(index);
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    const timers: number[] = [];
+
+    SLIDES.forEach((_, index) => {
+      if (index === 0) return; // already ready on mount
+
+      // Slide 2 loads almost immediately after the critical
+      // image so it's available well ahead of the first
+      // transition. The rest trickle in afterward.
+      const delay = index === 1 ? 150 : 600 + index * 500;
+
+      timers.push(
+        window.setTimeout(() => {
+          markReady(index);
+        }, delay)
+      );
+    });
+
+    return () => {
+      timers.forEach((t) => window.clearTimeout(t));
+    };
+  }, []);
+
   useEffect(() => {
     if (reducedMotion) return;
 
@@ -144,6 +198,7 @@ export default function Hero() {
       <div className="pointer-events-none absolute inset-0">
         {SLIDES.map((slide, index) => {
           const isActive = index === active;
+          const isReady = readyIndices.has(index);
 
           return (
             <div
@@ -173,12 +228,19 @@ export default function Hero() {
                       : ""
                   }`}
                 >
-                  <img
-                    src={slide.image}
-                    alt=""
-                    aria-hidden="true"
-                    className="h-full w-full object-cover object-center"
-                  />
+                  {isReady && (
+                    <Image
+                      src={slide.image}
+                      alt=""
+                      aria-hidden="true"
+                      fill
+                      sizes="100vw"
+                      quality={82}
+                      priority={index === 0}
+                      loading={index === 0 ? undefined : "lazy"}
+                      className="object-cover object-center"
+                    />
+                  )}
                 </div>
               </div>
 
@@ -399,7 +461,10 @@ export default function Hero() {
             type="button"
             aria-label={`View slide ${index + 1}`}
             aria-current={index === active ? "true" : undefined}
-            onClick={() => setActive(index)}
+            onClick={() => {
+              markReady(index);
+              setActive(index);
+            }}
             className="group flex items-center gap-3"
           >
             <span
@@ -1037,4 +1102,3 @@ export default function Hero() {
     </section>
   );
 }
-
