@@ -3,19 +3,19 @@ import "./globals.css";
 import SiteChrome from "./components/SiteChrome";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://www.abujacreativeshowcase.com"),
+  metadataBase: new URL("https://africacreativeshowcase.com"),
 
   title: {
-    default: "Abuja Creative Showcase 2026 | Creative Events in Abuja",
-    template: "%s | Abuja Creative Showcase",
+    default: "Afriqa Creative Showcase 2026 | Creative Events in Abuja",
+    template: "%s | Afriqa Creative Showcase",
   },
 
   description:
-    "Abuja Creative Showcase 2026 is a two-day creative industry event at the Old Parade Ground, Abuja, Nigeria — connecting film, music, fashion, art, technology, talent, investors, and opportunities.",
+    "Afriqa Creative Showcase 2026 is a two-day creative industry event at the Old Parade Ground, Abuja, Nigeria — connecting film, music, fashion, art, technology, talent, investors, and opportunities.",
 
   keywords: [
-    "Abuja Creative Showcase",
-    "Abuja Creative Showcase 2026",
+    "Afriqa Creative Showcase",
+    "Afriqa Creative Showcase 2026",
     "creative events in Abuja",
     "Abuja creative events",
     "creative industry events Abuja",
@@ -49,9 +49,9 @@ export const metadata: Metadata = {
 
   openGraph: {
     type: "website",
-    url: "https://www.abujacreativeshowcase.com/",
-    siteName: "Abuja Creative Showcase",
-    title: "Abuja Creative Showcase 2026 | Creative Events in Abuja",
+    url: "https://africacreativeshowcase.com/",
+    siteName: "Afriqa Creative Showcase",
+    title: "Afriqa Creative Showcase 2026 | Creative Events in Abuja",
     description:
       "Two days of film, music, fashion, art, technology, networking, pitching, investment, and creative opportunities — live at the Old Parade Ground, Abuja, Nigeria.",
     locale: "en_NG",
@@ -60,14 +60,14 @@ export const metadata: Metadata = {
         url: "/images/acspreview.jpeg",
         width: 1200,
         height: 630,
-        alt: "Abuja Creative Showcase 2026",
+        alt: "Afriqa Creative Showcase 2026",
       },
     ],
   },
 
   twitter: {
     card: "summary_large_image",
-    title: "Abuja Creative Showcase 2026",
+    title: "Afriqa Creative Showcase 2026",
     description:
       "Where Creativity Meets Opportunity. Film × Music × Fashion × Tech. Old Parade Ground, Abuja, Nigeria.",
     images: ["/images/acspreview.jpeg"],

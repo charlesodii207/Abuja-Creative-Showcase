@@ -108,8 +108,12 @@ export default function DashboardLayout({
             <line x1="3" y1="18" x2="21" y2="18" />
           </svg>
         </button>
-        <p className="font-display text-sm text-cream">Abuja Creative Showcase</p>
-        <div className="w-9" /> {/* spacer to balance the hamburger button */}
+
+        <p className="font-display text-sm text-cream">
+          Afriqa Creative Showcase
+        </p>
+
+        <div className="w-9" />
       </div>
 
       {/* Backdrop — only visible when mobile drawer is open */}
@@ -137,12 +141,14 @@ export default function DashboardLayout({
               <span />
               <span />
             </div>
+
             <p className="font-display text-lg text-cream leading-tight">
-              Abuja Creative
+              Afriqa Creative
               <br />
               Showcase
             </p>
           </div>
+
           <button
             onClick={() => setMobileNavOpen(false)}
             aria-label="Close menu"
@@ -167,6 +173,7 @@ export default function DashboardLayout({
           {visibleNav.map((item) => {
             const active = pathname?.startsWith(item.href);
             const showBadge = item.href === "/admin/messages" && unreadCount > 0;
+
             return (
               <Link
                 key={item.href}
@@ -178,6 +185,7 @@ export default function DashboardLayout({
                 }`}
               >
                 <span>{item.label}</span>
+
                 {showBadge && (
                   <span className="font-body text-xs bg-gold text-ink rounded-full min-w-[1.25rem] h-5 px-1.5 flex items-center justify-center">
                     {unreadCount > 99 ? "99+" : unreadCount}
@@ -190,9 +198,11 @@ export default function DashboardLayout({
 
         <div className="px-5 py-5 border-t border-ink-raised">
           <p className="font-body text-sm text-cream">{profile?.full_name}</p>
+
           <p className="font-body text-xs text-muted capitalize mb-3">
             {profile?.role.replace("_", " ")}
           </p>
+
           <button
             onClick={handleLogout}
             className="font-body text-xs text-muted-on-paper hover:text-cream border border-ink-raised rounded-sm px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-gold"

@@ -14,6 +14,7 @@ interface TimeLeft {
 
 function getTimeLeft(): TimeLeft {
   const diff = Math.max(EVENT_DATE - Date.now(), 0);
+
   return {
     days: Math.floor(diff / (1000 * 60 * 60 * 24)),
     hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
@@ -28,6 +29,7 @@ function Unit({ value, label }: { value: number; label: string }) {
       <span className="font-display text-4xl text-teal sm:text-6xl">
         {String(value).padStart(2, "0")}
       </span>
+
       <span className="mt-2 text-xs uppercase tracking-widest text-muted sm:text-sm">
         {label}
       </span>
@@ -41,15 +43,20 @@ export default function CountdownClock() {
 
   useEffect(() => {
     setTimeLeft(getTimeLeft());
-    const interval = setInterval(() => setTimeLeft(getTimeLeft()), 1000);
+
+    const interval = setInterval(
+      () => setTimeLeft(getTimeLeft()),
+      1000
+    );
+
     return () => clearInterval(interval);
   }, []);
 
   async function handleShare() {
     const shareData = {
-      title: "Abuja Creative Showcase 2026",
+      title: "Afriqa Creative Showcase 2026",
       text: "Counting down to ACS 2026 — Dec 4-5 at the Old Parade Ground, Abuja. Are you going?",
-      url: "https://www.abujacreativeshowcase.com/countdown",
+      url: "https://africacreativeshowcase.com/countdown",
     };
 
     if (navigator.share) {
@@ -68,15 +75,19 @@ export default function CountdownClock() {
   return (
     <main className="mx-auto max-w-4xl px-6 py-20 text-center md:py-28">
       <div className="tricolor-rule mx-auto mb-6 w-fit">
-        <span /><span /><span />
+        <span />
+        <span />
+        <span />
       </div>
 
       <p className="text-sm uppercase tracking-widest text-gold">
         December 4–5, 2026 · Old Parade Ground, Abuja
       </p>
+
       <h1 className="mt-3 font-display text-3xl text-cream sm:text-5xl">
         Counting Down to ACS
       </h1>
+
       <p className="mt-4 text-muted">
         Where Creativity Meets Opportunity.
       </p>
@@ -90,7 +101,9 @@ export default function CountdownClock() {
             <Unit value={timeLeft.seconds} label="Seconds" />
           </>
         ) : (
-          <div className="col-span-4 py-8 text-muted">Loading...</div>
+          <div className="col-span-4 py-8 text-muted">
+            Loading...
+          </div>
         )}
       </div>
 
@@ -101,6 +114,7 @@ export default function CountdownClock() {
         >
           {copied ? "Link Copied!" : "Share the Countdown"}
         </button>
+
         <Link
           href="/register"
           className="rounded-full bg-gold px-7 py-3.5 text-sm font-medium text-ink transition-transform hover:scale-105"
