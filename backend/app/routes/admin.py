@@ -230,7 +230,7 @@ def _approved_email_html(r: models.Registrant) -> str:
 def _rejected_email_html(r: models.Registrant) -> str:
     return f"""
         <p>Hi {r.full_name},</p>
-        <p>Thank you for applying to the Abuja Creative Showcase (reference <strong>{r.reference_number}</strong>).</p>
+        <p>Thank you for applying to the Africa Creative Showcase (reference <strong>{r.reference_number}</strong>).</p>
         <p>After careful review, we're unable to offer you a spot this time. We truly appreciate your interest
         and encourage you to apply again in future editions.</p>
     """
@@ -239,7 +239,7 @@ def _rejected_email_html(r: models.Registrant) -> str:
 def _pending_email_html(r: models.Registrant) -> str:
     return f"""
         <p>Hi {r.full_name},</p>
-        <p>Thank you for submitting your application to the Abuja Creative Showcase.</p>
+        <p>Thank you for submitting your application to the Africa Creative Showcase.</p>
         <p>Your application has been successfully received and is currently under review.</p>
         <p>Application ID: <strong>{r.reference_number}</strong></p>
         <p>We'll contact you by email once there is an update.</p>
@@ -264,23 +264,23 @@ def _awaiting_payment_email_html(r: models.Registrant) -> str:
 
 EMAIL_TEMPLATES_BY_STATUS = {
     models.RegistrantStatus.approved: {
-        "subject": "Your Abuja Creative Showcase Application — Approved!",
+        "subject": "Your Africa Creative Showcase Application — Approved!",
         "build_html": _approved_email_html,
     },
     models.RegistrantStatus.rejected: {
-        "subject": "Your Abuja Creative Showcase Application",
+        "subject": "Your Africa Creative Showcase Application",
         "build_html": _rejected_email_html,
     },
     models.RegistrantStatus.pending: {
-        "subject": "Your Abuja Creative Showcase Application Has Been Received",
+        "subject": "Your Africa Creative Showcase Application Has Been Received",
         "build_html": _pending_email_html,
     },
     models.RegistrantStatus.confirmed: {
-        "subject": "Payment Confirmed — Abuja Creative Showcase",
+        "subject": "Payment Confirmed — Africa Creative Showcase",
         "build_html": _confirmed_email_html,
     },
     models.RegistrantStatus.awaiting_payment: {
-        "subject": "Complete Your Registration — Abuja Creative Showcase",
+        "subject": "Complete Your Registration — Africa Creative Showcase",
         "build_html": _awaiting_payment_email_html,
     },
 }
@@ -302,7 +302,7 @@ def resend_email(
         )
 
     send_email(
-        to=registrant.email,
+        to=[registrant.email],
         subject=template["subject"],
         html=template["build_html"](registrant),
     )
@@ -337,8 +337,8 @@ def approve_registrant(
     db.commit()
 
     send_email(
-        to=registrant.email,
-        subject="Your Abuja Creative Showcase Application — Approved!",
+        to=[registrant.email],
+        subject="Your Africa Creative Showcase Application — Approved!",
         html=_approved_email_html(registrant),
     )
 
@@ -367,8 +367,8 @@ def reject_registrant(
     db.commit()
 
     send_email(
-        to=registrant.email,
-        subject="Your Abuja Creative Showcase Application",
+        to=[registrant.email],
+        subject="Your Africa Creative Showcase Application",
         html=_rejected_email_html(registrant),
     )
 

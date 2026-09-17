@@ -24,15 +24,11 @@ def send_message_reply(
     html: str,
 ) -> bool:
     """
-    Send a reply from the ACS contact address.
-
-    This is intentionally separate from send_email() so existing
-    registration, approval, payment, and notification emails continue
-    using their current configuration.
+    Send a reply from the Africa Creative Showcase contact address.
     """
     try:
         resend.Emails.send({
-            "from": "Abuja Creative Showcase <info@abujacreativeshowcase.com>",
+            "from": settings.reply_email,
             "to": [to],
             "subject": subject,
             "html": html,

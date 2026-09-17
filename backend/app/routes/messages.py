@@ -164,7 +164,6 @@ def list_message_threads(
             detail="Status must be 'open' or 'closed'.",
         )
 
-    # Build the query first.
     query = (
         db.query(models.ContactThread)
         .options(
@@ -172,20 +171,11 @@ def list_message_threads(
         )
     )
 
-    # IMPORTANT:
-    # Apply filters BEFORE limit/offset.
-    #
-    # SQLAlchemy does not allow:
-    # query.limit(...).filter(...)
-    #
-    # It requires:
-    # query.filter(...).limit(...)
     if status:
         query = query.filter(
             models.ContactThread.status == status
         )
 
-    # Apply ordering and limit after filtering.
     query = (
         query
         .order_by(models.ContactThread.updated_at.desc())
@@ -366,9 +356,9 @@ def reply_to_message_thread(
     Send an email reply to the visitor and record the reply
     in the conversation thread.
 
-    Replies are always sent from:
+    Replies are sent from:
 
-    info@abujacreativeshowcase.com
+    info@africacreativeshowcase.com
     """
 
     thread = _get_thread(db, thread_id)
@@ -402,7 +392,7 @@ def reply_to_message_thread(
 
         <p>
             Best regards,<br>
-            Abuja Creative Showcase
+            Africa Creative Showcase
         </p>
     </div>
     """
@@ -423,7 +413,7 @@ def reply_to_message_thread(
         thread_id=thread.id,
         sender_type="admin",
         sender_name=current_admin.full_name,
-        sender_email="info@abujacreativeshowcase.com",
+        sender_email="info@africacreativeshowcase.com",
         subject=reply_subject,
         body=body,
         admin_id=current_admin.id,
@@ -432,7 +422,7 @@ def reply_to_message_thread(
 
     db.add(message)
 
-    # A reply means ACS has responded to this conversation.
+    # A reply means Africa Creative Showcase has responded.
     thread.is_replied = True
 
     # A reply also makes the conversation active.
@@ -478,7 +468,8 @@ def close_message_thread(
     """
     Close a conversation thread.
 
-    Closing a thread does not change whether ACS has replied.
+    Closing a thread does not change whether Africa Creative Showcase
+    has replied.
     """
 
     thread = _get_thread(db, thread_id)
@@ -525,7 +516,8 @@ def reopen_message_thread(
     """
     Reopen a previously closed conversation.
 
-    Reopening does not change whether ACS has replied.
+    Reopening does not change whether Africa Creative Showcase
+    has replied.
     """
 
     thread = _get_thread(db, thread_id)
@@ -552,4 +544,3 @@ def reopen_message_thread(
         status="open",
         message="Conversation reopened.",
     )
-    

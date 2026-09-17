@@ -6,11 +6,28 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:5173"
     environment: str = "development"
     resend_api_key: str
-    email_from: str = "Abuja Creative Showcase <noreply@abujacreativeshowcase.com>"
-    sponsor_inquiry_email: str = "info@abujacreativeshowcase.com"
+
+    # Automated/system emails
+    email_from: str = (
+        "Africa Creative Showcase <noreply@africacreativeshowcase.com>"
+    )
+
+    # Contact/sponsor inquiry notifications
+    sponsor_inquiry_email: str = "info@africacreativeshowcase.com"
+
+    # Admin notification email
+    admin_email: str = "admin@africacreativeshowcase.com"
+
+    # Emails sent as replies from the admin dashboard
+    reply_email: str = (
+        "Africa Creative Showcase <info@africacreativeshowcase.com>"
+    )
+
     paystack_secret_key: str
     paystack_public_key: str
-    frontend_url: str = "http://localhost:5173"
+
+    frontend_url: str = "https://africacreativeshowcase.com"
+
     jwt_secret: str
 
     class Config:

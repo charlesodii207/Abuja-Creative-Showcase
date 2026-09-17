@@ -11,7 +11,10 @@ router = APIRouter(prefix="/upgrade", tags=["upgrade"])
 
 
 @router.post("", response_model=schemas.UpgradeResponse)
-def upgrade_ticket(payload: schemas.UpgradeRequest, db: Session = Depends(get_db)):
+def upgrade_ticket(
+    payload: schemas.UpgradeRequest,
+    db: Session = Depends(get_db),
+):
     registrant = db.query(models.Registrant).filter(
         models.Registrant.reference_number == payload.reference_number,
         models.Registrant.category == models.RegistrantCategory.attendee,
@@ -25,7 +28,10 @@ def upgrade_ticket(payload: schemas.UpgradeRequest, db: Session = Depends(get_db
 
     attendee_detail = registrant.attendee_detail
     if not attendee_detail:
-        raise HTTPException(status_code=404, detail="No ticket details found for this registrant.")
+        raise HTTPException(
+            status_code=404,
+            detail="No ticket details found for this registrant.",
+        )
 
     if not attendee_detail.is_paid:
         raise HTTPException(
@@ -41,7 +47,9 @@ def upgrade_ticket(payload: schemas.UpgradeRequest, db: Session = Depends(get_db
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    upgrade_reference = utils.generate_upgrade_reference(registrant.reference_number)
+    upgrade_reference = utils.generate_upgrade_reference(
+        registrant.reference_number
+    )
     callback_url = f"{settings.frontend_url}/register/payment-callback"
 
     try:
@@ -52,7 +60,10 @@ def upgrade_ticket(payload: schemas.UpgradeRequest, db: Session = Depends(get_db
             callback_url=callback_url,
         )
     except PaystackError as e:
-        raise HTTPException(status_code=502, detail=f"Could not start upgrade payment: {e}")
+        raise HTTPException(
+            status_code=502,
+            detail=f"Could not start upgrade payment: {e}",
+        )
 
     # Nothing about the ticket changes yet — only once payment is verified.
     attendee_detail.pending_upgrade_ticket_type = payload.ticket_type
@@ -60,9 +71,10 @@ def upgrade_ticket(payload: schemas.UpgradeRequest, db: Session = Depends(get_db
     db.commit()
 
     diff_amount_naira = diff_amount_kobo // 100
+
     send_email(
-        to=registrant.email,
-        subject="Complete Your Abuja Creative Showcase Ticket Upgrade",
+        to=[registrant.email],
+        subject="Complete Your Africa Creative Showcase Ticket Upgrade",
         html=f"""
         <p>Hi {registrant.full_name},</p>
         <p>You're upgrading your ticket (reference <strong>{registrant.reference_number}</strong>)
@@ -77,7 +89,10 @@ def upgrade_ticket(payload: schemas.UpgradeRequest, db: Session = Depends(get_db
     return schemas.UpgradeResponse(
         reference_number=registrant.reference_number,
         ticket_type=attendee_detail.ticket_type.value,  # unchanged until payment confirms
-        message=f"Complete payment of ₦{diff_amount_naira:,} to finish upgrading to {payload.ticket_type.value}.",
+        message=(
+            f"Complete payment of ₦{diff_amount_naira:,} to finish "
+            f"upgrading to {payload.ticket_type.value}."
+        ),
         amount_kobo=diff_amount_kobo,
         paystack_authorization_url=transaction["authorization_url"],
     )

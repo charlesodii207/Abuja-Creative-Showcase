@@ -9,7 +9,10 @@ router = APIRouter(prefix="/register/press", tags=["press"])
 
 
 @router.post("", response_model=schemas.RegistrationResponse)
-def register_press(payload: schemas.PressRegistrationRequest, db: Session = Depends(get_db)):
+def register_press(
+    payload: schemas.PressRegistrationRequest,
+    db: Session = Depends(get_db),
+):
     reference_number = utils.generate_reference_number(db)
 
     registrant = models.Registrant(
@@ -33,11 +36,11 @@ def register_press(payload: schemas.PressRegistrationRequest, db: Session = Depe
     db.commit()
 
     send_email(
-        to=payload.email,
-        subject="Your Abuja Creative Showcase Press Accreditation",
+        to=[payload.email],
+        subject="Your Africa Creative Showcase Press Accreditation",
         html=f"""
         <p>Hi {payload.full_name},</p>
-        <p>Thank you for applying for press accreditation at the Abuja Creative Showcase.</p>
+        <p>Thank you for applying for press accreditation at the Africa Creative Showcase.</p>
         <p>Your reference number is: <strong>{reference_number}</strong></p>
         <p>We've received your application. A member of our team will reach out to you
         soon to finalize the details.</p>

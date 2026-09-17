@@ -11,7 +11,10 @@ router = APIRouter(prefix="/register/attendee", tags=["attendee"])
 
 
 @router.post("", response_model=schemas.RegistrationResponse)
-def register_attendee(payload: schemas.AttendeeRegistrationRequest, db: Session = Depends(get_db)):
+def register_attendee(
+    payload: schemas.AttendeeRegistrationRequest,
+    db: Session = Depends(get_db),
+):
     reference_number = utils.generate_reference_number(db)
     amount_kobo = utils.get_attendee_amount_kobo(payload.ticket_type)
 
@@ -50,12 +53,13 @@ def register_attendee(payload: schemas.AttendeeRegistrationRequest, db: Session 
     db.commit()
 
     amount_naira = amount_kobo // 100
+
     send_email(
-        to=payload.email,
-        subject="Complete Your Abuja Creative Showcase Registration",
+        to=[payload.email],
+        subject="Complete Your Africa Creative Showcase Registration",
         html=f"""
         <p>Hi {payload.full_name},</p>
-        <p>Thanks for registering for the Abuja Creative Showcase!</p>
+        <p>Thanks for registering for the Africa Creative Showcase!</p>
         <p>Your reference number is: <strong>{reference_number}</strong></p>
         <p>To confirm your {payload.ticket_type.value.title()} ticket, complete payment of
         ₦{amount_naira:,} using the link below:</p>

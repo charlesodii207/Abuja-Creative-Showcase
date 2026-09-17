@@ -44,7 +44,7 @@ def issue_ticket_and_email(db: Session, registrant: models.Registrant) -> models
 
     html = f"""
     <p>Hi {registrant.full_name},</p>
-    <p>Your payment has been confirmed — here's your ticket for the Abuja Creative Showcase.</p>
+    <p>Your payment has been confirmed — here's your ticket for the Africa Creative Showcase.</p>
     <p><strong>Ticket Number:</strong> {ticket_number}</p>
     <p><strong>Category:</strong> {tag}</p>
     <p>Your QR code ticket is attached to this email — show it at the entrance.
@@ -56,7 +56,7 @@ def issue_ticket_and_email(db: Session, registrant: models.Registrant) -> models
         resend.Emails.send({
             "from": settings.email_from,
             "to": [registrant.email],
-            "subject": "Your Abuja Creative Showcase Ticket",
+            "subject": "Your Africa Creative Showcase Ticket",
             "html": html,
             "attachments": [
                 {

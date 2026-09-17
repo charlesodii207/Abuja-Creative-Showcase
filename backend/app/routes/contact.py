@@ -55,13 +55,13 @@ def submit_contact_inquiry(
     db.commit()
 
     # ------------------------------------------------------------------
-    # Keep the existing notification email unchanged
+    # Send notification to both Africa Creative Showcase inboxes
     # ------------------------------------------------------------------
 
     send_email(
         to=[
             settings.sponsor_inquiry_email,
-            "admin@abujacreativeshowcase.com",
+            settings.admin_email,
         ],
         subject=f"New Contact Form Question — {payload.full_name}",
         html=f"""
