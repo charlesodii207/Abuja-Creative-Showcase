@@ -4,66 +4,130 @@ from app.config import settings
 
 resend.api_key = settings.resend_api_key
 
-
 RED = "#B80319"
 GOLD = "#E59200"
 TEAL = "#00A5A8"
 INK = "#14100E"
 CREAM = "#F5EFE6"
+MUTED = "#B8ADA0"
 
 
 def _branded_html(html: str) -> str:
     return f"""
-    <div style="margin:0;padding:30px 15px;background:{INK};font-family:Arial,Helvetica,sans-serif;color:{CREAM};">
-        <div style="max-width:640px;margin:0 auto;background:{INK};">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0"
+        style="margin:0;padding:0;background-color:{INK};">
+        <tr>
+            <td align="center" style="padding:30px 15px;background-color:{INK};">
 
-            <div style="text-align:center;padding:10px 20px 25px;">
-                <img
-                    src="https://africacreativeshowcase.com/images/acs-logo.png"
-                    alt="Africa Creative Showcase"
-                    width="72"
-                    style="display:block;width:72px;height:auto;margin:0 auto 15px;"
-                >
+                <table width="640" cellpadding="0" cellspacing="0" border="0"
+                    style="width:100%;max-width:640px;background-color:{INK};">
 
-                <div style="font-size:20px;font-weight:600;color:{CREAM};margin-bottom:15px;">
-                    Africa Creative Showcase
-                </div>
+                    <tr>
+                        <td align="center" style="padding:10px 20px 25px;">
 
-                <div style="display:flex;width:96px;height:4px;margin:0 auto;">
-                    <div style="width:33.33%;background:{RED};"></div>
-                    <div style="width:33.33%;background:{GOLD};"></div>
-                    <div style="width:33.33%;background:{TEAL};"></div>
-                </div>
-            </div>
+                            <img
+                                src="https://africacreativeshowcase.com/images/acs-logo.png"
+                                alt="Africa Creative Showcase"
+                                width="72"
+                                style="display:block;width:72px;height:auto;margin:0 auto 15px;"
+                            >
 
-            <div style="padding:10px 25px 30px;color:{CREAM};font-size:15px;line-height:1.7;">
-                {html}
-            </div>
+                            <div style="
+                                font-family:Arial,Helvetica,sans-serif;
+                                font-size:20px;
+                                font-weight:600;
+                                color:{CREAM};
+                                margin-bottom:15px;
+                            ">
+                                Africa Creative Showcase
+                            </div>
 
-            <div style="border-top:1px solid #332c28;padding:20px 25px;text-align:center;">
-                <div style="color:#B8ADA0;font-size:12px;">
-                    Africa Creative Showcase
-                </div>
-                <div style="color:#B8ADA0;font-size:11px;margin-top:5px;">
-                    africacreativeshowcase.com
-                </div>
-            </div>
+                            <table cellpadding="0" cellspacing="0" border="0"
+                                width="96" style="width:96px;">
+                                <tr>
+                                    <td width="32" height="4"
+                                        style="background-color:{RED};font-size:0;">
+                                        &nbsp;
+                                    </td>
+                                    <td width="32" height="4"
+                                        style="background-color:{GOLD};font-size:0;">
+                                        &nbsp;
+                                    </td>
+                                    <td width="32" height="4"
+                                        style="background-color:{TEAL};font-size:0;">
+                                        &nbsp;
+                                    </td>
+                                </tr>
+                            </table>
 
-        </div>
-    </div>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="
+                            padding:10px 25px 30px;
+                            background-color:{INK};
+                            color:{CREAM};
+                            font-family:Arial,Helvetica,sans-serif;
+                            font-size:15px;
+                            line-height:1.7;
+                        ">
+                            {html}
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td align="center" style="
+                            border-top:1px solid #332C28;
+                            padding:20px 25px;
+                            background-color:{INK};
+                            font-family:Arial,Helvetica,sans-serif;
+                        ">
+                            <div style="
+                                color:{MUTED};
+                                font-size:12px;
+                            ">
+                                Africa Creative Showcase
+                            </div>
+
+                            <div style="
+                                color:{MUTED};
+                                font-size:11px;
+                                margin-top:5px;
+                            ">
+                                africacreativeshowcase.com
+                            </div>
+                        </td>
+                    </tr>
+
+                </table>
+
+            </td>
+        </tr>
+    </table>
     """
 
 
-def send_email(to: list[str], subject: str, html: str) -> None:
+def send_email(
+    to: list[str],
+    subject: str,
+    html: str,
+    attachments: list[dict] | None = None,
+) -> None:
     try:
-        resend.Emails.send({
+        payload = {
             "from": settings.email_from,
             "to": to,
             "subject": subject,
             "html": _branded_html(html),
-        })
+        }
+
+        if attachments:
+            payload["attachments"] = attachments
+
+        resend.Emails.send(payload)
+
     except Exception as e:
-        # Don't let a failed email crash the registration/approval flow.
         print(f"Failed to send email to {to}: {e}")
 
 
