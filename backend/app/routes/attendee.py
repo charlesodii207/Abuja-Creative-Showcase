@@ -56,10 +56,10 @@ def register_attendee(
 
     send_email(
         to=[payload.email],
-        subject="Complete Your Africa Creative Showcase Registration",
+        subject="Complete Your Afriqa Creative Showcase Registration",
         html=f"""
         <p>Hi {payload.full_name},</p>
-        <p>Thanks for registering for the Africa Creative Showcase!</p>
+        <p>Thanks for registering for the Afriqa Creative Showcase!</p>
         <p>Your reference number is: <strong>{reference_number}</strong></p>
         <p>To confirm your {payload.ticket_type.value.title()} ticket, complete payment of
         ₦{amount_naira:,} using the link below:</p>

@@ -21,7 +21,7 @@ def _branded_html(html: str) -> str:
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="color-scheme" content="dark">
 <meta name="supported-color-schemes" content="dark">
-<title>Africa Creative Showcase</title>
+<title>Afriqa Creative Showcase</title>
 <style>
     :root {{
         color-scheme: dark;
@@ -80,7 +80,7 @@ def _branded_html(html: str) -> str:
 
                             <img
                                 src="https://africacreativeshowcase.com/images/acs-logo.png"
-                                alt="Africa Creative Showcase"
+                                alt="Afriqa Creative Showcase"
                                 width="72"
                                 style="display:block;width:72px;height:auto;margin:0 auto 15px;"
                             >
@@ -92,7 +92,7 @@ def _branded_html(html: str) -> str:
                                 color:{CREAM};
                                 margin-bottom:15px;
                             ">
-                                Africa Creative Showcase
+                                Afriqa Creative Showcase
                             </div>
 
                             <table cellpadding="0" cellspacing="0" border="0"
@@ -140,7 +140,7 @@ def _branded_html(html: str) -> str:
                                 color:{MUTED};
                                 font-size:12px;
                             ">
-                                Africa Creative Showcase
+                                Afriqa Creative Showcase
                             </div>
 
                             <div class="email-muted" style="
@@ -192,7 +192,7 @@ def send_message_reply(
     html: str,
 ) -> bool:
     """
-    Send a reply from the Africa Creative Showcase contact address.
+    Send a reply from the Afriqa Creative Showcase contact address.
     """
     try:
         resend.Emails.send({

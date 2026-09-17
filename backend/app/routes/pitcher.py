@@ -62,10 +62,10 @@ def register_pitcher(
 
     send_email(
         to=[payload.email],
-        subject="Complete Your Africa Creative Showcase Pitching Registration",
+        subject="Complete Your Afriqa Creative Showcase Pitching Registration",
         html=f"""
         <p>Hi {payload.full_name},</p>
-        <p>Thanks for registering to pitch at the Africa Creative Showcase!</p>
+        <p>Thanks for registering to pitch at the Afriqa Creative Showcase!</p>
         <p>Your reference number is: <strong>{reference_number}</strong></p>
         <p>To confirm your spot in the Deal Room, complete payment of ₦{amount_naira:,} using the link below:</p>
         <p><a href="{transaction['authorization_url']}">Complete Payment</a></p>

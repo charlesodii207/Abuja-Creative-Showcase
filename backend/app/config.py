@@ -9,7 +9,7 @@ class Settings(BaseSettings):
 
     # Automated/system emails
     email_from: str = (
-        "Africa Creative Showcase <noreply@africacreativeshowcase.com>"
+        "Afriqa Creative Showcase <noreply@africacreativeshowcase.com>"
     )
 
     # Contact/sponsor inquiry notifications
@@ -20,7 +20,7 @@ class Settings(BaseSettings):
 
     # Emails sent as replies from the admin dashboard
     reply_email: str = (
-        "Africa Creative Showcase <info@africacreativeshowcase.com>"
+        "Afriqa Creative Showcase <info@africacreativeshowcase.com>"
     )
 
     paystack_secret_key: str

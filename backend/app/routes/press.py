@@ -37,10 +37,10 @@ def register_press(
 
     send_email(
         to=[payload.email],
-        subject="Your Africa Creative Showcase Press Accreditation",
+        subject="Your Afriqa Creative Showcase Press Accreditation",
         html=f"""
         <p>Hi {payload.full_name},</p>
-        <p>Thank you for applying for press accreditation at the Africa Creative Showcase.</p>
+        <p>Thank you for applying for press accreditation at the Afriqa Creative Showcase.</p>
         <p>Your reference number is: <strong>{reference_number}</strong></p>
         <p>We've received your application. A member of our team will reach out to you
         soon to finalize the details.</p>

@@ -19,7 +19,7 @@ from app.routes.tickets import router as tickets_router
 from app.routes.attendee_status import router as attendee_status_router
 
 
-app = FastAPI(title="Africa Creative Showcase API")
+app = FastAPI(title="Afriqa Creative Showcase API")
 
 
 app.add_middleware(

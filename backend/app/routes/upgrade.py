@@ -74,7 +74,7 @@ def upgrade_ticket(
 
     send_email(
         to=[registrant.email],
-        subject="Complete Your Africa Creative Showcase Ticket Upgrade",
+        subject="Complete Your Afriqa Creative Showcase Ticket Upgrade",
         html=f"""
         <p>Hi {registrant.full_name},</p>
         <p>You're upgrading your ticket (reference <strong>{registrant.reference_number}</strong>)

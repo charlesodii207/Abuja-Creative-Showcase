@@ -48,7 +48,7 @@ def issue_ticket_and_email(db: Session, registrant: models.Registrant) -> models
 
     <p>
         Your payment has been confirmed — here's your ticket for the
-        Africa Creative Showcase.
+        Afriqa Creative Showcase.
     </p>
 
     <p><strong>Ticket Number:</strong> {ticket_number}</p>
@@ -67,7 +67,7 @@ def issue_ticket_and_email(db: Session, registrant: models.Registrant) -> models
     try:
         send_email(
             to=[registrant.email],
-            subject="Your Africa Creative Showcase Ticket",
+            subject="Your Afriqa Creative Showcase Ticket",
             html=html,
             attachments=[
                 {

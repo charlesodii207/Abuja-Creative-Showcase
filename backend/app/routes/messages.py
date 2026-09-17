@@ -392,7 +392,7 @@ def reply_to_message_thread(
 
         <p>
             Best regards,<br>
-            Africa Creative Showcase
+            Afriqa Creative Showcase
         </p>
     </div>
     """
@@ -422,7 +422,7 @@ def reply_to_message_thread(
 
     db.add(message)
 
-    # A reply means Africa Creative Showcase has responded.
+    # A reply means Afriqa Creative Showcase has responded.
     thread.is_replied = True
 
     # A reply also makes the conversation active.
@@ -468,7 +468,7 @@ def close_message_thread(
     """
     Close a conversation thread.
 
-    Closing a thread does not change whether Africa Creative Showcase
+    Closing a thread does not change whether Afriqa Creative Showcase
     has replied.
     """
 
@@ -516,7 +516,7 @@ def reopen_message_thread(
     """
     Reopen a previously closed conversation.
 
-    Reopening does not change whether Africa Creative Showcase
+    Reopening does not change whether Afriqa Creative Showcase
     has replied.
     """
 

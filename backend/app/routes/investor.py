@@ -38,10 +38,10 @@ def register_investor(
 
     send_email(
         to=[payload.email],
-        subject="Your Africa Creative Showcase Investor Application",
+        subject="Your Afriqa Creative Showcase Investor Application",
         html=f"""
         <p>Hi {payload.full_name},</p>
-        <p>Thank you for applying to be an Investor at the Africa Creative Showcase.</p>
+        <p>Thank you for applying to be an Investor at the Afriqa Creative Showcase.</p>
         <p>Your reference number is: <strong>{reference_number}</strong></p>
         <p>We've received your application and are grateful for your interest.
         A member of our team will reach out to you soon to finalize the details.</p>

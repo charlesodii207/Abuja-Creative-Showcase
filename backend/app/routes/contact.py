@@ -55,7 +55,7 @@ def submit_contact_inquiry(
     db.commit()
 
     # ------------------------------------------------------------------
-    # Send notification to both Africa Creative Showcase inboxes
+    # Send notification to both Afriqa Creative Showcase inboxes
     # ------------------------------------------------------------------
 
     send_email(
