@@ -5,25 +5,51 @@ import { useEffect, useState } from "react";
 import { event } from "@/lib/content";
 
 const SLIDES = [
-  { text: "Two Days. One Ecosystem.", color: "text-red", hex: "#B80319" },
   {
+    image: "/images/hero-01.png",
+    text: "Two Days. One Ecosystem.",
+    color: "text-red",
+    hex: "#B80319",
+    transition: "zoom",
+  },
+  {
+    image: "/images/hero-02.png",
     text: "Film × Music × Fashion × Tech",
     color: "text-gold",
     hex: "#E59200",
+    transition: "rise",
   },
   {
+    image: "/images/hero-03.png",
     text: "Creativity. Connection. Capital.",
     color: "text-teal",
     hex: "#00A5A8",
+    transition: "wipe",
   },
-];
+  {
+    image: "/images/hero-04.png",
+    text: "Where African Creativity Meets Opportunity.",
+    color: "text-red",
+    hex: "#B80319",
+    transition: "scale",
+  },
+  {
+    image: "/images/hero-05.png",
+    text: "Abuja. Africa. The Future.",
+    color: "text-gold",
+    hex: "#E59200",
+    transition: "diagonal",
+  },
+  {
+    image: "/images/hero-06.png",
+    text: "Ideas. Talent. Opportunity.",
+    color: "text-teal",
+    hex: "#00A5A8",
+    transition: "pan",
+  },
+] as const;
 
-const SLIDE_DURATION = 3200;
-
-// Hero image
-// File location:
-// /public/images/hero-showcase.jpg
-const HERO_IMAGE = "/images/hero-showcase.jpg";
+const SLIDE_DURATION = 5200;
 
 function useReducedMotion() {
   const [reduced, setReduced] = useState(false);
@@ -46,10 +72,12 @@ function ProgressSegment({
   colorClass,
   state,
   duration,
+  resetKey,
 }: {
   colorClass: string;
   state: "done" | "active" | "pending";
   duration: number;
+  resetKey: string;
 }) {
   const [filled, setFilled] = useState(state === "done");
 
@@ -58,7 +86,9 @@ function ProgressSegment({
       setFilled(false);
 
       const raf1 = requestAnimationFrame(() => {
-        const raf2 = requestAnimationFrame(() => setFilled(true));
+        const raf2 = requestAnimationFrame(() => {
+          setFilled(true);
+        });
 
         return () => cancelAnimationFrame(raf2);
       });
@@ -67,10 +97,10 @@ function ProgressSegment({
     }
 
     setFilled(state === "done");
-  }, [state]);
+  }, [state, resetKey]);
 
   return (
-    <div className="h-[3px] flex-1 overflow-hidden rounded-full bg-white/15">
+    <div className="h-[3px] flex-1 overflow-hidden rounded-full bg-white/20">
       <div
         className={`h-full rounded-full ${colorClass} motion-reduce:transition-none`}
         style={{
@@ -78,7 +108,7 @@ function ProgressSegment({
           transitionProperty: "width",
           transitionTimingFunction: "linear",
           transitionDuration:
-            state === "active" ? `${duration}ms` : "0ms",
+            state === "active" ? `${duration}ms` : "300ms",
         }}
       />
     </div>
@@ -99,43 +129,86 @@ export default function Hero() {
     return () => clearInterval(interval);
   }, [reducedMotion]);
 
-  const activeHex = SLIDES[active].hex;
+  const activeSlide = SLIDES[active];
+  const activeHex = activeSlide.hex;
+
+  const activeBar = active % 3;
+  const cycle = Math.floor(active / 3);
 
   return (
-    <section className="relative h-[calc(100vh-104px)] min-h-[640px] overflow-hidden border-b border-white/10">
+    <section className="relative min-h-[calc(100vh-104px)] overflow-hidden border-b border-white/10 bg-[#111827]">
       {/* =====================================================
-          BACKGROUND ATMOSPHERE
+          CINEMATIC SLIDESHOW BACKGROUND
       ====================================================== */}
 
       <div className="pointer-events-none absolute inset-0">
-        {/* Very subtle ambient lighting */}
-        <div className="absolute -right-40 -top-40 h-[650px] w-[650px] rounded-full bg-red/5 blur-[150px]" />
+        {SLIDES.map((slide, index) => {
+          const isActive = index === active;
 
-        <div className="absolute -bottom-40 right-0 h-[500px] w-[500px] rounded-full bg-teal/5 blur-[150px]" />
+          return (
+            <div
+              key={`${slide.image}-${isActive ? active : "idle"}`}
+              className={`absolute inset-0 transition-opacity duration-[900ms] ease-out ${
+                isActive ? "z-[1] opacity-100" : "z-0 opacity-0"
+              }`}
+            >
+              {/* =================================================
+                  IMAGE ENTRANCE LAYER
+
+                  Each image gets its own premium entrance style.
+                  Entrance is intentionally fast.
+              ================================================== */}
+
+              <div
+                className={`absolute inset-[-5%] ${
+                  isActive && !reducedMotion
+                    ? `hero-image-transition hero-image-${slide.transition}`
+                    : ""
+                }`}
+              >
+                <div
+                  className={`absolute inset-0 ${
+                    isActive && !reducedMotion
+                      ? "hero-image-drift"
+                      : ""
+                  }`}
+                >
+                  <img
+                    src={slide.image}
+                    alt=""
+                    aria-hidden="true"
+                    className="h-full w-full object-cover object-center"
+                  />
+                </div>
+              </div>
+
+              {/* Soft navy cinematic wash */}
+              <div className="absolute inset-0 bg-[#111827]/30" />
+
+              {/* Strong left gradient */}
+              <div className="absolute inset-0 bg-gradient-to-r from-[#111827] via-[#111827]/75 to-[#111827]/10" />
+
+              {/* Bottom cinematic gradient */}
+              <div className="absolute inset-0 bg-gradient-to-t from-[#111827] via-[#111827]/25 to-transparent" />
+
+              {/* Slight dark overlay */}
+              <div className="absolute inset-0 bg-black/10" />
+            </div>
+          );
+        })}
 
         {/* =================================================
-            HERO IMAGE
+            AMBIENT COLOR GLOW
         ================================================== */}
 
-        {HERO_IMAGE && (
-          <div className="absolute inset-0 overflow-hidden lg:left-[42%] lg:right-0">
-            <img
-              src={HERO_IMAGE}
-              alt=""
-              aria-hidden="true"
-              className="absolute inset-0 h-full w-full object-cover object-center opacity-[0.18] lg:opacity-[0.32] motion-safe:animate-image-drift"
-            />
+        <div
+          className="absolute -right-32 -top-32 z-[2] h-[600px] w-[600px] rounded-full blur-[150px] transition-colors duration-1000"
+          style={{
+            backgroundColor: `${activeHex}18`,
+          }}
+        />
 
-            {/* Left fade */}
-            <div className="absolute inset-0 bg-gradient-to-r from-[#110d0d] via-[#110d0d]/60 to-transparent" />
-
-            {/* Bottom fade */}
-            <div className="absolute inset-0 bg-gradient-to-t from-[#110d0d] via-transparent to-[#110d0d]/20" />
-
-            {/* Slight cinematic wash */}
-            <div className="absolute inset-0 bg-black/15" />
-          </div>
-        )}
+        <div className="absolute -bottom-40 right-0 z-[2] h-[500px] w-[500px] rounded-full bg-teal/10 blur-[150px]" />
 
         {/* =================================================
             FLOATING DETAILS
@@ -154,136 +227,161 @@ export default function Hero() {
           CONTENT
       ====================================================== */}
 
-      <div className="relative z-10 mx-auto max-w-6xl px-6 pb-28 pt-8 md:pb-32 md:pt-12">
-        {/* Organizer */}
-        <p className="mb-6 text-sm text-muted motion-safe:animate-fade-up">
-          Organized by{" "}
-          <a
-            href="https://www.afrigos-academy.com/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-cream underline underline-offset-4 transition-colors hover:text-gold"
-          >
-            {event.organizer}
-          </a>
-        </p>
+      <div className="relative z-10 mx-auto flex min-h-[calc(100vh-104px)] max-w-7xl flex-col px-6 pb-28 pt-8 md:px-10 md:pb-32 md:pt-12 lg:px-12">
+        {/* =================================================
+            ORGANIZER
+        ================================================== */}
 
-        {/* Main heading */}
-        <h1 className="max-w-3xl font-display text-5xl leading-[1.05] text-cream motion-safe:animate-fade-up sm:text-6xl md:text-7xl">
-          {event.name}
-        </h1>
-
-        {/* Tagline */}
-        <p className="mt-6 max-w-xl font-display text-2xl italic text-gold motion-safe:animate-fade-up sm:text-3xl">
-          {event.tagline}
-        </p>
-
-        {/* Tricolor rule */}
-        <div className="mt-4 tricolor-rule motion-safe:animate-fade-up">
-          <span />
-          <span />
-          <span />
-        </div>
-
-        {/* Event date */}
-        <div className="mt-7 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs uppercase tracking-[0.2em] text-muted motion-safe:animate-fade-up">
-          <span>Abuja, Nigeria</span>
-
-          <span className="h-1 w-1 rounded-full bg-gold" />
-
-          <span>December 4–5, 2026</span>
+        <div className="hero-intro hero-intro-1">
+          <p className="mb-5 text-sm text-white/60">
+            Organized by{" "}
+            <a
+              href="https://www.afrigos-academy.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#F5EFE6] underline decoration-white/30 underline-offset-4 transition-colors hover:text-[#E59200]"
+            >
+              {event.organizer}
+            </a>
+          </p>
         </div>
 
         {/* =================================================
-            SLIDESHOW
+            MAIN CONTENT
         ================================================== */}
 
-        <div className="mt-5 min-h-[68px] max-w-xl">
-          <div className="relative h-9 sm:h-10">
-            {SLIDES.map((slide, i) => (
+        <div className="my-auto max-w-4xl py-12">
+          {/* Event name */}
+
+          <div className="hero-title-wrap">
+            <h1 className="hero-title max-w-4xl font-display text-5xl leading-[0.95] tracking-[-0.025em] text-[#F5EFE6] drop-shadow-2xl sm:text-6xl md:text-7xl lg:text-8xl">
+              {event.name}
+            </h1>
+          </div>
+
+          {/* Tagline */}
+
+          <div className="hero-intro hero-intro-3">
+            <p className="mt-6 max-w-2xl font-display text-2xl italic text-[#E59200] drop-shadow-lg sm:text-3xl md:text-4xl">
+              {event.tagline}
+            </p>
+          </div>
+
+          {/* Tricolor rule */}
+
+          <div className="hero-rule mt-5 flex h-[3px] w-32 overflow-hidden rounded-full">
+            <span className="flex-1 bg-[#B80319]" />
+            <span className="flex-1 bg-[#E59200]" />
+            <span className="flex-1 bg-[#00A5A8]" />
+          </div>
+
+          {/* Event information */}
+
+          <div className="hero-intro hero-intro-5 mt-7 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs uppercase tracking-[0.2em] text-white/65">
+            <span>Abuja, Nigeria</span>
+
+            <span className="h-1 w-1 rounded-full bg-[#E59200]" />
+
+            <span>December 4–5, 2026</span>
+          </div>
+
+          {/* =================================================
+              ANIMATED SLIDE MESSAGE
+          ================================================== */}
+
+          <div className="hero-slide-message mt-7 min-h-[110px] max-w-2xl sm:min-h-[120px]">
+            <div className="relative h-[55px] overflow-hidden sm:h-[60px]">
               <p
-                key={slide.text}
-                aria-hidden={i !== active}
-                className={`absolute inset-0 font-display text-2xl font-semibold sm:text-[1.7rem] ${
-                  slide.color
-                } transition-all duration-500 ease-out motion-reduce:transition-none ${
-                  i === active
-                    ? "translate-y-0 opacity-100"
-                    : "pointer-events-none translate-y-3 opacity-0"
-                }`}
+                key={active}
+                className={`absolute inset-0 font-display text-2xl font-semibold leading-tight ${
+                  activeSlide.color
+                } ${
+                  reducedMotion ? "" : "animate-hero-text-in"
+                } sm:text-3xl`}
               >
-                {slide.text}
+                {activeSlide.text}
               </p>
-            ))}
+            </div>
+
+            {/* =================================================
+                3-BAR PROGRESS SYSTEM
+            ================================================== */}
+
+            <div className="mt-4 flex w-full max-w-[340px] gap-1.5">
+              {[0, 1, 2].map((barIndex) => {
+                const barColor =
+                  barIndex === 0
+                    ? "bg-[#B80319]"
+                    : barIndex === 1
+                    ? "bg-[#E59200]"
+                    : "bg-[#00A5A8]";
+
+                let state: "done" | "active" | "pending";
+
+                if (barIndex < activeBar) {
+                  state = "done";
+                } else if (barIndex === activeBar) {
+                  state = "active";
+                } else {
+                  state = "pending";
+                }
+
+                return (
+                  <ProgressSegment
+                    key={`${cycle}-${barIndex}`}
+                    colorClass={barColor}
+                    state={state}
+                    duration={SLIDE_DURATION}
+                    resetKey={`${cycle}-${barIndex}`}
+                  />
+                );
+              })}
+            </div>
           </div>
 
-          {/* Progress indicators */}
-          <div className="mt-4 flex w-64 gap-1.5" role="presentation">
-            {SLIDES.map((slide, i) => (
-              <ProgressSegment
-                key={slide.text}
-                colorClass={
-                  slide.color === "text-red"
-                    ? "bg-red"
-                    : slide.color === "text-gold"
-                    ? "bg-gold"
-                    : "bg-teal"
-                }
-                state={
-                  i < active
-                    ? "done"
-                    : i === active
-                    ? "active"
-                    : "pending"
-                }
-                duration={SLIDE_DURATION}
-              />
-            ))}
+          {/* =================================================
+              CTA
+          ================================================== */}
+
+          <div className="hero-cta mt-4 flex flex-wrap gap-4">
+            <Link
+              href="/register"
+              className="group rounded-full bg-[#B80319] px-7 py-3.5 text-sm font-medium text-[#F5EFE6] shadow-[0_10px_35px_rgba(184,3,25,0.25)] transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:bg-[#d00620] hover:shadow-[0_15px_45px_rgba(184,3,25,0.4)]"
+            >
+              Register
+
+              <span className="ml-2 inline-block transition-transform duration-300 group-hover:translate-x-1">
+                →
+              </span>
+            </Link>
+
+            <a
+              href="#programme"
+              className="group rounded-full border bg-[#111827]/20 px-7 py-3.5 text-sm font-medium text-[#F5EFE6] backdrop-blur-sm transition-all duration-500 hover:-translate-y-1 hover:bg-white/10"
+              style={{
+                borderColor: reducedMotion
+                  ? "rgba(255,255,255,0.25)"
+                  : activeHex,
+              }}
+            >
+              See the programme
+
+              <span className="ml-2 inline-block transition-transform duration-300 group-hover:translate-y-1">
+                ↓
+              </span>
+            </a>
           </div>
-        </div>
-
-        {/* =================================================
-            CTA
-        ================================================== */}
-
-        <div className="mt-6 flex flex-wrap gap-4 motion-safe:animate-fade-up">
-          <Link
-            href="/register"
-            className="group rounded-full bg-red px-7 py-3.5 text-sm font-medium text-cream shadow-[0_10px_35px_rgba(184,3,25,0.18)] transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:shadow-[0_15px_45px_rgba(184,3,25,0.28)]"
-          >
-            Register
-
-            <span className="ml-2 inline-block transition-transform duration-300 group-hover:translate-x-1">
-              →
-            </span>
-          </Link>
-
-          <a
-            href="#programme"
-            className="group rounded-full border px-7 py-3.5 text-sm font-medium text-cream transition-all duration-500 hover:-translate-y-1 hover:bg-white/5"
-            style={{
-              borderColor: reducedMotion
-                ? "rgba(255,255,255,0.2)"
-                : activeHex,
-            }}
-          >
-            See the programme
-
-            <span className="ml-2 inline-block transition-transform duration-300 group-hover:translate-y-1">
-              ↓
-            </span>
-          </a>
         </div>
 
         {/* =================================================
             LIVE ECOSYSTEM INDICATOR
         ================================================== */}
 
-        <div className="mt-14 hidden items-center gap-3 text-[10px] uppercase tracking-[0.25em] text-muted md:flex">
+        <div className="hero-ecosystem hidden items-center gap-3 text-[10px] uppercase tracking-[0.25em] text-white/50 md:flex">
           <span className="relative flex h-2 w-2">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-teal opacity-50" />
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#00A5A8] opacity-50" />
 
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-teal" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-[#00A5A8]" />
           </span>
 
           <span>Connecting Abuja&apos;s creative ecosystem</span>
@@ -291,66 +389,96 @@ export default function Hero() {
       </div>
 
       {/* =====================================================
-          MOVING CREATIVE INDUSTRIES TICKER
-          
-          VISIBLE ON DESKTOP + TABLET + MOBILE
+          IMAGE NAVIGATION INDICATORS
       ====================================================== */}
 
-      <div className="absolute bottom-0 left-0 z-20 w-full overflow-hidden border-t border-white/10 bg-black/20 backdrop-blur-sm">
+      <div className="absolute right-6 top-1/2 z-20 hidden -translate-y-1/2 flex-col gap-3 md:flex lg:right-10">
+        {SLIDES.map((slide, index) => (
+          <button
+            key={slide.image}
+            type="button"
+            aria-label={`View slide ${index + 1}`}
+            aria-current={index === active ? "true" : undefined}
+            onClick={() => setActive(index)}
+            className="group flex items-center gap-3"
+          >
+            <span
+              className={`h-1 rounded-full transition-all duration-500 ${
+                index === active ? "w-10" : "w-4"
+              }`}
+              style={{
+                backgroundColor:
+                  index === active
+                    ? slide.hex
+                    : "rgba(255,255,255,0.3)",
+              }}
+            />
+
+            <span
+              className={`text-[9px] tracking-[0.2em] transition-opacity duration-300 ${
+                index === active
+                  ? "opacity-100"
+                  : "opacity-0 group-hover:opacity-70"
+              }`}
+            >
+              {String(index + 1).padStart(2, "0")}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {/* =====================================================
+          MOVING CREATIVE INDUSTRIES TICKER
+      ====================================================== */}
+
+      <div className="absolute bottom-0 left-0 z-20 w-full overflow-hidden border-t border-white/10 bg-[#111827]/55 backdrop-blur-md">
         <div className="hero-marquee flex w-max items-center py-3">
           {[...Array(2)].map((_, group) => (
             <div
               key={group}
               className="flex items-center whitespace-nowrap"
             >
-              {/* FILM */}
-              <span className="mx-5 text-xs uppercase tracking-[0.25em] text-muted">
+              <span className="mx-5 text-xs uppercase tracking-[0.25em] text-white/55">
                 Film
               </span>
 
-              <span className="text-gold">✦</span>
+              <span className="text-[#E59200]">✦</span>
 
-              {/* MUSIC */}
-              <span className="mx-5 text-xs uppercase tracking-[0.25em] text-muted">
+              <span className="mx-5 text-xs uppercase tracking-[0.25em] text-white/55">
                 Music
               </span>
 
-              <span className="text-red">✦</span>
+              <span className="text-[#B80319]">✦</span>
 
-              {/* FASHION */}
-              <span className="mx-5 text-xs uppercase tracking-[0.25em] text-muted">
+              <span className="mx-5 text-xs uppercase tracking-[0.25em] text-white/55">
                 Fashion
               </span>
 
-              <span className="text-teal">✦</span>
+              <span className="text-[#00A5A8]">✦</span>
 
-              {/* ART */}
-              <span className="mx-5 text-xs uppercase tracking-[0.25em] text-muted">
+              <span className="mx-5 text-xs uppercase tracking-[0.25em] text-white/55">
                 Art
               </span>
 
-              <span className="text-gold">✦</span>
+              <span className="text-[#E59200]">✦</span>
 
-              {/* TECHNOLOGY */}
-              <span className="mx-5 text-xs uppercase tracking-[0.25em] text-muted">
+              <span className="mx-5 text-xs uppercase tracking-[0.25em] text-white/55">
                 Technology
               </span>
 
-              <span className="text-red">✦</span>
+              <span className="text-[#B80319]">✦</span>
 
-              {/* MEDIA */}
-              <span className="mx-5 text-xs uppercase tracking-[0.25em] text-muted">
+              <span className="mx-5 text-xs uppercase tracking-[0.25em] text-white/55">
                 Media
               </span>
 
-              <span className="text-teal">✦</span>
+              <span className="text-[#00A5A8]">✦</span>
 
-              {/* CULTURE */}
-              <span className="mx-5 text-xs uppercase tracking-[0.25em] text-muted">
+              <span className="mx-5 text-xs uppercase tracking-[0.25em] text-white/55">
                 Culture
               </span>
 
-              <span className="text-gold">✦</span>
+              <span className="text-[#E59200]">✦</span>
             </div>
           ))}
         </div>
@@ -361,24 +489,328 @@ export default function Hero() {
       ====================================================== */}
 
       <style jsx>{`
-        /* =================================================
-           HERO IMAGE DRIFT
-        ================================================== */
+        /* ===================================================
+           CINEMATIC IMAGE ENTRANCES
+           
+           Fast entrance + separate slow drift.
+           This keeps the slideshow feeling premium rather
+           than making each image slowly crawl into place.
+        =================================================== */
 
-        @keyframes imageDrift {
-          0%,
-          100% {
-            transform: scale(1);
+        @keyframes imageZoomIn {
+          0% {
+            transform: scale(1.12) translate3d(0.8%, 0.4%, 0);
+            filter: blur(3px);
           }
 
-          50% {
-            transform: scale(1.02);
+          100% {
+            transform: scale(1.045) translate3d(0, 0, 0);
+            filter: blur(0);
           }
         }
 
-        /* =================================================
-           PARTICLE FLOAT
-        ================================================== */
+        @keyframes imageRiseIn {
+          0% {
+            transform: scale(1.075) translate3d(0, 3%, 0);
+            filter: blur(6px);
+          }
+
+          100% {
+            transform: scale(1.045) translate3d(0, 0, 0);
+            filter: blur(0);
+          }
+        }
+
+        @keyframes imageWipeIn {
+          0% {
+            transform: scale(1.055);
+            clip-path: inset(0 100% 0 0);
+          }
+
+          100% {
+            transform: scale(1.045);
+            clip-path: inset(0 0 0 0);
+          }
+        }
+
+        @keyframes imageScaleIn {
+          0% {
+            transform: scale(1.14);
+            filter: blur(5px);
+          }
+
+          100% {
+            transform: scale(1.045);
+            filter: blur(0);
+          }
+        }
+
+        @keyframes imageDiagonalIn {
+          0% {
+            transform: scale(1.075) translate3d(1.5%, -0.8%, 0);
+            clip-path: polygon(
+              100% 0,
+              100% 0,
+              100% 100%,
+              100% 100%
+            );
+          }
+
+          100% {
+            transform: scale(1.045) translate3d(0, 0, 0);
+            clip-path: polygon(
+              100% 0,
+              0 0,
+              0 100%,
+              100% 100%
+            );
+          }
+        }
+
+        @keyframes imagePanIn {
+          0% {
+            transform: scale(1.09) translate3d(2.5%, 0, 0);
+            filter: blur(3px);
+          }
+
+          100% {
+            transform: scale(1.045) translate3d(-0.5%, 0, 0);
+            filter: blur(0);
+          }
+        }
+
+        /* ===================================================
+           SLOW CINEMATIC DRIFT
+
+           Starts after the fast entrance and continues
+           through the slide.
+        =================================================== */
+
+        @keyframes heroImageDrift {
+          0% {
+            transform: scale(1.045) translate3d(0, 0, 0);
+          }
+
+          50% {
+            transform: scale(1.075) translate3d(-0.45%, -0.3%, 0);
+          }
+
+          100% {
+            transform: scale(1.055) translate3d(0.35%, 0.2%, 0);
+          }
+        }
+
+        .hero-image-transition {
+          transform-origin: center center;
+          will-change: transform, filter, clip-path;
+        }
+
+        /*
+          Fast entrance timings.
+          These are intentionally under 1 second.
+        */
+
+        .hero-image-zoom {
+          animation: imageZoomIn 850ms
+            cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        .hero-image-rise {
+          animation: imageRiseIn 700ms
+            cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        .hero-image-wipe {
+          animation: imageWipeIn 750ms
+            cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        .hero-image-scale {
+          animation: imageScaleIn 800ms
+            cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        .hero-image-diagonal {
+          animation: imageDiagonalIn 750ms
+            cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        .hero-image-pan {
+          animation: imagePanIn 850ms
+            cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        .hero-image-drift {
+          animation: heroImageDrift ${SLIDE_DURATION}ms
+            cubic-bezier(0.22, 1, 0.36, 1) 650ms both;
+          will-change: transform;
+        }
+
+        /* ===================================================
+           INITIAL HERO ENTRANCE
+        =================================================== */
+
+        @keyframes heroOrganizerIn {
+          0% {
+            opacity: 0;
+            transform: translate3d(0, -22px, 0);
+            filter: blur(7px);
+          }
+
+          100% {
+            opacity: 1;
+            transform: translate3d(0, 0, 0);
+            filter: blur(0);
+          }
+        }
+
+        @keyframes heroTitleIn {
+          0% {
+            opacity: 0;
+            transform: translate3d(-55px, 28px, 0) scale(0.97);
+            filter: blur(14px);
+            clip-path: inset(0 100% 0 0);
+          }
+
+          55% {
+            opacity: 1;
+            filter: blur(4px);
+            clip-path: inset(0 25% 0 0);
+          }
+
+          100% {
+            opacity: 1;
+            transform: translate3d(0, 0, 0) scale(1);
+            filter: blur(0);
+            clip-path: inset(0 0 0 0);
+          }
+        }
+
+        @keyframes heroTaglineIn {
+          0% {
+            opacity: 0;
+            transform: translate3d(55px, 18px, 0);
+            filter: blur(9px);
+          }
+
+          60% {
+            opacity: 0.8;
+            filter: blur(2px);
+          }
+
+          100% {
+            opacity: 1;
+            transform: translate3d(0, 0, 0);
+            filter: blur(0);
+          }
+        }
+
+        @keyframes heroRuleIn {
+          0% {
+            opacity: 0;
+            transform: scaleX(0);
+            transform-origin: left center;
+          }
+
+          100% {
+            opacity: 1;
+            transform: scaleX(1);
+            transform-origin: left center;
+          }
+        }
+
+        @keyframes heroMetaIn {
+          0% {
+            opacity: 0;
+            transform: translate3d(0, 24px, 0);
+            letter-spacing: 0.35em;
+            filter: blur(5px);
+          }
+
+          100% {
+            opacity: 1;
+            transform: translate3d(0, 0, 0);
+            letter-spacing: 0.2em;
+            filter: blur(0);
+          }
+        }
+
+        @keyframes heroSlideMessageIn {
+          0% {
+            opacity: 0;
+            transform: translate3d(-20px, 20px, 0) scale(0.96);
+            filter: blur(12px);
+          }
+
+          55% {
+            opacity: 0.75;
+            filter: blur(3px);
+          }
+
+          100% {
+            opacity: 1;
+            transform: translate3d(0, 0, 0) scale(1);
+            filter: blur(0);
+          }
+        }
+
+        @keyframes heroCtaIn {
+          0% {
+            opacity: 0;
+            transform: translate3d(0, 30px, 0) scale(0.94);
+            filter: blur(7px);
+          }
+
+          70% {
+            opacity: 1;
+            transform: translate3d(0, -2px, 0) scale(1.01);
+            filter: blur(0);
+          }
+
+          100% {
+            opacity: 1;
+            transform: translate3d(0, 0, 0) scale(1);
+          }
+        }
+
+        @keyframes heroEcosystemIn {
+          0% {
+            opacity: 0;
+            transform: translate3d(-18px, 0, 0);
+          }
+
+          100% {
+            opacity: 1;
+            transform: translate3d(0, 0, 0);
+          }
+        }
+
+        /* ===================================================
+           SLIDE TEXT
+        =================================================== */
+
+        @keyframes heroTextIn {
+          0% {
+            opacity: 0;
+            transform: translateY(22px) scale(0.97);
+            filter: blur(10px);
+          }
+
+          45% {
+            opacity: 0.7;
+            filter: blur(3px);
+          }
+
+          100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            filter: blur(0);
+          }
+        }
+
+        /* ===================================================
+           PARTICLES
+        =================================================== */
 
         @keyframes particleFloat {
           0%,
@@ -393,25 +825,9 @@ export default function Hero() {
           }
         }
 
-        /* =================================================
-           FADE UP
-        ================================================== */
-
-        @keyframes fadeUp {
-          from {
-            opacity: 0;
-            transform: translateY(14px);
-          }
-
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        /* =================================================
+        /* ===================================================
            MARQUEE
-        ================================================== */
+        =================================================== */
 
         @keyframes marquee {
           from {
@@ -423,23 +839,77 @@ export default function Hero() {
           }
         }
 
-        /* =================================================
-           GLOBAL ANIMATIONS
-        ================================================== */
+        /* ===================================================
+           INITIAL ANIMATION CLASSES
+        =================================================== */
 
-        :global(.animate-image-drift) {
-          animation: imageDrift 14s ease-in-out infinite;
-          transform-origin: center center;
-          will-change: transform;
+        :global(.hero-intro-1) {
+          opacity: 0;
+          animation: heroOrganizerIn 700ms
+            cubic-bezier(0.22, 1, 0.36, 1)
+            120ms forwards;
         }
 
-        :global(.animate-fade-up) {
-          animation: fadeUp 0.8s ease-out both;
+        :global(.hero-title) {
+          opacity: 0;
+          animation: heroTitleIn 1200ms
+            cubic-bezier(0.16, 1, 0.3, 1)
+            300ms forwards;
+          will-change: transform, opacity, filter, clip-path;
         }
 
-        /* =================================================
-           FLOATING PARTICLES
-        ================================================== */
+        :global(.hero-intro-3) {
+          opacity: 0;
+          animation: heroTaglineIn 900ms
+            cubic-bezier(0.22, 1, 0.36, 1)
+            700ms forwards;
+        }
+
+        :global(.hero-rule) {
+          opacity: 0;
+          animation: heroRuleIn 650ms
+            cubic-bezier(0.22, 1, 0.36, 1)
+            1050ms forwards;
+        }
+
+        :global(.hero-intro-5) {
+          opacity: 0;
+          animation: heroMetaIn 800ms
+            cubic-bezier(0.22, 1, 0.36, 1)
+            1200ms forwards;
+        }
+
+        :global(.hero-slide-message) {
+          opacity: 0;
+          animation: heroSlideMessageIn 900ms
+            cubic-bezier(0.22, 1, 0.36, 1)
+            1400ms forwards;
+        }
+
+        :global(.hero-cta) {
+          opacity: 0;
+          animation: heroCtaIn 850ms
+            cubic-bezier(0.22, 1, 0.36, 1)
+            1650ms forwards;
+        }
+
+        :global(.hero-ecosystem) {
+          opacity: 0;
+          animation: heroEcosystemIn 700ms
+            cubic-bezier(0.22, 1, 0.36, 1)
+            2050ms forwards;
+        }
+
+        :global(.animate-hero-text-in) {
+          animation: heroTextIn 900ms
+            cubic-bezier(0.22, 1, 0.36, 1)
+            both;
+          will-change: transform, opacity, filter;
+        }
+
+        /* ===================================================
+           FLOATING DETAILS
+        =================================================== */
 
         .hero-particle {
           position: absolute;
@@ -498,38 +968,73 @@ export default function Hero() {
           animation-delay: 3s;
         }
 
-        /* =================================================
-           MARQUEE ANIMATION
-        ================================================== */
+        /* ===================================================
+           MARQUEE
+        =================================================== */
 
         .hero-marquee {
           animation: marquee 28s linear infinite;
           will-change: transform;
         }
 
-        /* =================================================
+        /* ===================================================
            REDUCED MOTION
-        ================================================== */
+        =================================================== */
 
         @media (prefers-reduced-motion: reduce) {
-          :global(.animate-image-drift),
-          :global(.animate-fade-up),
+          .hero-image-transition,
+          .hero-image-drift,
+          :global(.hero-intro-1),
+          :global(.hero-title),
+          :global(.hero-intro-3),
+          :global(.hero-rule),
+          :global(.hero-intro-5),
+          :global(.hero-slide-message),
+          :global(.hero-cta),
+          :global(.hero-ecosystem),
+          :global(.animate-hero-text-in),
           .hero-particle,
           .hero-marquee {
             animation: none !important;
+            opacity: 1 !important;
+            transform: none !important;
+            filter: none !important;
+            clip-path: none !important;
           }
         }
 
-        /* =================================================
+        /* ===================================================
            MOBILE
-        ================================================== */
+        =================================================== */
 
         @media (max-width: 767px) {
           .hero-particle {
             display: none;
+          }
+
+          /*
+            Faster on phones.
+            The entrance is noticeable but doesn't feel heavy.
+          */
+
+          .hero-image-zoom,
+          .hero-image-pan {
+            animation-duration: 700ms;
+          }
+
+          .hero-image-rise,
+          .hero-image-wipe,
+          .hero-image-scale,
+          .hero-image-diagonal {
+            animation-duration: 650ms;
+          }
+
+          .hero-image-drift {
+            animation-duration: ${SLIDE_DURATION}ms;
           }
         }
       `}</style>
     </section>
   );
 }
+
