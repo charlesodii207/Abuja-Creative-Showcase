@@ -18,8 +18,6 @@ export default function InvestorNewRegistrationPage() {
     "idle" | "submitting" | "success" | "error"
   >("idle");
 
-  const [referenceNumber, setReferenceNumber] = useState("");
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setStatus("submitting");
@@ -42,7 +40,6 @@ export default function InvestorNewRegistrationPage() {
         throw new Error(data.detail || "Request failed");
       }
 
-      setReferenceNumber(data.reference_number);
       setStatus("success");
     } catch {
       setStatus("error");
@@ -91,16 +88,17 @@ export default function InvestorNewRegistrationPage() {
 
               <div className="mx-auto mt-8 max-w-md rounded-[1.5rem] border border-[#00A5A8]/20 bg-[#11152F]/60 px-6 py-6">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-[#B8B3AA]/45">
-                  Your Reference Number
+                  Confirmation Sent To
                 </p>
 
-                <p className="mt-2 font-mono text-xl font-semibold tracking-wide text-[#E59200]">
-                  {referenceNumber}
+                <p className="mt-2 break-all text-base font-medium text-[#E59200]">
+                  {form.email}
                 </p>
 
                 <p className="mt-4 text-sm leading-relaxed text-[#B8B3AA]/65">
-                  Please keep this reference number. You can use it to check
-                  your registration status later.
+                  Please check your inbox for your registration confirmation
+                  and keep the reference number in that email safe for future
+                  status checks.
                 </p>
               </div>
 

@@ -138,12 +138,13 @@ export default function ExhibitorRegistrationPage() {
                 </p>
 
                 <h1 className="mt-4 font-display text-4xl leading-[1.05] text-[#F5EFE6] sm:text-5xl">
-                  Complete Your Payment
+                  Complete Your Registration
                 </h1>
 
                 <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-[#B8B3AA]/75 sm:text-lg">
-                  Your Creative Market spot has been reserved. Complete your
-                  payment to confirm your participation at ACS.
+                  Your Creative Market spot has been reserved. To confirm your
+                  participation at ACS, continue through your registration
+                  verification.
                 </p>
 
                 <div className="mt-10 grid gap-4 sm:grid-cols-2">
@@ -178,20 +179,13 @@ export default function ExhibitorRegistrationPage() {
                   </p>
                 </div>
 
-                <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-                  <a
-                    href={payment.authorization_url}
+                <div className="mt-8">
+                  <Link
+                    href="/verify"
                     className="inline-flex items-center justify-center rounded-full bg-[#00A5A8] px-8 py-3.5 text-sm font-semibold text-[#11152F] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_30px_rgba(0,165,168,0.18)]"
                   >
-                    Complete Payment
+                    Finish Registration
                     <span className="ml-3">→</span>
-                  </a>
-
-                  <Link
-                    href="/register/lookup"
-                    className="inline-flex items-center justify-center rounded-full border border-white/15 bg-[#11152F]/40 px-7 py-3.5 text-sm font-medium text-[#F5EFE6]/80 transition-all duration-300 hover:border-[#00A5A8]/40 hover:text-[#F5EFE6]"
-                  >
-                    Check Status Later
                   </Link>
                 </div>
 
@@ -656,7 +650,7 @@ export default function ExhibitorRegistrationPage() {
               >
                 {status === "submitting"
                   ? "Submitting..."
-                  : "Continue to Payment →"}
+                  : "Complete Registration →"}
               </button>
             </div>
 
@@ -709,9 +703,8 @@ export default function ExhibitorRegistrationPage() {
 
               <div className="mt-6 border-t border-white/10 pt-6">
                 <p className="text-xs leading-relaxed text-[#B8B3AA]/50">
-                  After submitting your registration, you&apos;ll be redirected
-                  to secure payment. Your reference number will also be sent to
-                  your email.
+                  After submitting your registration, check your email for
+                  your reference number and continue through verification.
                 </p>
               </div>
             </div>
