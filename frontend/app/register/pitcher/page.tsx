@@ -2,42 +2,124 @@ import Link from "next/link";
 
 export default function PitcherRegisterPage() {
   return (
-    <main className="mx-auto max-w-2xl px-6 py-20 text-center md:py-28">
-      <div className="tricolor-rule mx-auto mb-6">
-        <span /><span /><span />
-      </div>
-      <h1 className="font-display text-3xl text-cream sm:text-4xl">
-        Pitching Participant
-      </h1>
-      <p className="mt-3 text-muted">
-        Pitch your project directly to investors, commissioners, brands, and distributors in the Deal Room.
-      </p>
+    <main className="relative min-h-screen overflow-hidden bg-[#11152F]">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -right-24 top-20 h-64 w-64 rounded-full border border-[#E59200]/10"
+      />
 
-      <p className="mx-auto mt-6 max-w-xl text-left text-sm leading-relaxed text-muted">
-        The Pitching & Deal Room is one of ACS&apos;s flagship components — a curated session where
-        selected creative projects pitch directly to funders, commissioners, distributors, and
-        brands. Categories span film, TV series, documentaries, music projects, creative technology,
-        fashion brands, publishing, animation, gaming, digital platforms, and social-impact creative
-        work. A successful pitch can lead to funding, commissioning, distribution, sponsorship,
-        mentorship, or a production deal — real commercial outcomes, not just exposure. You&apos;ll be
-        asked for your project name, category, a pitch summary, and a work sample or portfolio
-        link. Because this room is small and curated by design, a clear, well-developed project with
-        genuine commercial or creative potential has the best chance of being selected.
-      </p>
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -left-20 bottom-20 h-44 w-44 rounded-full border border-[#00A5A8]/10"
+      />
 
-      <div className="mt-10 flex flex-col gap-4 sm:mx-auto sm:max-w-sm">
-        <Link
-          href="/register/pitcher/new"
-          className="rounded-full bg-red px-7 py-3.5 text-sm font-medium text-cream transition-transform hover:scale-105"
-        >
-          New Registration
-        </Link>
-        <Link
-          href="/register/lookup"
-          className="rounded-full border border-white/20 px-7 py-3.5 text-sm font-medium text-cream transition-colors hover:border-white/40"
-        >
-          Already Registered? Check Status
-        </Link>
+      <div className="mx-auto max-w-3xl px-6 py-20 sm:px-8 md:py-28">
+        <div className="relative">
+          <div
+            aria-hidden="true"
+            className="absolute -inset-5 rounded-[2rem] border border-white/[0.06] sm:-inset-8"
+          />
+
+          <div className="relative rounded-[2rem] border border-white/10 bg-[#151A3A] px-6 py-12 text-center shadow-[0_30px_80px_rgba(0,0,0,0.18)] sm:px-10 sm:py-14">
+            <div className="tricolor-rule mx-auto mb-7">
+              <span />
+              <span />
+              <span />
+            </div>
+
+            <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#00A5A8]">
+              Pitching & Deal Room
+            </p>
+
+            <h1 className="mt-4 font-display text-4xl leading-[1.05] text-[#F5EFE6] sm:text-5xl">
+              Pitching Participant
+            </h1>
+
+            <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-[#B8B3AA]/75 sm:text-lg">
+              Pitch your project directly to investors, commissioners, brands,
+              and distributors in the Deal Room.
+            </p>
+
+            <div className="mx-auto mt-8 max-w-2xl rounded-[1.5rem] border border-white/10 bg-[#11152F]/60 px-6 py-7 text-left">
+              <p className="text-sm leading-relaxed text-[#B8B3AA]/70">
+                The Pitching & Deal Room is one of ACS&apos;s flagship
+                components — a curated session where selected creative
+                projects pitch directly to funders, commissioners,
+                distributors, and brands.
+              </p>
+
+              <p className="mt-4 text-sm leading-relaxed text-[#B8B3AA]/70">
+                Categories span film, TV series, documentaries, music
+                projects, creative technology, fashion brands, publishing,
+                animation, gaming, digital platforms, and social-impact
+                creative work.
+              </p>
+
+              <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                <div className="rounded-xl border border-[#E59200]/20 bg-[#151A3A] px-4 py-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#B8B3AA]/45">
+                    Potential Outcomes
+                  </p>
+                  <p className="mt-1 text-sm leading-relaxed text-[#E59200]">
+                    Funding · Distribution · Commissioning · Sponsorship
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-[#00A5A8]/20 bg-[#151A3A] px-4 py-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#B8B3AA]/45">
+                    What You&apos;ll Need
+                  </p>
+                  <p className="mt-1 text-sm leading-relaxed text-[#00A5A8]">
+                    Project · Category · Pitch · Work Sample
+                  </p>
+                </div>
+              </div>
+
+              <p className="mt-5 text-sm leading-relaxed text-[#B8B3AA]/70">
+                A successful pitch can lead to funding, commissioning,
+                distribution, sponsorship, mentorship, or a production deal —
+                real commercial outcomes, not just exposure.
+              </p>
+
+              <p className="mt-4 text-sm leading-relaxed text-[#B8B3AA]/70">
+                You&apos;ll be asked for your project name, category, a pitch
+                summary, and a work sample or portfolio link.
+              </p>
+
+              <p className="mt-4 text-xs leading-relaxed text-[#B8B3AA]/55">
+                The room is small and curated by design. Selection considers
+                the clarity and development of the project alongside its
+                commercial or creative potential.
+              </p>
+            </div>
+
+            <div className="mx-auto mt-9 flex max-w-sm flex-col gap-4">
+              <Link
+                href="/register/pitcher/new"
+                className="rounded-full bg-[#B80319] px-7 py-3.5 text-sm font-medium text-[#F5EFE6] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_30px_rgba(184,3,25,0.2)]"
+              >
+                New Registration
+              </Link>
+
+              <Link
+                href="/register/lookup"
+                className="rounded-full border border-white/15 bg-[#11152F]/40 px-7 py-3.5 text-sm font-medium text-[#F5EFE6]/80 transition-all duration-300 hover:border-[#00A5A8]/40 hover:text-[#F5EFE6]"
+              >
+                Already Registered? Check Status
+              </Link>
+            </div>
+
+            <div className="mt-10 flex items-center justify-center gap-3">
+              <span className="h-px w-10 bg-white/10" />
+
+              <span className="text-[10px] uppercase tracking-[0.25em] text-[#F5EFE6]/30">
+                Abuja · 04–05 December 2026
+              </span>
+
+              <span className="h-px w-10 bg-white/10" />
+            </div>
+          </div>
+        </div>
       </div>
     </main>
   );

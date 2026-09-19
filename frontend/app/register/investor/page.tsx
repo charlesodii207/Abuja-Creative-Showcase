@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-export default function ExhibitorRegisterPage() {
+export default function InvestorRegisterPage() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#11152F]">
       <div
@@ -28,69 +28,71 @@ export default function ExhibitorRegisterPage() {
             </div>
 
             <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#00A5A8]">
-              Join the Creative Market
+              Creative Finance & Deal Room
             </p>
 
             <h1 className="mt-4 font-display text-4xl leading-[1.05] text-[#F5EFE6] sm:text-5xl">
-              Exhibitor
+              Investor
             </h1>
 
             <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-[#B8B3AA]/75 sm:text-lg">
-              Showcase your creative business, sell products, and connect with
-              buyers and brands at the Creative Market.
+              Discover creative projects, meet emerging talent, and explore
+              opportunities across Africa&apos;s creative economy.
             </p>
 
             <div className="mx-auto mt-8 max-w-2xl rounded-[1.5rem] border border-white/10 bg-[#11152F]/60 px-6 py-7 text-left">
               <p className="text-sm leading-relaxed text-[#B8B3AA]/70">
-                The Creative Market transforms ACS from a showcase into a
-                working marketplace. As an Exhibitor, you get a dedicated space
-                where visitors, brands, and industry buyers can discover your
-                work — whether that&apos;s fashion, film, art, tech, publishing,
-                or any other creative product or service.
+                The Investor track connects investors, funders, brands,
+                institutions, and other capital partners with creative
+                businesses and projects participating at ACS.
               </p>
 
               <p className="mt-4 text-sm leading-relaxed text-[#B8B3AA]/70">
-                Exhibitor spaces aren&apos;t capped to a fixed number;
-                applications are reviewed and accepted as they come in, so
-                applying early genuinely improves your chances.
-              </p>
-
-              <p className="mt-4 text-sm leading-relaxed text-[#B8B3AA]/70">
-                You&apos;ll be asked about your company, what you plan to bring,
-                a short work sample or portfolio link, and your main goal at
-                the market — whether that&apos;s selling, showcasing, or
-                networking.
+                You can use the Showcase to discover projects and founders
+                across film, music, fashion, art, technology, publishing,
+                media, and other creative sectors — and connect directly with
+                the people building them.
               </p>
 
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
                 <div className="rounded-xl border border-[#E59200]/20 bg-[#151A3A] px-4 py-4">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#B8B3AA]/45">
-                    Small Booth
+                    Connect With
                   </p>
-                  <p className="mt-1 font-display text-xl text-[#E59200]">
-                    ₦250,000
+
+                  <p className="mt-1 text-sm leading-relaxed text-[#E59200]">
+                    Creators · Founders · Projects · Businesses
                   </p>
                 </div>
 
-                <div className="rounded-xl border border-[#E59200]/20 bg-[#151A3A] px-4 py-4">
+                <div className="rounded-xl border border-[#00A5A8]/20 bg-[#151A3A] px-4 py-4">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#B8B3AA]/45">
-                    Big Booth
+                    Explore
                   </p>
-                  <p className="mt-1 font-display text-xl text-[#E59200]">
-                    ₦500,000
+
+                  <p className="mt-1 text-sm leading-relaxed text-[#00A5A8]">
+                    Investment · Partnerships · Deals · Opportunities
                   </p>
                 </div>
               </div>
 
-              <p className="mt-5 text-xs leading-relaxed text-[#B8B3AA]/55">
-                You can also optionally include an auction of your own items
-                as part of your space.
+              <p className="mt-5 text-sm leading-relaxed text-[#B8B3AA]/70">
+                Investor participation is designed to create meaningful
+                connections between capital and creative opportunity, with
+                access to relevant conversations, projects, and people across
+                the Showcase.
+              </p>
+
+              <p className="mt-4 text-xs leading-relaxed text-[#B8B3AA]/55">
+                You&apos;ll be asked about your organization, investment
+                interests, areas of focus, and the kinds of creative
+                opportunities you are interested in exploring.
               </p>
             </div>
 
             <div className="mx-auto mt-9 flex max-w-sm flex-col gap-4">
               <Link
-                href="/register/exhibitor/new"
+                href="/register/investor/new"
                 className="rounded-full bg-[#B80319] px-7 py-3.5 text-sm font-medium text-[#F5EFE6] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_30px_rgba(184,3,25,0.2)]"
               >
                 New Registration

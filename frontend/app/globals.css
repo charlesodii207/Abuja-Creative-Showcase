@@ -8,12 +8,12 @@
 @import "@fontsource/work-sans/600.css";
 
 :root {
-  --ink: #14100e;
-  --ink-raised: #1d1713;
+  --ink: #11152f;
+  --ink-raised: #181c42;
   --paper: #faf6f0;
   --paper-raised: #f1ebe1;
   --cream: #f5efe6;
-  --muted: #b8ada0;
+  --muted: #a6a4c2;
   --muted-on-paper: #6b6259;
   --red: #b80319;
   --gold: #e59200;
@@ -263,5 +263,515 @@ a {
 
   .hero-marquee {
     animation-duration: 34s;
+  }
+}
+
+/* =====================================================
+   HERO SECTION ANIMATIONS
+   (moved out of Hero.tsx's styled-jsx block so they load
+   with the page's CSS instead of being injected by JS —
+   this removes the "flash of unstyled content" on first load)
+===================================================== */
+
+/* ---------------------------------------------------
+   CINEMATIC IMAGE ENTRANCES
+
+   Fast entrance + separate slow drift. This keeps the
+   slideshow feeling premium rather than making each
+   image slowly crawl into place.
+--------------------------------------------------- */
+
+@keyframes imageZoomIn {
+  0% {
+    transform: scale(1.12) translate3d(0.8%, 0.4%, 0);
+    filter: blur(3px);
+  }
+  100% {
+    transform: scale(1.045) translate3d(0, 0, 0);
+    filter: blur(0);
+  }
+}
+
+@keyframes imageRiseIn {
+  0% {
+    transform: scale(1.075) translate3d(0, 3%, 0);
+    filter: blur(6px);
+  }
+  100% {
+    transform: scale(1.045) translate3d(0, 0, 0);
+    filter: blur(0);
+  }
+}
+
+@keyframes imageWipeIn {
+  0% {
+    transform: scale(1.055);
+    clip-path: inset(0 100% 0 0);
+  }
+  100% {
+    transform: scale(1.045);
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes imageScaleIn {
+  0% {
+    transform: scale(1.14);
+    filter: blur(5px);
+  }
+  100% {
+    transform: scale(1.045);
+    filter: blur(0);
+  }
+}
+
+@keyframes imageDiagonalIn {
+  0% {
+    transform: scale(1.075) translate3d(1.5%, -0.8%, 0);
+    clip-path: polygon(100% 0, 100% 0, 100% 100%, 100% 100%);
+  }
+  100% {
+    transform: scale(1.045) translate3d(0, 0, 0);
+    clip-path: polygon(100% 0, 0 0, 0 100%, 100% 100%);
+  }
+}
+
+@keyframes imagePanIn {
+  0% {
+    transform: scale(1.09) translate3d(2.5%, 0, 0);
+    filter: blur(3px);
+  }
+  100% {
+    transform: scale(1.045) translate3d(-0.5%, 0, 0);
+    filter: blur(0);
+  }
+}
+
+/* ---------------------------------------------------
+   SLOW CINEMATIC DRIFT
+
+   Starts after the fast entrance and continues through
+   the slide. Duration hardcoded to 5200ms to match
+   SLIDE_DURATION in Hero.tsx — keep the two in sync if
+   you ever change SLIDE_DURATION.
+--------------------------------------------------- */
+
+@keyframes heroImageDrift {
+  0% {
+    transform: scale(1.045) translate3d(0, 0, 0);
+  }
+  50% {
+    transform: scale(1.075) translate3d(-0.45%, -0.3%, 0);
+  }
+  100% {
+    transform: scale(1.055) translate3d(0.35%, 0.2%, 0);
+  }
+}
+
+.hero-image-transition {
+  transform-origin: center center;
+  will-change: transform, filter, clip-path;
+}
+
+.hero-image-zoom {
+  animation: imageZoomIn 850ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.hero-image-rise {
+  animation: imageRiseIn 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.hero-image-wipe {
+  animation: imageWipeIn 750ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.hero-image-scale {
+  animation: imageScaleIn 800ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.hero-image-diagonal {
+  animation: imageDiagonalIn 750ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.hero-image-pan {
+  animation: imagePanIn 850ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.hero-image-drift {
+  animation: heroImageDrift 5200ms cubic-bezier(0.22, 1, 0.36, 1) 650ms both;
+  will-change: transform;
+}
+
+/* ---------------------------------------------------
+   INITIAL HERO ENTRANCE
+--------------------------------------------------- */
+
+@keyframes heroOrganizerIn {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, -22px, 0);
+    filter: blur(7px);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+    filter: blur(0);
+  }
+}
+
+@keyframes heroTitleIn {
+  0% {
+    opacity: 0;
+    transform: translate3d(-55px, 28px, 0) scale(0.97);
+    filter: blur(14px);
+    clip-path: inset(0 100% 0 0);
+  }
+  55% {
+    opacity: 1;
+    filter: blur(4px);
+    clip-path: inset(0 25% 0 0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: blur(0);
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes heroTaglineIn {
+  0% {
+    opacity: 0;
+    transform: translate3d(55px, 18px, 0);
+    filter: blur(9px);
+  }
+  60% {
+    opacity: 0.8;
+    filter: blur(2px);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+    filter: blur(0);
+  }
+}
+
+@keyframes heroRuleIn {
+  0% {
+    opacity: 0;
+    transform: scaleX(0);
+    transform-origin: left center;
+  }
+  100% {
+    opacity: 1;
+    transform: scaleX(1);
+    transform-origin: left center;
+  }
+}
+
+@keyframes heroMetaIn {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 24px, 0);
+    letter-spacing: 0.35em;
+    filter: blur(5px);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+    letter-spacing: 0.2em;
+    filter: blur(0);
+  }
+}
+
+@keyframes heroSlideMessageIn {
+  0% {
+    opacity: 0;
+    transform: translate3d(-20px, 20px, 0) scale(0.96);
+    filter: blur(12px);
+  }
+  55% {
+    opacity: 0.75;
+    filter: blur(3px);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes heroCtaIn {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 30px, 0) scale(0.94);
+    filter: blur(7px);
+  }
+  70% {
+    opacity: 1;
+    transform: translate3d(0, -2px, 0) scale(1.01);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes heroEcosystemIn {
+  0% {
+    opacity: 0;
+    transform: translate3d(-18px, 0, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* ---------------------------------------------------
+   SLIDE TEXT
+--------------------------------------------------- */
+
+@keyframes heroTextIn {
+  0% {
+    opacity: 0;
+    transform: translateY(22px) scale(0.97);
+    filter: blur(10px);
+  }
+  45% {
+    opacity: 0.7;
+    filter: blur(3px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+/* ---------------------------------------------------
+   PARTICLES (Hero section only — renamed to avoid
+   colliding with the site-wide particleFloat above)
+--------------------------------------------------- */
+
+@keyframes heroParticleFloat {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+    opacity: 0.2;
+  }
+  50% {
+    transform: translate3d(0, -18px, 0) rotate(8deg);
+    opacity: 0.7;
+  }
+}
+
+/* ---------------------------------------------------
+   INITIAL ANIMATION CLASSES
+--------------------------------------------------- */
+
+.hero-intro-1 {
+  opacity: 0;
+  animation: heroOrganizerIn 700ms cubic-bezier(0.22, 1, 0.36, 1) 120ms
+    forwards;
+}
+
+.hero-title {
+  opacity: 0;
+  animation: heroTitleIn 1200ms cubic-bezier(0.16, 1, 0.3, 1) 300ms forwards;
+  will-change: transform, opacity, filter, clip-path;
+}
+
+/* ---------------------------------------------------
+   AFRICAN-PATTERN TITLE FILL
+
+   Diagonal kente-inspired stripe weave in the brand
+   palette, clipped to the title glyphs. Drifts very
+   slowly so the huge display type stays readable.
+--------------------------------------------------- */
+
+@keyframes heroTitleWeave {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 280px 280px;
+  }
+}
+
+.hero-title-pattern {
+  background-image: repeating-linear-gradient(
+    135deg,
+    #b80319 0px,
+    #b80319 16px,
+    #e59200 16px 32px,
+    #00a5a8 32px 48px,
+    #f5efe6 48px 64px
+  );
+  background-size: 280px 280px;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: heroTitleWeave 26s linear infinite;
+  will-change: background-position;
+}
+
+@supports not ((background-clip: text) or (-webkit-background-clip: text)) {
+  .hero-title-pattern {
+    background: none;
+    color: #f5efe6;
+    -webkit-text-fill-color: currentColor;
+  }
+}
+
+.hero-intro-3 {
+  opacity: 0;
+  animation: heroTaglineIn 900ms cubic-bezier(0.22, 1, 0.36, 1) 700ms forwards;
+}
+
+.hero-rule {
+  opacity: 0;
+  animation: heroRuleIn 650ms cubic-bezier(0.22, 1, 0.36, 1) 1050ms forwards;
+}
+
+.hero-intro-5 {
+  opacity: 0;
+  animation: heroMetaIn 800ms cubic-bezier(0.22, 1, 0.36, 1) 1200ms forwards;
+}
+
+.hero-slide-message {
+  opacity: 0;
+  animation: heroSlideMessageIn 900ms cubic-bezier(0.22, 1, 0.36, 1) 1400ms
+    forwards;
+}
+
+.hero-cta {
+  opacity: 0;
+  animation: heroCtaIn 850ms cubic-bezier(0.22, 1, 0.36, 1) 1650ms forwards;
+}
+
+.hero-ecosystem {
+  opacity: 0;
+  animation: heroEcosystemIn 700ms cubic-bezier(0.22, 1, 0.36, 1) 2050ms
+    forwards;
+}
+
+.animate-hero-text-in {
+  animation: heroTextIn 900ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: transform, opacity, filter;
+}
+
+.hero-particle {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+  font-family: serif;
+  font-size: 18px;
+  color: rgba(255, 255, 255, 0.5);
+  animation: heroParticleFloat 5s ease-in-out infinite;
+}
+
+.particle-1 {
+  right: 38%;
+  top: 19%;
+}
+
+.particle-2 {
+  right: 12%;
+  top: 28%;
+  color: rgba(229, 146, 0, 0.7);
+  animation-delay: 1.2s;
+}
+
+.particle-3 {
+  right: 31%;
+  top: 46%;
+  font-size: 12px;
+  color: rgba(0, 165, 168, 0.7);
+  animation-delay: 2s;
+}
+
+.particle-4 {
+  right: 8%;
+  top: 62%;
+  animation-delay: 0.8s;
+}
+
+.particle-5 {
+  right: 43%;
+  top: 68%;
+  color: rgba(184, 3, 25, 0.8);
+  animation-delay: 2.5s;
+}
+
+.particle-6 {
+  right: 25%;
+  top: 14%;
+  font-size: 11px;
+  animation-delay: 1.7s;
+}
+
+.particle-7 {
+  right: 18%;
+  top: 78%;
+  color: rgba(0, 165, 168, 0.7);
+  animation-delay: 3s;
+}
+
+/* ---------------------------------------------------
+   REDUCED MOTION (Hero section)
+--------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-image-transition,
+  .hero-image-drift,
+  .hero-intro-1,
+  .hero-title,
+  .hero-title-pattern,
+  .hero-intro-3,
+  .hero-rule,
+  .hero-intro-5,
+  .hero-slide-message,
+  .hero-cta,
+  .hero-ecosystem,
+  .animate-hero-text-in,
+  .hero-particle {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+    clip-path: none !important;
+  }
+
+  .hero-title-pattern {
+    background-position: 0 0 !important;
+  }
+}
+
+/* ---------------------------------------------------
+   MOBILE (Hero section)
+--------------------------------------------------- */
+
+@media (max-width: 767px) {
+  .hero-particle {
+    display: none;
+  }
+
+  .hero-image-zoom,
+  .hero-image-pan {
+    animation-duration: 700ms;
+  }
+
+  .hero-image-rise,
+  .hero-image-wipe,
+  .hero-image-scale,
+  .hero-image-diagonal {
+    animation-duration: 650ms;
+  }
+
+  .hero-image-drift {
+    animation-duration: 5200ms;
   }
 }

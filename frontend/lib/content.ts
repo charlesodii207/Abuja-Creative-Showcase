@@ -10,9 +10,6 @@ export const event = {
   organizer: "AFRIGOS Film & Media Academy",
 };
 
-// TEMPORARY: ACS doesn't have its own social accounts yet.
-// These point to AFRIGOS's accounts as a placeholder — swap once ACS's
-// own accounts exist.
 export const socials = [
   {
     name: "TikTok",
@@ -21,13 +18,23 @@ export const socials = [
   },
   {
     name: "Facebook",
-    url: "https://www.facebook.com/share/1G2B8acP4D/?mibextid=wwXIfr",
+    url: "https://www.facebook.com/afriqacreativeshowcase/",
     icon: "facebook" as const,
   },
   {
     name: "Instagram",
-    url: "https://www.instagram.com/afrigosfilmschool/",
+    url: "https://www.instagram.com/afriqacreativeshowcase/",
     icon: "instagram" as const,
+  },
+  {
+    name: "LinkedIn",
+    url: "https://www.linkedin.com/company/afriqacreativeshowcase/",
+    icon: "linkedin" as const,
+  },
+  {
+    name: "YouTube",
+    url: "https://www.youtube.com/@afriqacreativeshowcase",
+    icon: "youtube" as const,
   },
 ];
 

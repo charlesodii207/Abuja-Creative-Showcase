@@ -23,16 +23,41 @@ function getTimeLeft(): TimeLeft {
   };
 }
 
-function Unit({ value, label }: { value: number; label: string }) {
+function Unit({
+  value,
+  label,
+  accent,
+}: {
+  value: number;
+  label: string;
+  accent: string;
+}) {
   return (
-    <div className="flex flex-col items-center rounded-2xl border border-white/10 bg-ink-raised px-6 py-8 sm:px-10">
-      <span className="font-display text-4xl text-teal sm:text-6xl">
-        {String(value).padStart(2, "0")}
-      </span>
+    <div className="group relative overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#151A3A] px-5 py-8 shadow-[0_20px_60px_rgba(0,0,0,0.14)] transition-all duration-300 hover:-translate-y-1 hover:border-white/15 sm:px-8 sm:py-10">
+      <div
+        aria-hidden="true"
+        className="absolute left-0 top-0 h-[2px] w-full opacity-70"
+        style={{ backgroundColor: accent }}
+      />
 
-      <span className="mt-2 text-xs uppercase tracking-widest text-muted sm:text-sm">
-        {label}
-      </span>
+      <div
+        aria-hidden="true"
+        className="absolute -right-10 -top-10 h-24 w-24 rounded-full blur-2xl opacity-10 transition-opacity duration-300 group-hover:opacity-20"
+        style={{ backgroundColor: accent }}
+      />
+
+      <div className="relative">
+        <span
+          className="font-display text-5xl leading-none sm:text-6xl lg:text-7xl"
+          style={{ color: accent }}
+        >
+          {String(value).padStart(2, "0")}
+        </span>
+
+        <span className="mt-3 block text-[9px] font-semibold uppercase tracking-[0.3em] text-[#B8B3AA]/50 sm:text-[10px]">
+          {label}
+        </span>
+      </div>
     </div>
   );
 }
@@ -44,10 +69,9 @@ export default function CountdownClock() {
   useEffect(() => {
     setTimeLeft(getTimeLeft());
 
-    const interval = setInterval(
-      () => setTimeLeft(getTimeLeft()),
-      1000
-    );
+    const interval = setInterval(() => {
+      setTimeLeft(getTimeLeft());
+    }, 1000);
 
     return () => clearInterval(interval);
   }, []);
@@ -63,7 +87,7 @@ export default function CountdownClock() {
       try {
         await navigator.share(shareData);
       } catch {
-        // user cancelled, ignore
+        // User cancelled.
       }
     } else {
       await navigator.clipboard.writeText(shareData.url);
@@ -73,54 +97,127 @@ export default function CountdownClock() {
   }
 
   return (
-    <main className="mx-auto max-w-4xl px-6 py-20 text-center md:py-28">
-      <div className="tricolor-rule mx-auto mb-6 w-fit">
-        <span />
-        <span />
-        <span />
-      </div>
+    <main className="relative min-h-screen overflow-hidden bg-[#11152F]">
+      {/* Ambient details */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -right-32 top-20 h-72 w-72 rounded-full border border-[#E59200]/10"
+      />
 
-      <p className="text-sm uppercase tracking-widest text-gold">
-        December 4–5, 2026 · Old Parade Ground, Abuja
-      </p>
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -left-28 bottom-20 h-56 w-56 rounded-full border border-[#00A5A8]/10"
+      />
 
-      <h1 className="mt-3 font-display text-3xl text-cream sm:text-5xl">
-        Counting Down to ACS
-      </h1>
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute left-1/2 top-32 h-96 w-96 -translate-x-1/2 rounded-full bg-[#B80319]/[0.04] blur-[120px]"
+      />
 
-      <p className="mt-4 text-muted">
-        Where Creativity Meets Opportunity.
-      </p>
-
-      <div className="mt-14 grid grid-cols-2 gap-4 sm:grid-cols-4">
-        {timeLeft ? (
-          <>
-            <Unit value={timeLeft.days} label="Days" />
-            <Unit value={timeLeft.hours} label="Hours" />
-            <Unit value={timeLeft.minutes} label="Minutes" />
-            <Unit value={timeLeft.seconds} label="Seconds" />
-          </>
-        ) : (
-          <div className="col-span-4 py-8 text-muted">
-            Loading...
+      <div className="relative mx-auto max-w-5xl px-6 py-20 sm:px-8 md:py-28 lg:px-10">
+        {/* Header */}
+        <div className="text-center">
+          <div className="tricolor-rule mx-auto mb-7">
+            <span />
+            <span />
+            <span />
           </div>
-        )}
-      </div>
 
-      <div className="mt-14 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-        <button
-          onClick={handleShare}
-          className="rounded-full bg-teal px-7 py-3.5 text-sm font-medium text-ink transition-transform hover:scale-105"
-        >
-          {copied ? "Link Copied!" : "Share the Countdown"}
-        </button>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#E59200] sm:text-xs">
+            December 4–5, 2026 · Abuja
+          </p>
 
-        <Link
-          href="/register"
-          className="rounded-full bg-gold px-7 py-3.5 text-sm font-medium text-ink transition-transform hover:scale-105"
-        >
-          Register Now
-        </Link>
+          <h1 className="mt-4 font-display text-4xl leading-[1.02] text-[#F5EFE6] sm:text-5xl md:text-6xl">
+            Counting Down to ACS
+          </h1>
+
+          <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-[#B8B3AA]/70 sm:text-lg">
+            Where Creativity Meets Opportunity.
+          </p>
+        </div>
+
+        {/* Countdown */}
+        <div className="relative mt-14">
+          <div
+            aria-hidden="true"
+            className="absolute -inset-3 rounded-[2.25rem] border border-white/[0.04]"
+          />
+
+          <div className="relative grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
+            {timeLeft ? (
+              <>
+                <Unit
+                  value={timeLeft.days}
+                  label="Days"
+                  accent="#B80319"
+                />
+
+                <Unit
+                  value={timeLeft.hours}
+                  label="Hours"
+                  accent="#E59200"
+                />
+
+                <Unit
+                  value={timeLeft.minutes}
+                  label="Minutes"
+                  accent="#00A5A8"
+                />
+
+                <Unit
+                  value={timeLeft.seconds}
+                  label="Seconds"
+                  accent="#F5EFE6"
+                />
+              </>
+            ) : (
+              <div className="col-span-2 py-12 text-center text-sm text-[#B8B3AA]/50 sm:col-span-4">
+                Loading countdown...
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="mt-12 flex flex-col items-center justify-center gap-4 sm:flex-row">
+          <button
+            type="button"
+            onClick={handleShare}
+            className="group inline-flex items-center justify-center rounded-full border border-white/15 bg-[#151A3A] px-7 py-3.5 text-sm font-medium text-[#F5EFE6] transition-all duration-300 hover:-translate-y-1 hover:border-[#00A5A8]/50 hover:bg-[#191F43]"
+          >
+            {copied ? "Link Copied!" : "Share the Countdown"}
+
+            <span className="ml-2 text-[#00A5A8] transition-transform duration-300 group-hover:translate-x-1">
+              ↗
+            </span>
+          </button>
+
+          <Link
+            href="/register"
+            className="group inline-flex items-center justify-center rounded-full bg-[#E59200] px-7 py-3.5 text-sm font-medium text-[#11152F] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_14px_35px_rgba(229,146,0,0.2)]"
+          >
+            Register Now
+
+            <span className="ml-2 transition-transform duration-300 group-hover:translate-x-1">
+              →
+            </span>
+          </Link>
+        </div>
+
+        {/* Footer detail */}
+        <div className="mx-auto mt-16 flex max-w-xl items-center justify-center gap-4">
+          <span className="h-px flex-1 bg-white/10" />
+
+          <span className="h-1.5 w-1.5 rounded-full bg-[#E59200]" />
+
+          <span className="text-[9px] font-semibold uppercase tracking-[0.3em] text-[#F5EFE6]/30">
+            Old Parade Ground
+          </span>
+
+          <span className="h-1.5 w-1.5 rounded-full bg-[#B80319]" />
+
+          <span className="h-px flex-1 bg-white/10" />
+        </div>
       </div>
     </main>
   );

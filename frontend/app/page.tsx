@@ -1,9 +1,12 @@
 import CountdownBanner from "./components/CountdownBanner";
 import Hero from "./components/Hero";
 import AboutSection from "./components/AboutSection";
+import ConvenersNote from "./components/ConvenersNote";
+import CreativeEcosystem from "./components/CreativeEcosystem";
 import ParticipationSection from "./components/ParticipationSection";
 import ProgrammeSection from "./components/ProgrammeSection";
 import SponsorsSection from "./components/SponsorsSection";
+import InsideAfriqa from "./components/InsideAfriqa";
 import FAQSection from "./components/FAQSection";
 import ContactSection from "./components/ContactSection";
 import FollowSection from "./components/FollowSection";
@@ -44,12 +47,16 @@ export default function Home() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(eventJsonLd) }}
       />
+
       <CountdownBanner />
       <Hero />
       <AboutSection />
+      <ConvenersNote />
+      <CreativeEcosystem />
       <ParticipationSection />
       <ProgrammeSection />
       <SponsorsSection />
+      <InsideAfriqa />
       <FAQSection />
       <ContactSection />
       <FollowSection />

@@ -7,42 +7,42 @@ import { event } from "@/lib/content";
 
 const SLIDES = [
   {
-    image: "/images/hero-01.png",
+    image: "/images/hero-01.webp",
     text: "Two Days. One Ecosystem.",
     color: "text-red",
     hex: "#B80319",
     transition: "zoom",
   },
   {
-    image: "/images/hero-02.png",
+    image: "/images/hero-02.webp",
     text: "Film × Music × Fashion × Tech",
     color: "text-gold",
     hex: "#E59200",
     transition: "rise",
   },
   {
-    image: "/images/hero-03.png",
+    image: "/images/hero-03.webp",
     text: "Creativity. Connection. Capital.",
     color: "text-teal",
     hex: "#00A5A8",
     transition: "wipe",
   },
   {
-    image: "/images/hero-04.png",
+    image: "/images/hero-04.webp",
     text: "Where African Creativity Meets Opportunity.",
     color: "text-red",
     hex: "#B80319",
     transition: "scale",
   },
   {
-    image: "/images/hero-05.png",
+    image: "/images/hero-05.webp",
     text: "Abuja. Africa. The Future.",
     color: "text-gold",
     hex: "#E59200",
     transition: "diagonal",
   },
   {
-    image: "/images/hero-06.png",
+    image: "/images/hero-06.webp",
     text: "Ideas. Talent. Opportunity.",
     color: "text-teal",
     hex: "#00A5A8",
@@ -120,23 +120,6 @@ export default function Hero() {
   const [active, setActive] = useState(0);
   const reducedMotion = useReducedMotion();
 
-  // =====================================================
-  // PROGRESSIVE HERO IMAGE LOADING
-  //
-  // All 6 slides used to render an <img> with `src` set
-  // unconditionally, so the browser fetched all ~15MB on
-  // mount regardless of which slide was visible. Instead,
-  // only the slide that's currently on screen gets its
-  // <Image> mounted immediately. The next slide is queued
-  // in almost right away (so it's ready well before its
-  // 5200ms turn), and the remaining slides trickle in over
-  // the following couple of seconds so they never compete
-  // with the critical first paint.
-  //
-  // Manually jumping to a slide via the side navigation
-  // also marks that slide "ready" immediately, so there's
-  // never a stall waiting on the scheduled queue.
-  // =====================================================
   const [readyIndices, setReadyIndices] = useState<Set<number>>(
     () => new Set([0])
   );
@@ -144,8 +127,10 @@ export default function Hero() {
   const markReady = (index: number) => {
     setReadyIndices((prev) => {
       if (prev.has(index)) return prev;
+
       const next = new Set(prev);
       next.add(index);
+
       return next;
     });
   };
@@ -154,11 +139,8 @@ export default function Hero() {
     const timers: number[] = [];
 
     SLIDES.forEach((_, index) => {
-      if (index === 0) return; // already ready on mount
+      if (index === 0) return;
 
-      // Slide 2 loads almost immediately after the critical
-      // image so it's available well ahead of the first
-      // transition. The rest trickle in afterward.
       const delay = index === 1 ? 150 : 600 + index * 500;
 
       timers.push(
@@ -190,7 +172,7 @@ export default function Hero() {
   const cycle = Math.floor(active / 3);
 
   return (
-    <section className="relative min-h-[calc(100vh-104px)] overflow-hidden border-b border-white/10 bg-[#111827]">
+    <section className="relative min-h-[calc(100vh-104px)] overflow-hidden border-b border-white/10 bg-[#11152F]">
       {/* =====================================================
           CINEMATIC SLIDESHOW BACKGROUND
       ====================================================== */}
@@ -207,13 +189,6 @@ export default function Hero() {
                 isActive ? "z-[1] opacity-100" : "z-0 opacity-0"
               }`}
             >
-              {/* =================================================
-                  IMAGE ENTRANCE LAYER
-
-                  Each image gets its own premium entrance style.
-                  Entrance is intentionally fast.
-              ================================================== */}
-
               <div
                 className={`absolute inset-[-5%] ${
                   isActive && !reducedMotion
@@ -235,7 +210,7 @@ export default function Hero() {
                       aria-hidden="true"
                       fill
                       sizes="100vw"
-                      quality={82}
+                      quality={75}
                       priority={index === 0}
                       loading={index === 0 ? undefined : "lazy"}
                       className="object-cover object-center"
@@ -244,16 +219,12 @@ export default function Hero() {
                 </div>
               </div>
 
-              {/* Soft navy cinematic wash */}
-              <div className="absolute inset-0 bg-[#111827]/30" />
+              <div className="absolute inset-0 bg-[#11152F]/30" />
 
-              {/* Strong left gradient */}
-              <div className="absolute inset-0 bg-gradient-to-r from-[#111827] via-[#111827]/75 to-[#111827]/10" />
+              <div className="absolute inset-0 bg-gradient-to-r from-[#11152F] via-[#11152F]/75 to-[#11152F]/10" />
 
-              {/* Bottom cinematic gradient */}
-              <div className="absolute inset-0 bg-gradient-to-t from-[#111827] via-[#111827]/25 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#11152F] via-[#11152F]/25 to-transparent" />
 
-              {/* Slight dark overlay */}
               <div className="absolute inset-0 bg-black/10" />
             </div>
           );
@@ -313,8 +284,6 @@ export default function Hero() {
         ================================================== */}
 
         <div className="my-auto max-w-4xl py-12">
-          {/* Event name */}
-
           <div className="hero-title-wrap">
             <h1 className="hero-title max-w-4xl font-display text-5xl leading-[0.95] tracking-[-0.025em] text-[#F5EFE6] drop-shadow-2xl sm:text-6xl md:text-7xl lg:text-8xl">
               {event.name}
@@ -357,9 +326,7 @@ export default function Hero() {
                 key={active}
                 className={`absolute inset-0 font-display text-2xl font-semibold leading-tight ${
                   activeSlide.color
-                } ${
-                  reducedMotion ? "" : "animate-hero-text-in"
-                } sm:text-3xl`}
+                } ${reducedMotion ? "" : "animate-hero-text-in"} sm:text-3xl`}
               >
                 {activeSlide.text}
               </p>
@@ -375,8 +342,8 @@ export default function Hero() {
                   barIndex === 0
                     ? "bg-[#B80319]"
                     : barIndex === 1
-                    ? "bg-[#E59200]"
-                    : "bg-[#00A5A8]";
+                      ? "bg-[#E59200]"
+                      : "bg-[#00A5A8]";
 
                 let state: "done" | "active" | "pending";
 
@@ -419,7 +386,7 @@ export default function Hero() {
 
             <a
               href="#programme"
-              className="group rounded-full border bg-[#111827]/20 px-7 py-3.5 text-sm font-medium text-[#F5EFE6] backdrop-blur-sm transition-all duration-500 hover:-translate-y-1 hover:bg-white/10"
+              className="group rounded-full border bg-[#11152F]/20 px-7 py-3.5 text-sm font-medium text-[#F5EFE6] backdrop-blur-sm transition-all duration-500 hover:-translate-y-1 hover:bg-white/10"
               style={{
                 borderColor: reducedMotion
                   ? "rgba(255,255,255,0.25)"
@@ -496,7 +463,7 @@ export default function Hero() {
           MOVING CREATIVE INDUSTRIES TICKER
       ====================================================== */}
 
-      <div className="absolute bottom-0 left-0 z-20 w-full overflow-hidden border-t border-white/10 bg-[#111827]/55 backdrop-blur-md">
+      <div className="absolute bottom-0 left-0 z-20 w-full overflow-hidden border-t border-white/10 bg-[#11152F]/55 backdrop-blur-md">
         <div className="hero-marquee flex w-max items-center py-3">
           {[...Array(2)].map((_, group) => (
             <div
@@ -554,14 +521,6 @@ export default function Hero() {
       ====================================================== */}
 
       <style jsx>{`
-        /* ===================================================
-           CINEMATIC IMAGE ENTRANCES
-           
-           Fast entrance + separate slow drift.
-           This keeps the slideshow feeling premium rather
-           than making each image slowly crawl into place.
-        =================================================== */
-
         @keyframes imageZoomIn {
           0% {
             transform: scale(1.12) translate3d(0.8%, 0.4%, 0);
@@ -644,13 +603,6 @@ export default function Hero() {
           }
         }
 
-        /* ===================================================
-           SLOW CINEMATIC DRIFT
-
-           Starts after the fast entrance and continues
-           through the slide.
-        =================================================== */
-
         @keyframes heroImageDrift {
           0% {
             transform: scale(1.045) translate3d(0, 0, 0);
@@ -669,11 +621,6 @@ export default function Hero() {
           transform-origin: center center;
           will-change: transform, filter, clip-path;
         }
-
-        /*
-          Fast entrance timings.
-          These are intentionally under 1 second.
-        */
 
         .hero-image-zoom {
           animation: imageZoomIn 850ms
@@ -1076,11 +1023,6 @@ export default function Hero() {
           .hero-particle {
             display: none;
           }
-
-          /*
-            Faster on phones.
-            The entrance is noticeable but doesn't feel heavy.
-          */
 
           .hero-image-zoom,
           .hero-image-pan {
