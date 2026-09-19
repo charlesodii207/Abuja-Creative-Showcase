@@ -378,12 +378,19 @@ export default function SponsorshipPageClient() {
 
         <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {tiers.map((tier) => (
-            <button
+            <div
               key={tier.name}
-              type="button"
+              role="button"
+              tabIndex={0}
               onClick={() => handlePackageSelect(tier.name)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  handlePackageSelect(tier.name);
+                }
+              }}
               aria-label={`Enquire about ${tier.name}`}
-              className="group relative flex h-full flex-col overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#151A3A] px-6 py-8 text-left transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:bg-[#181E40] focus:outline-none focus:ring-2 focus:ring-[#00A5A8]/50"
+              className="group relative flex h-full w-full cursor-pointer flex-col overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#151A3A] px-6 py-8 text-center transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:bg-[#181E40] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#00A5A8]/50"
             >
               <div
                 aria-hidden="true"
@@ -397,7 +404,7 @@ export default function SponsorshipPageClient() {
                 style={{ backgroundColor: tier.color }}
               />
 
-              <div className="relative flex flex-1 flex-col text-center">
+              <div className="relative flex w-full flex-1 flex-col text-center">
                 <div className="mx-auto flex h-20 w-20 items-center justify-center">
                   {tier.icon}
                 </div>
@@ -417,7 +424,7 @@ export default function SponsorshipPageClient() {
                   {tier.usd}
                 </p>
 
-                <div className="mt-7 border-t border-dashed border-white/10 pt-6">
+                <div className="mt-7 w-full border-t border-dashed border-white/10 pt-6">
                   <p className="mb-4 text-[9px] font-semibold uppercase tracking-[0.25em] text-[#F5EFE6]/30">
                     Key Benefits
                   </p>
@@ -445,7 +452,7 @@ export default function SponsorshipPageClient() {
                   </span>
                 </div>
               </div>
-            </button>
+            </div>
           ))}
         </div>
 
