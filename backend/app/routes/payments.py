@@ -59,6 +59,43 @@ def _get_resume_detail_by_reference(
     return None
 
 
+def _get_completed_payment_detail_by_reference(
+    db: Session,
+    reference: str,
+):
+    """
+    Find a registration detail by a Paystack reference that has already
+    been successfully processed.
+
+    This makes payment verification idempotent. If the frontend calls
+    /payments/verify again after a successful payment, the backend can
+    recognize the transaction instead of returning "Registration not found".
+    """
+
+    attendee_detail = db.query(models.AttendeeDetail).filter(
+        models.AttendeeDetail.paystack_reference == reference
+    ).first()
+
+    if attendee_detail:
+        return attendee_detail
+
+    exhibitor_detail = db.query(models.ExhibitorDetail).filter(
+        models.ExhibitorDetail.paystack_reference == reference
+    ).first()
+
+    if exhibitor_detail:
+        return exhibitor_detail
+
+    pitcher_detail = db.query(models.PitcherDetail).filter(
+        models.PitcherDetail.paystack_reference == reference
+    ).first()
+
+    if pitcher_detail:
+        return pitcher_detail
+
+    return None
+
+
 def _verify_with_paystack(reference: str):
     try:
         transaction = verify_transaction(reference)
@@ -345,7 +382,7 @@ def verify_payment(
     payload: schemas.PaystackVerifyRequest,
     db: Session = Depends(get_db),
 ):
-    reference = payload.reference_number
+    reference = payload.reference_number.strip()
 
     # ------------------------------------------------------------------
     # Case 1: this reference belongs to an in-progress ticket upgrade
@@ -407,7 +444,7 @@ def verify_payment(
         )
 
     # ------------------------------------------------------------------
-    # Case 2: this reference belongs to a resumed original payment
+    # Case 2: this reference belongs to an in-progress resumed payment
     # ------------------------------------------------------------------
 
     resume_detail = _get_resume_detail_by_reference(
@@ -450,7 +487,12 @@ def verify_payment(
                 ),
             )
 
+        # Save the successful Paystack reference permanently before
+        # clearing the pending reference. This allows the same payment
+        # to be safely verified again after a page refresh or duplicate
+        # callback.
         resume_detail.is_paid = True
+        resume_detail.paystack_reference = reference
         resume_detail.pending_payment_reference = None
 
         registrant.status = models.RegistrantStatus.confirmed
@@ -463,6 +505,24 @@ def verify_payment(
             reference_number=registrant.reference_number,
             status="confirmed",
             message="Payment confirmed — registration complete.",
+        )
+
+    # ------------------------------------------------------------------
+    # Case 2B: this reference was already successfully processed
+    # ------------------------------------------------------------------
+
+    completed_detail = _get_completed_payment_detail_by_reference(
+        db=db,
+        reference=reference,
+    )
+
+    if completed_detail:
+        registrant = completed_detail.registrant
+
+        return schemas.PaystackVerifyResponse(
+            reference_number=registrant.reference_number,
+            status="confirmed",
+            message="Payment already confirmed.",
         )
 
     # ------------------------------------------------------------------
@@ -529,6 +589,7 @@ def verify_payment(
         )
 
     detail.is_paid = True
+    detail.paystack_reference = reference
     registrant.status = models.RegistrantStatus.confirmed
 
     db.commit()
