@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from pydantic import BaseModel, EmailStr, model_validator
+
 from app.models import TicketType, BoothSize, ExhibitType
 
 
@@ -29,15 +30,18 @@ class ExhibitorRegistrationRequest(BaseModel):
     def check_exhibit_fields(self):
         if self.exhibit_type == ExhibitType.booth and not self.booth_size:
             raise ValueError("booth_size is required when exhibit_type is 'booth'")
+
         if self.exhibit_type == ExhibitType.auction:
             if not self.auction_item_description:
                 raise ValueError(
                     "auction_item_description is required when exhibit_type is 'auction'"
                 )
+
             if not self.auction_quantity or self.auction_quantity < 1:
                 raise ValueError(
                     "auction_quantity must be at least 1 when exhibit_type is 'auction'"
                 )
+
         return self
 
 
@@ -159,8 +163,9 @@ class SponsorInquiryRequest(BaseModel):
     full_name: str
     email: EmailStr
     phone: str
-    organization: str
-    tier_interested: str | None = None
+    organization_name: str
+    role: str
+    package_interest: str | None = None
     message: str | None = None
 
 
