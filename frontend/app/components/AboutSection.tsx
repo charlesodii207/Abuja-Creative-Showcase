@@ -13,19 +13,18 @@ export default function AboutSection() {
         <div className="grid items-center gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:gap-20">
           {/* Mobile heading / Desktop content */}
           <div className="order-1 lg:order-2">
-            <Reveal>
-              <div className="mb-6 flex items-center gap-3">
-                <div className="tricolor-rule">
-                  <span />
-                  <span />
-                  <span />
-                </div>
-
-                <span className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#F5EFE6]/45">
-                  About AFRIQA
-                </span>
+            {/* About AFRIQA — intentionally loads immediately */}
+            <div className="mb-6 flex items-center gap-3">
+              <div className="tricolor-rule">
+                <span />
+                <span />
+                <span />
               </div>
-            </Reveal>
+
+              <span className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#F5EFE6]/45">
+                About AFRIQA
+              </span>
+            </div>
 
             {/* Mobile portrait */}
             <div className="mb-12 lg:hidden">

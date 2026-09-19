@@ -11,42 +11,36 @@ const SLIDES = [
     text: "Two Days. One Ecosystem.",
     color: "text-red",
     hex: "#B80319",
-    transition: "zoom",
   },
   {
     image: "/images/hero-02.webp",
     text: "Film × Music × Fashion × Tech",
     color: "text-gold",
     hex: "#E59200",
-    transition: "rise",
   },
   {
     image: "/images/hero-03.webp",
     text: "Creativity. Connection. Capital.",
     color: "text-teal",
     hex: "#00A5A8",
-    transition: "wipe",
   },
   {
     image: "/images/hero-04.webp",
     text: "Where African Creativity Meets Opportunity.",
     color: "text-red",
     hex: "#B80319",
-    transition: "scale",
   },
   {
     image: "/images/hero-05.webp",
     text: "Abuja. Africa. The Future.",
     color: "text-gold",
     hex: "#E59200",
-    transition: "diagonal",
   },
   {
     image: "/images/hero-06.webp",
     text: "Ideas. Talent. Opportunity.",
     color: "text-teal",
     hex: "#00A5A8",
-    transition: "pan",
   },
 ] as const;
 
@@ -184,18 +178,12 @@ export default function Hero() {
 
           return (
             <div
-              key={`${slide.image}-${isActive ? active : "idle"}`}
-              className={`absolute inset-0 transition-opacity duration-[900ms] ease-out ${
+              key={slide.image}
+              className={`absolute inset-0 transition-opacity duration-[1200ms] ease-in-out ${
                 isActive ? "z-[1] opacity-100" : "z-0 opacity-0"
               }`}
             >
-              <div
-                className={`absolute inset-[-5%] ${
-                  isActive && !reducedMotion
-                    ? `hero-image-transition hero-image-${slide.transition}`
-                    : ""
-                }`}
-              >
+              <div className="absolute inset-[-5%]">
                 <div
                   className={`absolute inset-0 ${
                     isActive && !reducedMotion
@@ -525,88 +513,6 @@ export default function Hero() {
       ====================================================== */}
 
       <style jsx>{`
-        @keyframes imageZoomIn {
-          0% {
-            transform: scale(1.12) translate3d(0.8%, 0.4%, 0);
-            filter: blur(3px);
-          }
-
-          100% {
-            transform: scale(1.045) translate3d(0, 0, 0);
-            filter: blur(0);
-          }
-        }
-
-        @keyframes imageRiseIn {
-          0% {
-            transform: scale(1.075) translate3d(0, 3%, 0);
-            filter: blur(6px);
-          }
-
-          100% {
-            transform: scale(1.045) translate3d(0, 0, 0);
-            filter: blur(0);
-          }
-        }
-
-        @keyframes imageWipeIn {
-          0% {
-            transform: scale(1.055);
-            clip-path: inset(0 100% 0 0);
-          }
-
-          100% {
-            transform: scale(1.045);
-            clip-path: inset(0 0 0 0);
-          }
-        }
-
-        @keyframes imageScaleIn {
-          0% {
-            transform: scale(1.14);
-            filter: blur(5px);
-          }
-
-          100% {
-            transform: scale(1.045);
-            filter: blur(0);
-          }
-        }
-
-        @keyframes imageDiagonalIn {
-          0% {
-            transform: scale(1.075) translate3d(1.5%, -0.8%, 0);
-            clip-path: polygon(
-              100% 0,
-              100% 0,
-              100% 100%,
-              100% 100%
-            );
-          }
-
-          100% {
-            transform: scale(1.045) translate3d(0, 0, 0);
-            clip-path: polygon(
-              100% 0,
-              0 0,
-              0 100%,
-              100% 100%
-            );
-          }
-        }
-
-        @keyframes imagePanIn {
-          0% {
-            transform: scale(1.09) translate3d(2.5%, 0, 0);
-            filter: blur(3px);
-          }
-
-          100% {
-            transform: scale(1.045) translate3d(-0.5%, 0, 0);
-            filter: blur(0);
-          }
-        }
-
         @keyframes heroImageDrift {
           0% {
             transform: scale(1.045) translate3d(0, 0, 0);
@@ -619,41 +525,6 @@ export default function Hero() {
           100% {
             transform: scale(1.055) translate3d(0.35%, 0.2%, 0);
           }
-        }
-
-        .hero-image-transition {
-          transform-origin: center center;
-          will-change: transform, filter, clip-path;
-        }
-
-        .hero-image-zoom {
-          animation: imageZoomIn 850ms
-            cubic-bezier(0.16, 1, 0.3, 1) both;
-        }
-
-        .hero-image-rise {
-          animation: imageRiseIn 700ms
-            cubic-bezier(0.16, 1, 0.3, 1) both;
-        }
-
-        .hero-image-wipe {
-          animation: imageWipeIn 750ms
-            cubic-bezier(0.16, 1, 0.3, 1) both;
-        }
-
-        .hero-image-scale {
-          animation: imageScaleIn 800ms
-            cubic-bezier(0.16, 1, 0.3, 1) both;
-        }
-
-        .hero-image-diagonal {
-          animation: imageDiagonalIn 750ms
-            cubic-bezier(0.16, 1, 0.3, 1) both;
-        }
-
-        .hero-image-pan {
-          animation: imagePanIn 850ms
-            cubic-bezier(0.16, 1, 0.3, 1) both;
         }
 
         .hero-image-drift {
@@ -998,7 +869,6 @@ export default function Hero() {
         =================================================== */
 
         @media (prefers-reduced-motion: reduce) {
-          .hero-image-transition,
           .hero-image-drift,
           :global(.hero-intro-1),
           :global(.hero-title),
@@ -1026,18 +896,6 @@ export default function Hero() {
         @media (max-width: 767px) {
           .hero-particle {
             display: none;
-          }
-
-          .hero-image-zoom,
-          .hero-image-pan {
-            animation-duration: 700ms;
-          }
-
-          .hero-image-rise,
-          .hero-image-wipe,
-          .hero-image-scale,
-          .hero-image-diagonal {
-            animation-duration: 650ms;
           }
 
           .hero-image-drift {
