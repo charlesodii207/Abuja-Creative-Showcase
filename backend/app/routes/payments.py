@@ -27,14 +27,6 @@ def _get_resume_detail_by_reference(
     db: Session,
     reference: str,
 ):
-    """
-    Find the paid registration detail associated with a resumed
-    payment reference.
-
-    Resumed payments are supported for attendee, exhibitor, and
-    pitcher registrations.
-    """
-
     attendee_detail = db.query(models.AttendeeDetail).filter(
         models.AttendeeDetail.pending_payment_reference == reference
     ).first()
@@ -64,30 +56,32 @@ def _get_completed_payment_detail_by_reference(
     reference: str,
 ):
     """
-    Find a registration detail by a Paystack reference that has already
-    been successfully processed.
+    Only return a completed payment when the registration is actually paid.
 
-    This makes payment verification idempotent. If the frontend calls
-    /payments/verify again after a successful payment, the backend can
-    recognize the transaction instead of returning "Registration not found".
+    A Paystack reference may already be stored before verification is
+    completed, so paystack_reference alone must never be treated as proof
+    that payment succeeded.
     """
 
     attendee_detail = db.query(models.AttendeeDetail).filter(
-        models.AttendeeDetail.paystack_reference == reference
+        models.AttendeeDetail.paystack_reference == reference,
+        models.AttendeeDetail.is_paid.is_(True),
     ).first()
 
     if attendee_detail:
         return attendee_detail
 
     exhibitor_detail = db.query(models.ExhibitorDetail).filter(
-        models.ExhibitorDetail.paystack_reference == reference
+        models.ExhibitorDetail.paystack_reference == reference,
+        models.ExhibitorDetail.is_paid.is_(True),
     ).first()
 
     if exhibitor_detail:
         return exhibitor_detail
 
     pitcher_detail = db.query(models.PitcherDetail).filter(
-        models.PitcherDetail.paystack_reference == reference
+        models.PitcherDetail.paystack_reference == reference,
+        models.PitcherDetail.is_paid.is_(True),
     ).first()
 
     if pitcher_detail:
@@ -114,18 +108,8 @@ def _verify_with_paystack(reference: str):
 def _get_registration_action(
     registrant: models.Registrant,
 ) -> tuple[str, str, int | None]:
-    """
-    Determine what the frontend should show on the smart /verify page.
-
-    Returns:
-        action, message, amount_kobo
-    """
 
     status = registrant.status
-
-    # ---------------------------------------------------------------
-    # Confirmed
-    # ---------------------------------------------------------------
 
     if status == models.RegistrantStatus.confirmed:
         return (
@@ -134,10 +118,6 @@ def _get_registration_action(
             None,
         )
 
-    # ---------------------------------------------------------------
-    # Rejected
-    # ---------------------------------------------------------------
-
     if status == models.RegistrantStatus.rejected:
         return (
             "rejected",
@@ -145,16 +125,10 @@ def _get_registration_action(
             None,
         )
 
-    # ---------------------------------------------------------------
-    # Payment-required categories
-    # ---------------------------------------------------------------
-
     detail = _get_paid_detail(registrant)
 
     if detail is not None:
-        is_paid = bool(detail.is_paid)
-
-        if is_paid:
+        if bool(detail.is_paid):
             return (
                 "confirmed",
                 "Your payment has been recorded and your registration is confirmed.",
@@ -182,10 +156,6 @@ def _get_registration_action(
             "Your registration is awaiting payment.",
             amount_kobo,
         )
-
-    # ---------------------------------------------------------------
-    # Applications that don't require payment
-    # ---------------------------------------------------------------
 
     if status == models.RegistrantStatus.approved:
         return (
@@ -223,18 +193,6 @@ def registration_status(
     ref: str = Query(..., min_length=1),
     db: Session = Depends(get_db),
 ):
-    """
-    Smart registration status endpoint used by:
-
-        /verify?ref=ACS-XXXXXXX
-
-    The frontend sends the registration reference number here and the
-    backend determines the correct next step.
-
-    This endpoint does not verify a Paystack transaction. Payment
-    verification remains handled by POST /payments/verify.
-    """
-
     reference = ref.strip()
 
     registrant = db.query(models.Registrant).filter(
@@ -274,20 +232,6 @@ def resume_payment(
     payload: schemas.ResumePaymentRequest,
     db: Session = Depends(get_db),
 ):
-    """
-    Start a fresh Paystack payment attempt for an unpaid registration.
-
-    Supported paid categories:
-        - attendee
-        - exhibitor
-        - pitcher
-
-    The registration reference remains the user's permanent reference.
-    A separate pending payment reference is generated for each Paystack
-    payment attempt so Paystack never receives a reused transaction
-    reference.
-    """
-
     reference = payload.reference_number.strip()
 
     registrant = db.query(models.Registrant).filter(
@@ -339,9 +283,6 @@ def resume_payment(
         registrant.reference_number
     )
 
-    # Keep the permanent ACS registration reference in the callback URL
-    # so the frontend can reconnect the Paystack transaction to the
-    # correct registration after payment.
     callback_url = (
         f"{settings.frontend_url.rstrip('/')}/verify"
         f"?ref={reference}"
@@ -384,9 +325,9 @@ def verify_payment(
 ):
     reference = payload.reference_number.strip()
 
-    # ------------------------------------------------------------------
-    # Case 1: this reference belongs to an in-progress ticket upgrade
-    # ------------------------------------------------------------------
+    # ---------------------------------------------------------------
+    # Case 1: ticket upgrade
+    # ---------------------------------------------------------------
 
     upgrade_detail = db.query(models.AttendeeDetail).filter(
         models.AttendeeDetail.pending_upgrade_reference == reference
@@ -399,12 +340,10 @@ def verify_payment(
 
         if not success_txn:
             return schemas.PaystackVerifyResponse(
-                reference_number=reference,
+                reference_number=registrant.reference_number,
                 status="failed",
                 message="Upgrade payment was not successful.",
             )
-
-        expected_diff = None
 
         try:
             expected_diff = utils.get_upgrade_amount_kobo(
@@ -412,7 +351,7 @@ def verify_payment(
                 new_tier=upgrade_detail.pending_upgrade_ticket_type,
             )
         except ValueError:
-            pass
+            expected_diff = None
 
         paid_amount = txn.get("amount")
 
@@ -443,9 +382,9 @@ def verify_payment(
             message=f"Upgrade confirmed — ticket is now {new_tier.value}.",
         )
 
-    # ------------------------------------------------------------------
-    # Case 2: this reference belongs to an in-progress resumed payment
-    # ------------------------------------------------------------------
+    # ---------------------------------------------------------------
+    # Case 2: resumed payment
+    # ---------------------------------------------------------------
 
     resume_detail = _get_resume_detail_by_reference(
         db=db,
@@ -487,10 +426,6 @@ def verify_payment(
                 ),
             )
 
-        # Save the successful Paystack reference permanently before
-        # clearing the pending reference. This allows the same payment
-        # to be safely verified again after a page refresh or duplicate
-        # callback.
         resume_detail.is_paid = True
         resume_detail.paystack_reference = reference
         resume_detail.pending_payment_reference = None
@@ -507,9 +442,9 @@ def verify_payment(
             message="Payment confirmed — registration complete.",
         )
 
-    # ------------------------------------------------------------------
-    # Case 2B: this reference was already successfully processed
-    # ------------------------------------------------------------------
+    # ---------------------------------------------------------------
+    # Case 2B: already-completed payment
+    # ---------------------------------------------------------------
 
     completed_detail = _get_completed_payment_detail_by_reference(
         db=db,
@@ -525,9 +460,9 @@ def verify_payment(
             message="Payment already confirmed.",
         )
 
-    # ------------------------------------------------------------------
+    # ---------------------------------------------------------------
     # Case 3: normal registration payment
-    # ------------------------------------------------------------------
+    # ---------------------------------------------------------------
 
     registrant = db.query(models.Registrant).filter(
         models.Registrant.reference_number == reference
