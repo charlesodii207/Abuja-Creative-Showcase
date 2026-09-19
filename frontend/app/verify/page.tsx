@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
@@ -22,7 +22,7 @@ type RegistrationStatus = {
   ticket_number: string | null;
 };
 
-type PageState = "loading" | "ready" | "error" | "paying";
+type PageState = "idle" | "loading" | "ready" | "error" | "paying";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -43,60 +43,67 @@ function categoryLabel(category: string) {
 export default function VerifyPage() {
   const searchParams = useSearchParams();
 
-  const [pageState, setPageState] = useState<PageState>("loading");
+  const [pageState, setPageState] = useState<PageState>("idle");
   const [registration, setRegistration] =
     useState<RegistrationStatus | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
+  const [referenceInput, setReferenceInput] = useState("");
 
   const reference = searchParams.get("ref")?.trim() || "";
+
   const paymentReference =
     searchParams.get("reference")?.trim() ||
     searchParams.get("trxref")?.trim() ||
     "";
 
-  useEffect(() => {
-    if (!reference) {
+  async function loadStatus(referenceNumber: string) {
+    if (!referenceNumber) return;
+
+    try {
+      setPageState("loading");
+      setErrorMessage("");
+      setRegistration(null);
+
+      const response = await fetch(
+        `${API_URL}/payments/status?ref=${encodeURIComponent(
+          referenceNumber
+        )}`,
+        {
+          method: "GET",
+          cache: "no-store",
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data?.detail || "We could not find that registration."
+        );
+      }
+
+      setRegistration(data);
+      setPageState("ready");
+    } catch (error) {
       setPageState("error");
       setErrorMessage(
-        "No registration reference was found in this link."
+        error instanceof Error
+          ? error.message
+          : "Something went wrong while checking your registration."
       );
+    }
+  }
+
+  useEffect(() => {
+    if (!reference) {
+      setPageState("idle");
+      setRegistration(null);
+      setErrorMessage("");
       return;
     }
 
-    async function loadStatus() {
-      try {
-        setPageState("loading");
-        setErrorMessage("");
-
-        const response = await fetch(
-          `${API_URL}/payments/status?ref=${encodeURIComponent(reference)}`,
-          {
-            method: "GET",
-            cache: "no-store",
-          }
-        );
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(
-            data?.detail || "We could not find that registration."
-          );
-        }
-
-        setRegistration(data);
-        setPageState("ready");
-      } catch (error) {
-        setPageState("error");
-        setErrorMessage(
-          error instanceof Error
-            ? error.message
-            : "Something went wrong while checking your registration."
-        );
-      }
-    }
-
-    loadStatus();
+    setReferenceInput(reference);
+    loadStatus(reference);
   }, [reference]);
 
   useEffect(() => {
@@ -105,6 +112,7 @@ export default function VerifyPage() {
     async function verifyReturnedPayment() {
       try {
         setPageState("paying");
+        setErrorMessage("");
 
         const response = await fetch(`${API_URL}/payments/verify`, {
           method: "POST",
@@ -124,25 +132,7 @@ export default function VerifyPage() {
           );
         }
 
-        const statusResponse = await fetch(
-          `${API_URL}/payments/status?ref=${encodeURIComponent(reference)}`,
-          {
-            method: "GET",
-            cache: "no-store",
-          }
-        );
-
-        const statusData = await statusResponse.json();
-
-        if (!statusResponse.ok) {
-          throw new Error(
-            statusData?.detail ||
-              "Payment was confirmed, but we could not reload your registration."
-          );
-        }
-
-        setRegistration(statusData);
-        setPageState("ready");
+        await loadStatus(reference);
       } catch (error) {
         setPageState("error");
         setErrorMessage(
@@ -155,6 +145,32 @@ export default function VerifyPage() {
 
     verifyReturnedPayment();
   }, [paymentReference, reference]);
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const cleanedReference = referenceInput.trim().toUpperCase();
+
+    if (!cleanedReference) {
+      setPageState("error");
+      setErrorMessage("Please enter your ACS registration reference.");
+      return;
+    }
+
+    const params = new URLSearchParams();
+    params.set("ref", cleanedReference);
+
+    window.location.href = `/verify?${params.toString()}`;
+  }
+
+  function startAnotherLookup() {
+    setRegistration(null);
+    setErrorMessage("");
+    setReferenceInput("");
+    setPageState("idle");
+
+    window.history.replaceState({}, "", "/verify");
+  }
 
   async function continueToPayment() {
     if (!reference || !registration) return;
@@ -219,6 +235,60 @@ export default function VerifyPage() {
         </p>
       </div>
 
+      {pageState === "idle" && (
+        <section className="mt-10 rounded-2xl border border-white/10 bg-ink-raised px-6 py-8 sm:px-8 sm:py-10">
+          <div className="text-center">
+            <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted">
+              Check your registration
+            </p>
+
+            <h2 className="mt-3 font-display text-2xl text-cream sm:text-3xl">
+              Enter your reference number
+            </h2>
+
+            <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-muted">
+              Enter the ACS reference number sent to your email after
+              registration.
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="mt-8">
+            <label
+              htmlFor="reference"
+              className="block text-xs font-medium uppercase tracking-[0.16em] text-muted"
+            >
+              ACS reference number
+            </label>
+
+            <input
+              id="reference"
+              name="reference"
+              type="text"
+              value={referenceInput}
+              onChange={(event) =>
+                setReferenceInput(event.target.value.toUpperCase())
+              }
+              placeholder="ACS-XXXXXXXX"
+              autoComplete="off"
+              spellCheck={false}
+              className="mt-3 w-full rounded-xl border border-white/10 bg-ink px-5 py-4 font-mono text-sm uppercase tracking-[0.08em] text-cream outline-none transition-colors placeholder:text-white/25 focus:border-gold/60"
+            />
+
+            <button
+              type="submit"
+              className="mt-5 w-full rounded-full bg-gold px-7 py-4 text-sm font-semibold text-ink transition-transform hover:scale-[1.01]"
+            >
+              Check Registration
+            </button>
+          </form>
+
+          <p className="mt-5 text-center text-xs leading-6 text-muted">
+            Your reference number is in the confirmation email from Afriqa
+            Creative Showcase.
+          </p>
+        </section>
+      )}
+
       {pageState === "loading" && (
         <section className="mt-10 rounded-2xl border border-white/10 bg-ink-raised px-8 py-10 text-center">
           <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-white/15 border-t-teal" />
@@ -262,15 +332,13 @@ export default function VerifyPage() {
           </p>
 
           <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-            {reference && (
-              <button
-                type="button"
-                onClick={() => window.location.reload()}
-                className="rounded-full bg-gold px-7 py-3.5 text-sm font-medium text-ink transition-transform hover:scale-105"
-              >
-                Try again
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={startAnotherLookup}
+              className="rounded-full bg-gold px-7 py-3.5 text-sm font-medium text-ink transition-transform hover:scale-105"
+            >
+              Check Another Reference
+            </button>
 
             <Link
               href="/"
@@ -414,6 +482,14 @@ export default function VerifyPage() {
           </div>
 
           <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+            <button
+              type="button"
+              onClick={startAnotherLookup}
+              className="rounded-full bg-gold px-7 py-3.5 text-sm font-medium text-ink transition-transform hover:scale-105"
+            >
+              Check Another Reference
+            </button>
+
             <Link
               href="/"
               className="rounded-full border border-white/20 px-7 py-3.5 text-sm font-medium text-cream transition-colors hover:border-white/40"
