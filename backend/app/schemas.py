@@ -29,7 +29,9 @@ class ExhibitorRegistrationRequest(BaseModel):
     @model_validator(mode="after")
     def check_exhibit_fields(self):
         if self.exhibit_type == ExhibitType.booth and not self.booth_size:
-            raise ValueError("booth_size is required when exhibit_type is 'booth'")
+            raise ValueError(
+                "booth_size is required when exhibit_type is 'booth'"
+            )
 
         if self.exhibit_type == ExhibitType.auction:
             if not self.auction_item_description:
@@ -249,7 +251,9 @@ class ContactUnreadCountResponse(BaseModel):
     unread_count: int
 
 
-# --- Paystack ---
+# ---------------------------------------------------------------------------
+# Paystack
+# ---------------------------------------------------------------------------
 
 class PaystackInitializeRequest(BaseModel):
     reference_number: str
@@ -271,7 +275,24 @@ class PaystackVerifyResponse(BaseModel):
     message: str
 
 
-# --- Tickets ---
+# ---------------------------------------------------------------------------
+# Smart registration verification
+# ---------------------------------------------------------------------------
+
+class RegistrationVerifyResponse(BaseModel):
+    reference_number: str
+    full_name: str
+    category: str
+    status: str
+    action: str
+    message: str
+    amount_kobo: int | None = None
+    ticket_number: str | None = None
+
+
+# ---------------------------------------------------------------------------
+# Tickets
+# ---------------------------------------------------------------------------
 
 class CheckinRequest(BaseModel):
     ticket_number: str
@@ -285,7 +306,9 @@ class CheckinResponse(BaseModel):
     message: str
 
 
-# --- Admin auth ---
+# ---------------------------------------------------------------------------
+# Admin auth
+# ---------------------------------------------------------------------------
 
 class LoginRequest(BaseModel):
     username: str
@@ -331,7 +354,9 @@ class AdminLogSummary(BaseModel):
     created_at: datetime | None
 
 
-# --- Attendee status / resume payment ---
+# ---------------------------------------------------------------------------
+# Attendee status / resume payment
+# ---------------------------------------------------------------------------
 
 class AttendeeStatusRequest(BaseModel):
     reference_number: str

@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app import models, schemas, utils
-from app.emailer import send_email
+from app.emailer import send_application_received_email
 
 router = APIRouter(prefix="/register/press", tags=["press"])
 
@@ -35,16 +35,11 @@ def register_press(
     db.add(press_detail)
     db.commit()
 
-    send_email(
-        to=[payload.email],
-        subject="Your Afriqa Creative Showcase Press Accreditation",
-        html=f"""
-        <p>Hi {payload.full_name},</p>
-        <p>Thank you for applying for press accreditation at the Afriqa Creative Showcase.</p>
-        <p>Your reference number is: <strong>{reference_number}</strong></p>
-        <p>We've received your application. A member of our team will reach out to you
-        soon to finalize the details.</p>
-        """,
+    send_application_received_email(
+        to=payload.email,
+        full_name=payload.full_name,
+        reference_number=reference_number,
+        application_type="Press",
     )
 
     return schemas.RegistrationResponse(

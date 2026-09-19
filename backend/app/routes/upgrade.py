@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.database import get_db
 from app import models, schemas, utils
-from app.emailer import send_email
+from app.emailer import send_payment_required_email
 from app.paystack import initialize_transaction, PaystackError
 
 router = APIRouter(prefix="/upgrade", tags=["upgrade"])
@@ -72,18 +72,17 @@ def upgrade_ticket(
 
     diff_amount_naira = diff_amount_kobo // 100
 
-    send_email(
-        to=[registrant.email],
-        subject="Complete Your Afriqa Creative Showcase Ticket Upgrade",
-        html=f"""
-        <p>Hi {registrant.full_name},</p>
-        <p>You're upgrading your ticket (reference <strong>{registrant.reference_number}</strong>)
-        from <strong>{attendee_detail.ticket_type.value}</strong> to
-        <strong>{payload.ticket_type.value}</strong>.</p>
-        <p>Complete payment of ₦{diff_amount_naira:,} to finish the upgrade:</p>
-        <p><a href="{transaction['authorization_url']}">Complete Payment</a></p>
-        <p>Your ticket will update automatically once payment is received.</p>
-        """,
+    send_payment_required_email(
+        to=registrant.email,
+        full_name=registrant.full_name,
+        reference_number=registrant.reference_number,
+        description=(
+            f"Ticket upgrade from "
+            f"{attendee_detail.ticket_type.value.title()} to "
+            f"{payload.ticket_type.value.title()}"
+        ),
+        amount_naira=diff_amount_naira,
+        payment_url=transaction["authorization_url"],
     )
 
     return schemas.UpgradeResponse(

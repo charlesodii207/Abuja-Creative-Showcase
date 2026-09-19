@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.database import get_db
 from app import models, schemas, utils
-from app.emailer import send_email
+from app.emailer import send_payment_required_email
 from app.paystack import initialize_transaction, PaystackError
 
 router = APIRouter(prefix="/register/exhibitor", tags=["exhibitor"])
@@ -17,7 +17,9 @@ def register_exhibitor(
 ):
     reference_number = utils.generate_reference_number(db)
     amount_kobo = utils.get_exhibitor_amount_kobo(
-        payload.exhibit_type, payload.booth_size, payload.auction_quantity
+        payload.exhibit_type,
+        payload.booth_size,
+        payload.auction_quantity,
     )
 
     registrant = models.Registrant(
@@ -57,24 +59,23 @@ def register_exhibitor(
         )
     except PaystackError as e:
         db.rollback()
-        raise HTTPException(status_code=502, detail=f"Could not start payment: {e}")
+        raise HTTPException(
+            status_code=502,
+            detail=f"Could not start payment: {e}",
+        )
 
     exhibitor_detail.paystack_reference = transaction["reference"]
     db.commit()
 
     amount_naira = amount_kobo // 100
 
-    send_email(
-        to=[payload.email],
-        subject="Complete Your Afriqa Creative Showcase Exhibitor Registration",
-        html=f"""
-        <p>Hi {payload.full_name},</p>
-        <p>Thanks for registering to exhibit at the Afriqa Creative Showcase!</p>
-        <p>Your reference number is: <strong>{reference_number}</strong></p>
-        <p>To confirm your spot, complete payment of ₦{amount_naira:,} using the link below:</p>
-        <p><a href="{transaction['authorization_url']}">Complete Payment</a></p>
-        <p>Your registration is confirmed as soon as payment is received.</p>
-        """,
+    send_payment_required_email(
+        to=payload.email,
+        full_name=payload.full_name,
+        reference_number=reference_number,
+        description="Exhibitor registration",
+        amount_naira=amount_naira,
+        payment_url=transaction["authorization_url"],
     )
 
     return schemas.RegistrationResponse(

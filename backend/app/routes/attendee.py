@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.database import get_db
 from app import models, schemas, utils
-from app.emailer import send_email
+from app.emailer import send_payment_required_email
 from app.paystack import initialize_transaction, PaystackError
 
 router = APIRouter(prefix="/register/attendee", tags=["attendee"])
@@ -47,25 +47,23 @@ def register_attendee(
         )
     except PaystackError as e:
         db.rollback()
-        raise HTTPException(status_code=502, detail=f"Could not start payment: {e}")
+        raise HTTPException(
+            status_code=502,
+            detail=f"Could not start payment: {e}",
+        )
 
     attendee_detail.paystack_reference = transaction["reference"]
     db.commit()
 
     amount_naira = amount_kobo // 100
 
-    send_email(
-        to=[payload.email],
-        subject="Complete Your Afriqa Creative Showcase Registration",
-        html=f"""
-        <p>Hi {payload.full_name},</p>
-        <p>Thanks for registering for the Afriqa Creative Showcase!</p>
-        <p>Your reference number is: <strong>{reference_number}</strong></p>
-        <p>To confirm your {payload.ticket_type.value.title()} ticket, complete payment of
-        ₦{amount_naira:,} using the link below:</p>
-        <p><a href="{transaction['authorization_url']}">Complete Payment</a></p>
-        <p>Your ticket is confirmed as soon as payment is received.</p>
-        """,
+    send_payment_required_email(
+        to=payload.email,
+        full_name=payload.full_name,
+        reference_number=reference_number,
+        description=f"{payload.ticket_type.value.title()} ticket",
+        amount_naira=amount_naira,
+        payment_url=transaction["authorization_url"],
     )
 
     return schemas.RegistrationResponse(

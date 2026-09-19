@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.database import get_db
 from app import models, schemas, utils
-from app.emailer import send_email
+from app.emailer import send_payment_required_email
 from app.paystack import initialize_transaction, PaystackError
 
 router = APIRouter(prefix="/register/pitcher", tags=["pitcher"])
@@ -60,17 +60,13 @@ def register_pitcher(
 
     amount_naira = amount_kobo // 100
 
-    send_email(
-        to=[payload.email],
-        subject="Complete Your Afriqa Creative Showcase Pitching Registration",
-        html=f"""
-        <p>Hi {payload.full_name},</p>
-        <p>Thanks for registering to pitch at the Afriqa Creative Showcase!</p>
-        <p>Your reference number is: <strong>{reference_number}</strong></p>
-        <p>To confirm your spot in the Deal Room, complete payment of ₦{amount_naira:,} using the link below:</p>
-        <p><a href="{transaction['authorization_url']}">Complete Payment</a></p>
-        <p>Your registration is confirmed as soon as payment is received.</p>
-        """,
+    send_payment_required_email(
+        to=payload.email,
+        full_name=payload.full_name,
+        reference_number=reference_number,
+        description="Pitching registration / Deal Room spot",
+        amount_naira=amount_naira,
+        payment_url=transaction["authorization_url"],
     )
 
     return schemas.RegistrationResponse(

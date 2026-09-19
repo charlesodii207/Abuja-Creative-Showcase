@@ -291,6 +291,7 @@ class ExhibitorDetail(Base):
     is_paid = Column(Boolean, default=False)
     amount_kobo = Column(Integer, nullable=True)
     paystack_reference = Column(String, nullable=True, unique=True)
+    pending_payment_reference = Column(String, nullable=True, unique=True)
 
     registrant = relationship(
         "Registrant",
@@ -335,6 +336,7 @@ class PitcherDetail(Base):
     is_paid = Column(Boolean, default=False)
     amount_kobo = Column(Integer, nullable=True)
     paystack_reference = Column(String, nullable=True, unique=True)
+    pending_payment_reference = Column(String, nullable=True, unique=True)
 
     registrant = relationship(
         "Registrant",

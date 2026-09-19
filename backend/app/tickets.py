@@ -5,7 +5,7 @@ import qrcode
 from sqlalchemy.orm import Session
 
 from app import models, utils
-from app.emailer import send_email
+from app.emailer import send_ticket_email
 
 
 def _generate_qr_base64(data: str) -> str:
@@ -43,38 +43,13 @@ def issue_ticket_and_email(db: Session, registrant: models.Registrant) -> models
     qr_base64 = _generate_qr_base64(ticket_number)
     tag = utils.get_ticket_tag(registrant)
 
-    html = f"""
-    <p>Hi {registrant.full_name},</p>
-
-    <p>
-        Your payment has been confirmed — here's your ticket for the
-        Afriqa Creative Showcase.
-    </p>
-
-    <p><strong>Ticket Number:</strong> {ticket_number}</p>
-
-    <p><strong>Category:</strong> {tag}</p>
-
-    <p>
-        Your QR code ticket is attached to this email — show it at the
-        entrance. If it can't be scanned for any reason, staff can type
-        in your ticket number instead.
-    </p>
-
-    <p>See you at the show!</p>
-    """
-
     try:
-        send_email(
-            to=[registrant.email],
-            subject="Your Afriqa Creative Showcase Ticket",
-            html=html,
-            attachments=[
-                {
-                    "filename": "acs-ticket-qr.png",
-                    "content": qr_base64,
-                }
-            ],
+        send_ticket_email(
+            to=registrant.email,
+            full_name=registrant.full_name,
+            ticket_number=ticket_number,
+            category_tag=tag,
+            qr_base64=qr_base64,
         )
     except Exception as e:
         # Don't let a failed email crash the payment/verify flow.

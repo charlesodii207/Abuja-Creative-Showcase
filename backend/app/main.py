@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
+
 from app.routes.attendee import router as attendee_router
 from app.routes.exhibitor import router as exhibitor_router
 from app.routes.press import router as press_router
@@ -19,7 +20,9 @@ from app.routes.tickets import router as tickets_router
 from app.routes.attendee_status import router as attendee_status_router
 
 
-app = FastAPI(title="Afriqa Creative Showcase API")
+app = FastAPI(
+    title="Afriqa Creative Showcase API"
+)
 
 
 app.add_middleware(
