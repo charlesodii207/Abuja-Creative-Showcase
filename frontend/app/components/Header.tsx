@@ -6,12 +6,13 @@ import Link from "next/link";
 import { event } from "@/lib/content";
 
 const navLinks = [
+  { href: "/", label: "Home" },
   { href: "/#about", label: "About" },
   { href: "/#programme", label: "Programme" },
   { href: "/countdown", label: "Countdown" },
   { href: "/creative-finance", label: "Invest & Pitch" },
   { href: "/#sponsors", label: "Sponsors" },
-  { href: "/#faq", label: "FAQ" },
+  { href: "/#contact", label: "Get in Touch" },
 ];
 
 export default function Header() {

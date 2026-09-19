@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import AlertDialog from "../components/AlertDialog";
 
 type Tier = {
   name: string;
@@ -242,6 +243,13 @@ export default function SponsorshipPageClient() {
   const [loading, setLoading] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState("");
 
+  const [alertDialog, setAlertDialog] = useState({
+    open: false,
+    title: "",
+    message: "",
+    variant: "error" as "error" | "success" | "info",
+  });
+
   function handlePackageSelect(packageName: string) {
     setSelectedPackage(packageName);
 
@@ -294,7 +302,13 @@ export default function SponsorshipPageClient() {
         behavior: "smooth",
       });
     } catch {
-      alert("We couldn't submit your enquiry. Please try again.");
+      setAlertDialog({
+        open: true,
+        title: "Unable to Submit Enquiry",
+        message:
+          "We couldn't submit your partnership enquiry right now. Please try again.",
+        variant: "error",
+      });
     } finally {
       setLoading(false);
     }
@@ -302,6 +316,20 @@ export default function SponsorshipPageClient() {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#11152F]">
+      <AlertDialog
+        open={alertDialog.open}
+        title={alertDialog.title}
+        message={alertDialog.message}
+        variant={alertDialog.variant}
+        buttonText="Close"
+        onClose={() =>
+          setAlertDialog((current) => ({
+            ...current,
+            open: false,
+          }))
+        }
+      />
+
       <div
         aria-hidden="true"
         className="pointer-events-none absolute -right-32 top-20 h-80 w-80 rounded-full border border-[#E59200]/10"

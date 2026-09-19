@@ -172,7 +172,7 @@ export default function Hero() {
   const cycle = Math.floor(active / 3);
 
   return (
-    <section className="relative min-h-[calc(100vh-104px)] overflow-hidden border-b border-white/10 bg-[#11152F]">
+    <section className="relative min-h-[60vh] overflow-hidden border-b border-white/10 bg-[#11152F] md:min-h-[calc(100vh-104px)]">
       {/* =====================================================
           CINEMATIC SLIDESHOW BACKGROUND
       ====================================================== */}
@@ -219,13 +219,17 @@ export default function Hero() {
                 </div>
               </div>
 
-              <div className="absolute inset-0 bg-[#11152F]/30" />
+              {/* Light overall navy tint */}
+              <div className="absolute inset-0 bg-[#11152F]/10" />
 
-              <div className="absolute inset-0 bg-gradient-to-r from-[#11152F] via-[#11152F]/75 to-[#11152F]/10" />
+              {/* Navy readability gradient — concentrated on content side */}
+              <div className="absolute inset-0 bg-gradient-to-r from-[#11152F]/85 via-[#11152F]/35 to-transparent" />
 
-              <div className="absolute inset-0 bg-gradient-to-t from-[#11152F] via-[#11152F]/25 to-transparent" />
+              {/* Subtle bottom fade */}
+              <div className="absolute inset-0 bg-gradient-to-t from-[#11152F]/65 via-[#11152F]/10 to-transparent" />
 
-              <div className="absolute inset-0 bg-black/10" />
+              {/* Very subtle cinematic depth */}
+              <div className="absolute inset-0 bg-black/5" />
             </div>
           );
         })}
@@ -237,11 +241,11 @@ export default function Hero() {
         <div
           className="absolute -right-32 -top-32 z-[2] h-[600px] w-[600px] rounded-full blur-[150px] transition-colors duration-1000"
           style={{
-            backgroundColor: `${activeHex}18`,
+            backgroundColor: `${activeHex}12`,
           }}
         />
 
-        <div className="absolute -bottom-40 right-0 z-[2] h-[500px] w-[500px] rounded-full bg-teal/10 blur-[150px]" />
+        <div className="absolute -bottom-40 right-0 z-[2] h-[500px] w-[500px] rounded-full bg-[#00A5A8]/[0.06] blur-[150px]" />
 
         {/* =================================================
             FLOATING DETAILS
@@ -260,13 +264,13 @@ export default function Hero() {
           CONTENT
       ====================================================== */}
 
-      <div className="relative z-10 mx-auto flex min-h-[calc(100vh-104px)] max-w-7xl flex-col px-6 pb-28 pt-8 md:px-10 md:pb-32 md:pt-12 lg:px-12">
+      <div className="relative z-10 mx-auto flex min-h-[60vh] max-w-7xl flex-col px-6 pb-24 pt-5 md:min-h-[calc(100vh-104px)] md:px-10 md:pb-32 md:pt-12 lg:px-12">
         {/* =================================================
             ORGANIZER
         ================================================== */}
 
         <div className="hero-intro hero-intro-1">
-          <p className="mb-5 text-sm text-white/60">
+          <p className="mb-3 text-xs text-white/60 md:mb-5 md:text-sm">
             Organized by{" "}
             <a
               href="https://www.afrigos-academy.com/"
@@ -283,9 +287,9 @@ export default function Hero() {
             MAIN CONTENT
         ================================================== */}
 
-        <div className="my-auto max-w-4xl py-12">
+        <div className="my-auto max-w-4xl py-5 md:py-12">
           <div className="hero-title-wrap">
-            <h1 className="hero-title max-w-4xl font-display text-5xl leading-[0.95] tracking-[-0.025em] text-[#F5EFE6] drop-shadow-2xl sm:text-6xl md:text-7xl lg:text-8xl">
+            <h1 className="hero-title max-w-4xl font-display text-4xl leading-[0.95] tracking-[-0.025em] text-[#F5EFE6] drop-shadow-2xl sm:text-6xl md:text-7xl lg:text-8xl">
               {event.name}
             </h1>
           </div>
@@ -293,14 +297,14 @@ export default function Hero() {
           {/* Tagline */}
 
           <div className="hero-intro hero-intro-3">
-            <p className="mt-6 max-w-2xl font-display text-2xl italic text-[#E59200] drop-shadow-lg sm:text-3xl md:text-4xl">
+            <p className="mt-3 max-w-2xl font-display text-xl italic text-[#E59200] drop-shadow-lg sm:mt-6 sm:text-3xl md:text-4xl">
               {event.tagline}
             </p>
           </div>
 
           {/* Tricolor rule */}
 
-          <div className="hero-rule mt-5 flex h-[3px] w-32 overflow-hidden rounded-full">
+          <div className="hero-rule mt-4 flex h-[3px] w-28 overflow-hidden rounded-full sm:mt-5 sm:w-32">
             <span className="flex-1 bg-[#B80319]" />
             <span className="flex-1 bg-[#E59200]" />
             <span className="flex-1 bg-[#00A5A8]" />
@@ -308,7 +312,7 @@ export default function Hero() {
 
           {/* Event information */}
 
-          <div className="hero-intro hero-intro-5 mt-7 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs uppercase tracking-[0.2em] text-white/65">
+          <div className="hero-intro hero-intro-5 mt-4 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[10px] uppercase tracking-[0.16em] text-white/65 sm:mt-7 sm:gap-x-4 sm:gap-y-2 sm:text-xs sm:tracking-[0.2em]">
             <span>Abuja, Nigeria</span>
 
             <span className="h-1 w-1 rounded-full bg-[#E59200]" />
@@ -320,11 +324,11 @@ export default function Hero() {
               ANIMATED SLIDE MESSAGE
           ================================================== */}
 
-          <div className="hero-slide-message mt-7 min-h-[110px] max-w-2xl sm:min-h-[120px]">
-            <div className="relative h-[55px] overflow-hidden sm:h-[60px]">
+          <div className="hero-slide-message mt-4 min-h-[82px] max-w-2xl sm:mt-7 sm:min-h-[120px]">
+            <div className="relative h-[48px] overflow-hidden sm:h-[60px]">
               <p
                 key={active}
-                className={`absolute inset-0 font-display text-2xl font-semibold leading-tight ${
+                className={`absolute inset-0 font-display text-xl font-semibold leading-tight ${
                   activeSlide.color
                 } ${reducedMotion ? "" : "animate-hero-text-in"} sm:text-3xl`}
               >
@@ -336,7 +340,7 @@ export default function Hero() {
                 3-BAR PROGRESS SYSTEM
             ================================================== */}
 
-            <div className="mt-4 flex w-full max-w-[340px] gap-1.5">
+            <div className="mt-3 flex w-full max-w-[280px] gap-1.5 sm:mt-4 sm:max-w-[340px]">
               {[0, 1, 2].map((barIndex) => {
                 const barColor =
                   barIndex === 0
@@ -372,10 +376,10 @@ export default function Hero() {
               CTA
           ================================================== */}
 
-          <div className="hero-cta mt-4 flex flex-wrap gap-4">
+          <div className="hero-cta mt-2 flex flex-wrap gap-3 sm:mt-4 sm:gap-4">
             <Link
               href="/register"
-              className="group rounded-full bg-[#B80319] px-7 py-3.5 text-sm font-medium text-[#F5EFE6] shadow-[0_10px_35px_rgba(184,3,25,0.25)] transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:bg-[#d00620] hover:shadow-[0_15px_45px_rgba(184,3,25,0.4)]"
+              className="group rounded-full bg-[#B80319] px-5 py-3 text-xs font-medium text-[#F5EFE6] shadow-[0_10px_35px_rgba(184,3,25,0.25)] transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:bg-[#d00620] hover:shadow-[0_15px_45px_rgba(184,3,25,0.4)] sm:px-7 sm:py-3.5 sm:text-sm"
             >
               Register
 
@@ -386,7 +390,7 @@ export default function Hero() {
 
             <a
               href="#programme"
-              className="group rounded-full border bg-[#11152F]/20 px-7 py-3.5 text-sm font-medium text-[#F5EFE6] backdrop-blur-sm transition-all duration-500 hover:-translate-y-1 hover:bg-white/10"
+              className="group rounded-full border bg-[#11152F]/10 px-5 py-3 text-xs font-medium text-[#F5EFE6] backdrop-blur-sm transition-all duration-500 hover:-translate-y-1 hover:bg-white/10 sm:px-7 sm:py-3.5 sm:text-sm"
               style={{
                 borderColor: reducedMotion
                   ? "rgba(255,255,255,0.25)"
@@ -463,50 +467,50 @@ export default function Hero() {
           MOVING CREATIVE INDUSTRIES TICKER
       ====================================================== */}
 
-      <div className="absolute bottom-0 left-0 z-20 w-full overflow-hidden border-t border-white/10 bg-[#11152F]/55 backdrop-blur-md">
-        <div className="hero-marquee flex w-max items-center py-3">
+      <div className="absolute bottom-0 left-0 z-20 w-full overflow-hidden border-t border-white/10 bg-[#11152F]/45 backdrop-blur-md">
+        <div className="hero-marquee flex w-max items-center py-2.5 sm:py-3">
           {[...Array(2)].map((_, group) => (
             <div
               key={group}
               className="flex items-center whitespace-nowrap"
             >
-              <span className="mx-5 text-xs uppercase tracking-[0.25em] text-white/55">
+              <span className="mx-4 text-[10px] uppercase tracking-[0.2em] text-white/55 sm:mx-5 sm:text-xs sm:tracking-[0.25em]">
                 Film
               </span>
 
               <span className="text-[#E59200]">✦</span>
 
-              <span className="mx-5 text-xs uppercase tracking-[0.25em] text-white/55">
+              <span className="mx-4 text-[10px] uppercase tracking-[0.2em] text-white/55 sm:mx-5 sm:text-xs sm:tracking-[0.25em]">
                 Music
               </span>
 
               <span className="text-[#B80319]">✦</span>
 
-              <span className="mx-5 text-xs uppercase tracking-[0.25em] text-white/55">
+              <span className="mx-4 text-[10px] uppercase tracking-[0.2em] text-white/55 sm:mx-5 sm:text-xs sm:tracking-[0.25em]">
                 Fashion
               </span>
 
               <span className="text-[#00A5A8]">✦</span>
 
-              <span className="mx-5 text-xs uppercase tracking-[0.25em] text-white/55">
+              <span className="mx-4 text-[10px] uppercase tracking-[0.2em] text-white/55 sm:mx-5 sm:text-xs sm:tracking-[0.25em]">
                 Art
               </span>
 
               <span className="text-[#E59200]">✦</span>
 
-              <span className="mx-5 text-xs uppercase tracking-[0.25em] text-white/55">
+              <span className="mx-4 text-[10px] uppercase tracking-[0.2em] text-white/55 sm:mx-5 sm:text-xs sm:tracking-[0.25em]">
                 Technology
               </span>
 
               <span className="text-[#B80319]">✦</span>
 
-              <span className="mx-5 text-xs uppercase tracking-[0.25em] text-white/55">
+              <span className="mx-4 text-[10px] uppercase tracking-[0.2em] text-white/55 sm:mx-5 sm:text-xs sm:tracking-[0.25em]">
                 Media
               </span>
 
               <span className="text-[#00A5A8]">✦</span>
 
-              <span className="mx-5 text-xs uppercase tracking-[0.25em] text-white/55">
+              <span className="mx-4 text-[10px] uppercase tracking-[0.2em] text-white/55 sm:mx-5 sm:text-xs sm:tracking-[0.25em]">
                 Culture
               </span>
 
