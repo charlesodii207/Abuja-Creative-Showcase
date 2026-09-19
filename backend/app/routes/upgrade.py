@@ -50,7 +50,11 @@ def upgrade_ticket(
     upgrade_reference = utils.generate_upgrade_reference(
         registrant.reference_number
     )
-    callback_url = f"{settings.frontend_url}/register/payment-callback"
+
+    callback_url = (
+        f"{settings.frontend_url.rstrip('/')}/verify"
+        f"?ref={registrant.reference_number}"
+    )
 
     try:
         transaction = initialize_transaction(
@@ -87,7 +91,7 @@ def upgrade_ticket(
 
     return schemas.UpgradeResponse(
         reference_number=registrant.reference_number,
-        ticket_type=attendee_detail.ticket_type.value,  # unchanged until payment confirms
+        ticket_type=attendee_detail.ticket_type.value,
         message=(
             f"Complete payment of ₦{diff_amount_naira:,} to finish "
             f"upgrading to {payload.ticket_type.value}."

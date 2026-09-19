@@ -39,7 +39,10 @@ def register_pitcher(
     )
     db.add(pitcher_detail)
 
-    callback_url = f"{settings.frontend_url}/register/payment-callback"
+    callback_url = (
+        f"{settings.frontend_url.rstrip('/')}/verify"
+        f"?ref={reference_number}"
+    )
 
     try:
         transaction = initialize_transaction(

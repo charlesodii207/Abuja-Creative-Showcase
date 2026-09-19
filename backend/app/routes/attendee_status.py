@@ -60,10 +60,19 @@ def resume_payment(payload: schemas.ResumePaymentRequest, db: Session = Depends(
     detail = registrant.attendee_detail
 
     if detail.is_paid:
-        raise HTTPException(status_code=400, detail="This ticket is already paid for.")
+        raise HTTPException(
+            status_code=400,
+            detail="This ticket is already paid for.",
+        )
 
-    resume_reference = utils.generate_resume_reference(registrant.reference_number)
-    callback_url = f"{settings.frontend_url}/register/payment-callback"
+    resume_reference = utils.generate_resume_reference(
+        registrant.reference_number
+    )
+
+    callback_url = (
+        f"{settings.frontend_url.rstrip('/')}/verify"
+        f"?ref={registrant.reference_number}"
+    )
 
     try:
         transaction = initialize_transaction(
@@ -73,7 +82,10 @@ def resume_payment(payload: schemas.ResumePaymentRequest, db: Session = Depends(
             callback_url=callback_url,
         )
     except PaystackError as e:
-        raise HTTPException(status_code=502, detail=f"Could not start payment: {e}")
+        raise HTTPException(
+            status_code=502,
+            detail=f"Could not start payment: {e}",
+        )
 
     detail.pending_payment_reference = transaction["reference"]
     db.commit()
