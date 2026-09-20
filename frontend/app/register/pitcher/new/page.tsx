@@ -22,7 +22,6 @@ export default function PitcherRegistrationPage() {
 
   const [payment, setPayment] = useState<{
     amount_kobo: number;
-    authorization_url: string;
   } | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -45,7 +44,6 @@ export default function PitcherRegistrationPage() {
 
       setPayment({
         amount_kobo: data.amount_kobo,
-        authorization_url: data.paystack_authorization_url,
       });
 
       setStatus("success");
@@ -98,9 +96,8 @@ export default function PitcherRegistrationPage() {
                 </h1>
 
                 <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-[#B8B3AA]/75 sm:text-lg">
-                  Your spot in the Deal Room has been reserved. To confirm
-                  your pitching participation at ACS, continue your
-                  registration using your reference number.
+                  To confirm your pitching participation at ACS, continue your
+                  registration using the reference number sent to your email.
                 </p>
 
                 <div className="mt-10 grid gap-4 sm:grid-cols-2">
@@ -125,11 +122,19 @@ export default function PitcherRegistrationPage() {
                   </div>
                 </div>
 
-                <div className="mt-5 rounded-[1.5rem] border border-white/10 bg-[#11152F]/40 px-6 py-6">
-                  <p className="text-sm leading-relaxed text-[#B8B3AA]/65">
+                <div className="mt-5 rounded-[1.5rem] border border-white/10 bg-[#11152F]/40 px-6 py-6 text-left">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#B8B3AA]/45">
+                    Confirmation Email
+                  </p>
+
+                  <p className="mt-2 break-all text-base font-medium text-[#F5EFE6]">
+                    {form.email}
+                  </p>
+
+                  <p className="mt-3 text-sm leading-relaxed text-[#B8B3AA]/65">
                     Check your email for your reference number. Keep it safe —
                     you&apos;ll need it to check your registration status,
-                    continue your registration, and confirm your payment.
+                    continue your registration, and complete your payment.
                   </p>
                 </div>
 
@@ -423,7 +428,6 @@ export default function PitcherRegistrationPage() {
           </Link>
 
           <span className="h-px w-10 bg-white/10" />
-
         </div>
       </div>
     </main>

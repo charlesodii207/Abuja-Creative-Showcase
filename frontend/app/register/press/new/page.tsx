@@ -31,7 +31,11 @@ export default function PressRegistrationPage() {
         }
       );
 
-      if (!res.ok) throw new Error("Request failed");
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.detail || "Request failed");
+      }
 
       setStatus("success");
     } catch {
@@ -73,38 +77,39 @@ export default function PressRegistrationPage() {
                 </div>
 
                 <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#00A5A8]">
-                  Media & Press Centre
+                  Application Received
                 </p>
 
                 <h1 className="mt-4 font-display text-4xl leading-[1.05] text-[#F5EFE6] sm:text-5xl">
-                  Application Submitted
+                  Thank You
                 </h1>
 
                 <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-[#B8B3AA]/75 sm:text-lg">
                   Your press accreditation application has been received and
-                  is now pending review.
+                  is now pending review. Our team will contact you with the
+                  outcome.
                 </p>
 
-                <div className="mt-10 rounded-[1.5rem] border border-[#E59200]/20 bg-[#11152F]/60 px-6 py-6">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#B8B3AA]/45">
+                <div className="mt-8 rounded-[1.5rem] border border-[#00A5A8]/20 bg-[#11152F]/60 px-6 py-6 text-left">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-[#B8B3AA]/45">
                     Confirmation Email
                   </p>
 
-                  <p className="mt-2 break-words font-display text-xl text-[#E59200]">
+                  <p className="mt-2 break-all text-base font-medium text-[#F5EFE6]">
                     {form.email}
                   </p>
 
                   <p className="mt-4 text-sm leading-relaxed text-[#B8B3AA]/65">
                     Check your email for your reference number. Keep it safe —
-                    you&apos;ll need it to check your accreditation status
-                    later.
+                    you&apos;ll need it to check your accreditation status and
+                    receive updates from ACS.
                   </p>
                 </div>
 
                 <div className="mt-5 rounded-[1.5rem] border border-white/10 bg-[#11152F]/40 px-6 py-5">
                   <p className="text-sm leading-relaxed text-[#B8B3AA]/65">
-                    Applying does not guarantee accreditation. Our team will
-                    review your application and contact you with the outcome.
+                    Submitting an application does not guarantee accreditation.
+                    Each application is reviewed by the ACS team.
                   </p>
                 </div>
 
@@ -113,7 +118,8 @@ export default function PressRegistrationPage() {
                     href="/register/lookup"
                     className="inline-flex items-center justify-center rounded-full bg-[#00A5A8] px-8 py-3.5 text-sm font-semibold text-[#11152F] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_30px_rgba(0,165,168,0.18)]"
                   >
-                    Check Status Later
+                    Check Status
+                    <span className="ml-3">→</span>
                   </Link>
 
                   <Link

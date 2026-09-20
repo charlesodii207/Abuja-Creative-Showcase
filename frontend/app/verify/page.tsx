@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
@@ -19,7 +19,6 @@ type RegistrationStatus = {
   action: Action;
   message: string;
   amount_kobo: number | null;
-  ticket_number: string | null;
 };
 
 type PageState = "idle" | "loading" | "ready" | "error" | "paying";
@@ -40,13 +39,14 @@ function categoryLabel(category: string) {
   return category.charAt(0).toUpperCase() + category.slice(1);
 }
 
-export default function VerifyPage() {
+function VerifyContent() {
   const searchParams = useSearchParams();
 
   const [pageState, setPageState] = useState<PageState>("idle");
   const [registration, setRegistration] =
     useState<RegistrationStatus | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
+  const [paymentNotice, setPaymentNotice] = useState("");
   const [referenceInput, setReferenceInput] = useState("");
 
   const reference = searchParams.get("ref")?.trim() || "";
@@ -57,41 +57,29 @@ export default function VerifyPage() {
     "";
 
   async function loadStatus(referenceNumber: string) {
-    if (!referenceNumber) return;
+    if (!referenceNumber) return null;
 
-    try {
-      setPageState("loading");
-      setErrorMessage("");
-      setRegistration(null);
-
-      const response = await fetch(
-        `${API_URL}/payments/status?ref=${encodeURIComponent(
-          referenceNumber
-        )}`,
-        {
-          method: "GET",
-          cache: "no-store",
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data?.detail || "We could not find that registration."
-        );
+    const response = await fetch(
+      `${API_URL}/payments/status?ref=${encodeURIComponent(
+        referenceNumber
+      )}`,
+      {
+        method: "GET",
+        cache: "no-store",
       }
+    );
 
-      setRegistration(data);
-      setPageState("ready");
-    } catch (error) {
-      setPageState("error");
-      setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : "Something went wrong while checking your registration."
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data?.detail || "We could not find that registration."
       );
     }
+
+    setRegistration(data);
+
+    return data as RegistrationStatus;
   }
 
   useEffect(() => {
@@ -99,52 +87,87 @@ export default function VerifyPage() {
       setPageState("idle");
       setRegistration(null);
       setErrorMessage("");
+      setPaymentNotice("");
+      setReferenceInput("");
       return;
     }
 
     setReferenceInput(reference);
-    loadStatus(reference);
-  }, [reference]);
 
-  useEffect(() => {
-    if (!paymentReference || !reference) return;
+    let cancelled = false;
 
-    async function verifyReturnedPayment() {
+    async function resolveRegistration() {
       try {
-        setPageState("paying");
         setErrorMessage("");
+        setPaymentNotice("");
 
-        const response = await fetch(`${API_URL}/payments/verify`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            reference_number: paymentReference,
-          }),
-        });
+        /*
+         * If Paystack sent the customer back here, confirm the
+         * transaction first. A failed or unrecognised payment must NOT
+         * kill the page: we still load the registration status so the
+         * person can see where they stand and try again.
+         */
+        if (paymentReference) {
+          setPageState("paying");
 
-        const data = await response.json();
+          try {
+            const response = await fetch(`${API_URL}/payments/verify`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                reference_number: paymentReference,
+              }),
+            });
 
-        if (!response.ok || data.status !== "confirmed") {
-          throw new Error(
-            data?.message || "Payment could not be confirmed."
-          );
+            const data = await response.json();
+
+            if (response.ok && data.status !== "confirmed") {
+              setPaymentNotice(
+                data?.message || "Your payment was not successful."
+              );
+            } else if (!response.ok && response.status !== 404) {
+              // 404 just means this reference was already processed
+              // (e.g. page refreshed after an upgrade), so stay quiet.
+              setPaymentNotice(
+                "We could not confirm your payment yet. Your current status is below."
+              );
+            }
+          } catch {
+            setPaymentNotice(
+              "We could not confirm your payment yet. Your current status is below."
+            );
+          }
         }
 
+        if (cancelled) return;
+
+        setPageState("loading");
+
         await loadStatus(reference);
+
+        if (cancelled) return;
+
+        setPageState("ready");
       } catch (error) {
+        if (cancelled) return;
+
         setPageState("error");
         setErrorMessage(
           error instanceof Error
             ? error.message
-            : "Something went wrong while confirming your payment."
+            : "Something went wrong while checking your registration."
         );
       }
     }
 
-    verifyReturnedPayment();
-  }, [paymentReference, reference]);
+    resolveRegistration();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [reference, paymentReference]);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -166,6 +189,7 @@ export default function VerifyPage() {
   function startAnotherLookup() {
     setRegistration(null);
     setErrorMessage("");
+    setPaymentNotice("");
     setReferenceInput("");
     setPageState("idle");
 
@@ -352,6 +376,12 @@ export default function VerifyPage() {
 
       {pageState === "ready" && registration && (
         <section className="mt-10">
+          {paymentNotice && (
+            <div className="mb-6 rounded-xl border border-red/30 bg-red/5 px-5 py-4">
+              <p className="text-sm leading-6 text-cream">{paymentNotice}</p>
+            </div>
+          )}
+
           <div className="rounded-2xl border border-white/10 bg-ink-raised px-6 py-8 sm:px-8 sm:py-10">
             <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
               <div>
@@ -383,19 +413,21 @@ export default function VerifyPage() {
               </p>
             </div>
 
-            <div className="mt-8 rounded-xl border border-white/10 bg-ink px-5 py-5">
-              <p className="text-sm leading-7 text-muted">
-                {registration.message}
-              </p>
-            </div>
+            {/* The confirmed state has its own message below, so the
+                generic backend message is hidden to avoid saying it twice. */}
+            {registration.action !== "confirmed" && (
+              <div className="mt-8 rounded-xl border border-white/10 bg-ink px-5 py-5">
+                <p className="text-sm leading-7 text-muted">
+                  {registration.message}
+                </p>
+              </div>
+            )}
 
             {registration.action === "payment_required" && (
               <div className="mt-8">
                 {registration.amount_kobo !== null && (
                   <div className="mb-5 flex items-center justify-between rounded-xl border border-gold/20 bg-gold/5 px-5 py-4">
-                    <span className="text-sm text-muted">
-                      Amount due
-                    </span>
+                    <span className="text-sm text-muted">Amount due</span>
 
                     <span className="font-display text-xl text-cream">
                       {formatNaira(registration.amount_kobo)}
@@ -438,33 +470,26 @@ export default function VerifyPage() {
                 </p>
 
                 <p className="mt-2 text-sm leading-6 text-muted">
-                  No further payment is required for this registration.
+                  Please check your email for the latest instructions from
+                  Afriqa Creative Showcase.
                 </p>
               </div>
             )}
 
             {registration.action === "confirmed" && (
               <div className="mt-8 rounded-xl border border-teal/30 bg-teal/5 px-5 py-6">
-                <p className="text-sm font-medium text-teal">
-                  Registration confirmed
+                <p className="text-base font-medium text-teal">
+                  Registration Confirmed
                 </p>
 
                 <p className="mt-2 text-sm leading-6 text-muted">
-                  Your payment and registration have been successfully
-                  recorded.
+                  Your registration and payment have been successfully
+                  confirmed.
                 </p>
 
-                {registration.ticket_number && (
-                  <div className="mt-5 border-t border-white/10 pt-5">
-                    <p className="text-xs uppercase tracking-[0.16em] text-muted">
-                      Ticket number
-                    </p>
-
-                    <p className="mt-2 font-mono text-sm text-cream">
-                      {registration.ticket_number}
-                    </p>
-                  </div>
-                )}
+                <p className="mt-4 text-sm leading-6 text-muted">
+                  Your official ticket has been sent to your email.
+                </p>
               </div>
             )}
 
@@ -500,5 +525,13 @@ export default function VerifyPage() {
         </section>
       )}
     </main>
+  );
+}
+
+export default function VerifyPage() {
+  return (
+    <Suspense fallback={null}>
+      <VerifyContent />
+    </Suspense>
   );
 }

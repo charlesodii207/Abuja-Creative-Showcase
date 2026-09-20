@@ -66,66 +66,74 @@ export default function InvestorNewRegistrationPage() {
               className="absolute -inset-5 rounded-[2rem] border border-white/[0.06] sm:-inset-8"
             />
 
-            <div className="relative rounded-[2rem] border border-white/10 bg-[#151A3A] px-6 py-12 text-center shadow-[0_30px_80px_rgba(0,0,0,0.18)] sm:px-10 sm:py-14">
-              <div className="tricolor-rule mx-auto mb-7">
-                <span />
-                <span />
-                <span />
-              </div>
+            <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#151A3A] px-6 py-12 text-center shadow-[0_30px_80px_rgba(0,0,0,0.18)] sm:px-10 sm:py-14">
+              <div
+                aria-hidden="true"
+                className="absolute left-0 top-0 h-1 w-full bg-gradient-to-r from-[#B80319] via-[#E59200] to-[#00A5A8]"
+              />
 
-              <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#00A5A8]">
-                Registration Received
-              </p>
+              <div className="mx-auto max-w-2xl">
+                <div className="tricolor-rule mx-auto mb-7">
+                  <span />
+                  <span />
+                  <span />
+                </div>
 
-              <h1 className="mt-4 font-display text-4xl leading-[1.05] text-[#F5EFE6] sm:text-5xl">
-                Thank You
-              </h1>
-
-              <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-[#B8B3AA]/75 sm:text-lg">
-                Your investor registration has been received. Our team will
-                review your details and contact you with the next steps.
-              </p>
-
-              <div className="mx-auto mt-8 max-w-md rounded-[1.5rem] border border-[#00A5A8]/20 bg-[#11152F]/60 px-6 py-6">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-[#B8B3AA]/45">
-                  Confirmation Sent To
+                <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#00A5A8]">
+                  Registration Received
                 </p>
 
-                <p className="mt-2 break-all text-base font-medium text-[#E59200]">
-                  {form.email}
+                <h1 className="mt-4 font-display text-4xl leading-[1.05] text-[#F5EFE6] sm:text-5xl">
+                  Thank You
+                </h1>
+
+                <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-[#B8B3AA]/75 sm:text-lg">
+                  Your investor application has been received. Our team will
+                  review your details and contact you with the next steps.
                 </p>
 
-                <p className="mt-4 text-sm leading-relaxed text-[#B8B3AA]/65">
-                  Please check your inbox for your registration confirmation
-                  and keep the reference number in that email safe for future
-                  status checks.
-                </p>
-              </div>
+                <div className="mx-auto mt-8 max-w-md rounded-[1.5rem] border border-[#00A5A8]/20 bg-[#11152F]/60 px-6 py-6 text-left">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-[#B8B3AA]/45">
+                    Confirmation Email
+                  </p>
 
-              <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-                <Link
-                  href="/register/lookup"
-                  className="rounded-full bg-[#00A5A8] px-7 py-3.5 text-sm font-semibold text-[#11152F] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_30px_rgba(0,165,168,0.18)]"
-                >
-                  Check Status
-                </Link>
+                  <p className="mt-2 break-all text-base font-medium text-[#F5EFE6]">
+                    {form.email}
+                  </p>
 
-                <Link
-                  href="/"
-                  className="rounded-full border border-white/15 bg-[#11152F]/40 px-7 py-3.5 text-sm font-medium text-[#F5EFE6]/80 transition-all duration-300 hover:border-[#00A5A8]/40 hover:text-[#F5EFE6]"
-                >
-                  Back to Homepage
-                </Link>
-              </div>
+                  <p className="mt-4 text-sm leading-relaxed text-[#B8B3AA]/65">
+                    Check your email for your reference number. Keep it safe —
+                    you&apos;ll need it to check your application status and
+                    receive updates from ACS.
+                  </p>
+                </div>
 
-              <div className="mt-10 flex items-center justify-center gap-3">
-                <span className="h-px w-10 bg-white/10" />
+                <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+                  <Link
+                    href="/register/lookup"
+                    className="inline-flex items-center justify-center rounded-full bg-[#00A5A8] px-7 py-3.5 text-sm font-semibold text-[#11152F] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_30px_rgba(0,165,168,0.18)]"
+                  >
+                    Check Status
+                    <span className="ml-3">→</span>
+                  </Link>
 
-                <span className="text-[10px] uppercase tracking-[0.25em] text-[#F5EFE6]/30">
-                  Abuja · 04–05 December 2026
-                </span>
+                  <Link
+                    href="/"
+                    className="inline-flex items-center justify-center rounded-full border border-white/15 bg-[#11152F]/40 px-7 py-3.5 text-sm font-medium text-[#F5EFE6]/80 transition-all duration-300 hover:border-[#00A5A8]/40 hover:text-[#F5EFE6]"
+                  >
+                    Back to Homepage
+                  </Link>
+                </div>
 
-                <span className="h-px w-10 bg-white/10" />
+                <div className="mt-10 flex items-center justify-center gap-3">
+                  <span className="h-px w-10 bg-white/10" />
+
+                  <span className="text-[10px] uppercase tracking-[0.25em] text-[#F5EFE6]/30">
+                    Abuja · 04–05 December 2026
+                  </span>
+
+                  <span className="h-px w-10 bg-white/10" />
+                </div>
               </div>
             </div>
           </div>

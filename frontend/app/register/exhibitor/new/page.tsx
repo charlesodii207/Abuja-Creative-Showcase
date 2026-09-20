@@ -34,9 +34,9 @@ export default function ExhibitorRegistrationPage() {
     "idle" | "submitting" | "success" | "error"
   >("idle");
 
-  const [payment, setPayment] = useState<{
+  const [confirmation, setConfirmation] = useState<{
     amount_kobo: number;
-    authorization_url: string;
+    email: string;
   } | null>(null);
 
   const priceLabel =
@@ -83,13 +83,15 @@ export default function ExhibitorRegistrationPage() {
         }
       );
 
-      if (!res.ok) throw new Error("Request failed");
-
       const data = await res.json();
 
-      setPayment({
+      if (!res.ok) {
+        throw new Error(data?.detail || "Registration failed");
+      }
+
+      setConfirmation({
         amount_kobo: data.amount_kobo,
-        authorization_url: data.paystack_authorization_url,
+        email: form.email,
       });
 
       setStatus("success");
@@ -98,8 +100,8 @@ export default function ExhibitorRegistrationPage() {
     }
   }
 
-  if (status === "success" && payment) {
-    const amountNaira = (payment.amount_kobo / 100).toLocaleString();
+  if (status === "success" && confirmation) {
+    const amountNaira = (confirmation.amount_kobo / 100).toLocaleString();
 
     return (
       <main className="relative min-h-screen overflow-hidden bg-[#11152F]">
@@ -138,13 +140,13 @@ export default function ExhibitorRegistrationPage() {
                 </p>
 
                 <h1 className="mt-4 font-display text-4xl leading-[1.05] text-[#F5EFE6] sm:text-5xl">
-                  Complete Your Registration
+                  You&apos;re Almost There
                 </h1>
 
                 <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-[#B8B3AA]/75 sm:text-lg">
-                  Your Creative Market spot has been reserved. To confirm your
-                  participation at ACS, continue through your registration
-                  verification.
+                  Your Creative Market registration has been received. To
+                  confirm your participation at ACS, continue through
+                  registration verification.
                 </p>
 
                 <div className="mt-10 grid gap-4 sm:grid-cols-2">
@@ -155,7 +157,7 @@ export default function ExhibitorRegistrationPage() {
 
                     <p className="mt-2 font-display text-2xl capitalize text-[#F5EFE6]">
                       {exhibitType === "booth"
-                        ? `${form.booth_size} booth`
+                        ? `${form.booth_size} Booth`
                         : "Auction"}
                     </p>
                   </div>
@@ -171,11 +173,19 @@ export default function ExhibitorRegistrationPage() {
                   </div>
                 </div>
 
-                <div className="mt-5 rounded-[1.5rem] border border-white/10 bg-[#11152F]/40 px-6 py-6">
-                  <p className="text-sm leading-relaxed text-[#B8B3AA]/65">
+                <div className="mt-5 rounded-[1.5rem] border border-white/10 bg-[#11152F]/40 px-6 py-6 text-left">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#B8B3AA]/45">
+                    Confirmation Email
+                  </p>
+
+                  <p className="mt-2 break-all font-mono text-sm text-[#F5EFE6]">
+                    {confirmation.email}
+                  </p>
+
+                  <p className="mt-3 text-sm leading-relaxed text-[#B8B3AA]/65">
                     Check your email for your reference number. Keep it safe —
-                    you&apos;ll need it to check your registration status and
-                    confirm your payment later.
+                    you&apos;ll need it to finish your registration, check your
+                    status later, and confirm your payment.
                   </p>
                 </div>
 
