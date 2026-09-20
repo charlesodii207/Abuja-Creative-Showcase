@@ -7,11 +7,18 @@ from app import models
 from app.models import ExhibitType, BoothSize, TicketType
 
 
+# Characters used in generated codes. 0, 1, O and I are left out on purpose
+# because people mix them up when reading or typing a code by hand
+# (0 vs O, 1 vs I). That leaves 24 letters + 8 digits = 32 characters.
+SAFE_CHARACTERS = "".join(
+    c for c in (string.ascii_uppercase + string.digits) if c not in "01OI"
+)
+
+
 def generate_reference_number(db: Session, length: int = 8) -> str:
-    """Generate a unique random alphanumeric reference number."""
-    characters = string.ascii_uppercase + string.digits
+    """Generate a unique random reference number, e.g. ACS-92KT7XMD."""
     while True:
-        candidate = "ACS-" + "".join(random.choices(characters, k=length))
+        candidate = "ACS-" + "".join(random.choices(SAFE_CHARACTERS, k=length))
         exists = db.query(models.Registrant).filter(
             models.Registrant.reference_number == candidate
         ).first()
@@ -26,8 +33,7 @@ def generate_upgrade_reference(base_reference: str) -> str:
     moment someone calls /upgrade more than once for the same ticket
     (e.g. they retry after not finishing payment the first time).
     """
-    characters = string.ascii_uppercase + string.digits
-    suffix = "".join(random.choices(characters, k=4))
+    suffix = "".join(random.choices(SAFE_CHARACTERS, k=4))
     return f"{base_reference}-UPG-{suffix}"
 
 
@@ -38,8 +44,7 @@ def generate_resume_reference(base_reference: str) -> str:
     link and wants to try again via /register/attendee/finish. Paystack
     rejects reused references, so this mirrors generate_upgrade_reference.
     """
-    characters = string.ascii_uppercase + string.digits
-    suffix = "".join(random.choices(characters, k=4))
+    suffix = "".join(random.choices(SAFE_CHARACTERS, k=4))
     return f"{base_reference}-PAY-{suffix}"
 
 
@@ -48,10 +53,10 @@ def generate_ticket_number(db: Session, length: int = 10) -> str:
     Generates a unique ticket number for check-in. Deliberately plain —
     no "ACS" prefix, no dashes — so door staff can type it in by hand as
     a fallback if QR scanning fails, without fumbling over punctuation.
+    Uses the same look-alike-free characters as reference numbers.
     """
-    characters = string.ascii_uppercase + string.digits
     while True:
-        candidate = "".join(random.choices(characters, k=length))
+        candidate = "".join(random.choices(SAFE_CHARACTERS, k=length))
         exists = db.query(models.Ticket).filter(
             models.Ticket.ticket_number == candidate
         ).first()
