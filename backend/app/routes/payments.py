@@ -114,7 +114,7 @@ def _get_registration_action(
     if status == models.RegistrantStatus.confirmed:
         return (
             "confirmed",
-            "Your registration is confirmed. Your ticket has been issued.",
+            "Your registration is confirmed. Your ticket has been sent to your email.",
             None,
         )
 
@@ -131,7 +131,7 @@ def _get_registration_action(
         if bool(detail.is_paid):
             return (
                 "confirmed",
-                "Your payment has been recorded and your registration is confirmed.",
+                "Your registration is confirmed. Your ticket has been sent to your email.",
                 None,
             )
 
@@ -207,11 +207,8 @@ def registration_status(
 
     action, message, amount_kobo = _get_registration_action(registrant)
 
-    ticket_number = None
-
-    if registrant.ticket is not None:
-        ticket_number = registrant.ticket.ticket_number
-
+    # Ticket details are intentionally NOT returned here. The ticket
+    # number and QR are only ever sent to the registrant by email.
     return schemas.RegistrationVerifyResponse(
         reference_number=registrant.reference_number,
         full_name=registrant.full_name,
@@ -220,7 +217,6 @@ def registration_status(
         action=action,
         message=message,
         amount_kobo=amount_kobo,
-        ticket_number=ticket_number,
     )
 
 

@@ -287,7 +287,6 @@ class RegistrationVerifyResponse(BaseModel):
     action: str
     message: str
     amount_kobo: int | None = None
-    ticket_number: str | None = None
 
 
 # ---------------------------------------------------------------------------
