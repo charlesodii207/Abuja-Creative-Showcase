@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 
-type Phase = "enter-ref" | "loading" | "unpaid" | "paid" | "error";
+type Phase = "enter-ref" | "loading" | "unpaid" | "paid" | "rejected" | "error";
 
 const UPGRADE_OPTIONS: Record<
   string,
@@ -21,6 +21,7 @@ export default function AttendeeFinishPage() {
   const [referenceNumber, setReferenceNumber] = useState("");
   const [phase, setPhase] = useState<Phase>("enter-ref");
   const [error, setError] = useState("");
+  const [statusMessage, setStatusMessage] = useState("");
 
   const [fullName, setFullName] = useState("");
   const [ticketType, setTicketType] = useState("");
@@ -29,8 +30,6 @@ export default function AttendeeFinishPage() {
   const [upgradeTier, setUpgradeTier] = useState("");
   const [upgrading, setUpgrading] = useState(false);
 
-  const [payAmount, setPayAmount] = useState<number | null>(null);
-  const [payUrl, setPayUrl] = useState<string | null>(null);
   const [resuming, setResuming] = useState(false);
 
   async function checkStatus(e: React.FormEvent) {
@@ -61,7 +60,15 @@ export default function AttendeeFinishPage() {
 
       setFullName(data.full_name);
       setTicketType(data.ticket_type);
-      setPhase(data.is_paid ? "paid" : "unpaid");
+      setStatusMessage(data.message);
+
+      // Status (rejected) always wins over is_paid — a registrant can
+      // be paid and still rejected, pending a refund.
+      if (data.status === "rejected") {
+        setPhase("rejected");
+      } else {
+        setPhase(data.is_paid ? "paid" : "unpaid");
+      }
     } catch {
       setError("Something went wrong. Please try again.");
       setPhase("error");
@@ -92,8 +99,6 @@ export default function AttendeeFinishPage() {
         return;
       }
 
-      setPayAmount(data.amount_kobo);
-      setPayUrl(data.paystack_authorization_url);
       window.location.href = data.paystack_authorization_url;
     } catch {
       setError("Something went wrong starting payment.");
@@ -210,6 +215,23 @@ export default function AttendeeFinishPage() {
           </div>
         )}
 
+        {phase === "rejected" && (
+          <div className="mt-8 rounded-[2rem] border border-[#B80319]/25 bg-[#151A3A] px-6 py-9 text-center shadow-[0_25px_60px_rgba(0,0,0,0.14)] sm:px-8">
+            <p className="text-sm text-[#B8B3AA]/65">Hi {fullName},</p>
+
+            <p className="mt-3 font-display text-2xl text-[#F5EFE6]">
+              Registration Status
+            </p>
+
+            <div className="mx-auto mt-5 h-px w-16 bg-[#B80319]/40" />
+
+            <p className="mx-auto mt-5 max-w-md text-sm leading-relaxed text-[#B8B3AA]/70">
+              {statusMessage ||
+                "Your registration was not approved for this edition."}
+            </p>
+          </div>
+        )}
+
         {phase === "unpaid" && (
           <div className="mt-8 rounded-[2rem] border border-[#E59200]/25 bg-[#151A3A] px-6 py-9 text-center shadow-[0_25px_60px_rgba(0,0,0,0.14)] sm:px-8">
             <p className="text-sm text-[#B8B3AA]/65">
@@ -267,6 +289,10 @@ export default function AttendeeFinishPage() {
               Confirmed
             </p>
 
+            <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-[#B8B3AA]/70">
+              Your ticket has been sent to your email.
+            </p>
+
             {upgradeChoices.length > 0 && !showUpgrade && (
               <p className="mt-6 text-xs text-[#B8B3AA]/60">
                 Want to upgrade your status?{" "}
@@ -283,6 +309,12 @@ export default function AttendeeFinishPage() {
               <div className="mt-7 rounded-[1.25rem] border border-white/10 bg-[#11152F] px-5 py-6 text-left">
                 <p className="text-sm font-medium text-[#F5EFE6]/75">
                   Upgrade your ticket
+                </p>
+
+                <p className="mt-2 text-xs leading-relaxed text-[#B8B3AA]/55">
+                  Your ticket number and QR code stay the same — only your
+                  access type changes. A new ticket will be emailed once
+                  payment is confirmed.
                 </p>
 
                 <label className="mt-4 block text-xs uppercase tracking-[0.15em] text-[#B8B3AA]/50">

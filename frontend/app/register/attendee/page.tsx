@@ -1,5 +1,17 @@
 import Link from "next/link";
 
+function Price({ label, amount }: { label: string; amount: string }) {
+  return (
+    <span className="whitespace-nowrap">
+      {label}{" "}
+      <span className="line-through decoration-2 decoration-[#E59200]/70">
+        ₦
+      </span>
+      {amount}
+    </span>
+  );
+}
+
 export default function AttendeeRegisterPage() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#11152F]">
@@ -40,10 +52,14 @@ export default function AttendeeRegisterPage() {
               creative market, and more.
             </p>
 
-            <div className="mt-5 inline-flex items-center gap-3 rounded-full border border-[#E59200]/20 bg-[#11152F]/60 px-4 py-2">
-              <span className="h-2 w-2 rounded-full bg-[#E59200]" />
+            <div className="mt-5 inline-flex flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-full border border-[#E59200]/20 bg-[#11152F]/60 px-4 py-2">
+              <span className="h-2 w-2 shrink-0 rounded-full bg-[#E59200]" />
               <p className="text-sm font-medium text-[#F5EFE6]/80">
-                General ₦5,000 · VIP ₦10,000 · Masterclass ₦25,000
+                <Price label="General" amount="5,000" />
+                {" · "}
+                <Price label="VIP" amount="10,000" />
+                {" · "}
+                <Price label="Masterclass" amount="25,000" />
               </p>
             </div>
 
