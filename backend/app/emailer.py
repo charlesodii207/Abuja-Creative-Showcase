@@ -635,10 +635,24 @@ def send_application_rejected_email(
     to: str,
     full_name: str,
     reference_number: str,
+    refund_applicable: bool = False,
 ) -> bool:
     """
-    Send an application rejection notification.
+    Send an application rejection notification. When refund_applicable
+    is True (the registrant had already paid), a refund note is added
+    so the person isn't left wondering what happens to their payment.
     """
+    refund_html = ""
+
+    if refund_applicable:
+        refund_html = f"""
+        <p>
+            Since you had already completed payment, a refund will be
+            processed to the account or card used. Please allow a few
+            business days for it to reflect.
+        </p>
+        """
+
     html = f"""
     <p>Hi {_safe(full_name)},</p>
 
@@ -652,6 +666,8 @@ def send_application_rejected_email(
         After careful review, we're unable to offer you a spot
         for this edition.
     </p>
+
+    {refund_html}
 
     <p>
         We truly appreciate your interest in the showcase and encourage

@@ -14,8 +14,12 @@ router = APIRouter(prefix="/register/attendee", tags=["attendee-status"])
 def attendee_status(payload: schemas.AttendeeStatusRequest, db: Session = Depends(get_db)):
     """
     Read-only status check — safe to call as often as needed, never
-    creates a new payment attempt. Used by the "Already Registered?"
-    flow to decide whether to show a Pay button or a Confirmed message.
+    creates a new payment attempt. Used by the "Check Status, Pay, or
+    Upgrade" page to decide what to show: pay, confirmed, or rejected.
+
+    is_paid alone isn't enough here — a registrant can have is_paid=True
+    and still be status=rejected (e.g. rejected after the fact, pending
+    a refund), so the actual registrant status is always checked first.
     """
     registrant = db.query(models.Registrant).filter(
         models.Registrant.reference_number == payload.reference_number,
@@ -30,12 +34,25 @@ def attendee_status(payload: schemas.AttendeeStatusRequest, db: Session = Depend
 
     detail = registrant.attendee_detail
 
+    if registrant.status == models.RegistrantStatus.rejected:
+        message = (
+            "Your registration was not approved for this edition. "
+            "If you had already paid, a refund will be processed."
+            if detail.is_paid
+            else "Your registration was not approved for this edition."
+        )
+    elif detail.is_paid:
+        message = "Payment confirmed. Your ticket has been sent to your email."
+    else:
+        message = "Payment still pending."
+
     return schemas.AttendeeStatusResponse(
         reference_number=registrant.reference_number,
         full_name=registrant.full_name,
         ticket_type=detail.ticket_type.value,
         is_paid=detail.is_paid,
-        message="Payment confirmed." if detail.is_paid else "Payment still pending.",
+        status=registrant.status.value,
+        message=message,
     )
 
 
@@ -44,7 +61,8 @@ def resume_payment(payload: schemas.ResumePaymentRequest, db: Session = Depends(
     """
     Starts a fresh Paystack payment attempt for someone who registered
     but never completed (or lost) their original payment link. Only
-    valid while the ticket is still unpaid.
+    valid while the ticket is still unpaid and the registrant hasn't
+    been rejected.
     """
     registrant = db.query(models.Registrant).filter(
         models.Registrant.reference_number == payload.reference_number,
@@ -55,6 +73,12 @@ def resume_payment(payload: schemas.ResumePaymentRequest, db: Session = Depends(
         raise HTTPException(
             status_code=404,
             detail="No matching Attendee registration found for that reference number.",
+        )
+
+    if registrant.status == models.RegistrantStatus.rejected:
+        raise HTTPException(
+            status_code=400,
+            detail="This registration was not approved and is not eligible for payment.",
         )
 
     detail = registrant.attendee_detail

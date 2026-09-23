@@ -366,6 +366,7 @@ class AttendeeStatusResponse(BaseModel):
     full_name: str
     ticket_type: str
     is_paid: bool
+    status: str
     message: str
 
 

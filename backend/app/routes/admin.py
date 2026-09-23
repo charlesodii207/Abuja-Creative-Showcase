@@ -463,6 +463,7 @@ def reject_registrant(
         to=registrant.email,
         full_name=registrant.full_name,
         reference_number=registrant.reference_number,
+        refund_applicable=was_paid,
     )
 
     log_action(
