@@ -15,6 +15,7 @@ from app.emailer import (
     send_payment_confirmed_email,
     send_awaiting_payment_email,
 )
+from app.tickets import issue_ticket_and_email, resend_ticket_email
 from app.dependencies import require_role
 from app.audit import log_action
 
@@ -230,10 +231,17 @@ def mark_registrant_paid(
             detail="Registrant detail record not found.",
         )
 
+    already_paid = bool(detail_obj.is_paid)
+
     detail_obj.is_paid = True
     registrant.status = models.RegistrantStatus.confirmed
 
     db.commit()
+
+    # Same rule as the Paystack-confirmed path: issue (or reuse) the
+    # ticket for whatever the registrant actually applied/paid for —
+    # an admin marking someone paid never picks or changes the tier.
+    issue_ticket_and_email(db, registrant)
 
     log_action(
         db,
@@ -241,13 +249,13 @@ def mark_registrant_paid(
         "mark_paid",
         target_type="registrant",
         target_reference=registrant.reference_number,
-        detail="Manual payment override",
+        detail="Manual payment override" if not already_paid else "Already paid — ticket re-checked",
     )
 
     return schemas.AdminActionResponse(
         id=str(registrant.id),
         status=registrant.status.value,
-        message="Registrant marked as paid (manual override).",
+        message="Registrant marked as paid and ticket has been emailed.",
     )
 
 
@@ -255,7 +263,11 @@ def mark_registrant_paid(
 # Manual resend email
 # ---------------------------------------------------------------------------
 
-def _send_status_email(registrant: models.Registrant) -> None:
+def _send_status_email(registrant: models.Registrant) -> str:
+    """Sends the right email for the registrant's current status and
+    returns a short description of what was sent, for the response
+    message and the admin log."""
+
     if registrant.status == models.RegistrantStatus.approved:
         is_exhibitor = registrant.category == models.RegistrantCategory.exhibitor
 
@@ -272,43 +284,54 @@ def _send_status_email(registrant: models.Registrant) -> None:
             reference_number=registrant.reference_number,
             next_steps=next_steps,
         )
+        return "'approved' email"
 
-    elif registrant.status == models.RegistrantStatus.rejected:
+    if registrant.status == models.RegistrantStatus.rejected:
         send_application_rejected_email(
             to=registrant.email,
             full_name=registrant.full_name,
             reference_number=registrant.reference_number,
         )
+        return "'rejected' email"
 
-    elif registrant.status == models.RegistrantStatus.pending:
+    if registrant.status == models.RegistrantStatus.pending:
         send_application_under_review_email(
             to=registrant.email,
             full_name=registrant.full_name,
             reference_number=registrant.reference_number,
         )
+        return "'under review' email"
 
-    elif registrant.status == models.RegistrantStatus.confirmed:
+    if registrant.status == models.RegistrantStatus.confirmed:
+        # Confirmed means a ticket exists (or should). Resend the actual
+        # PDF ticket rather than the old "payment confirmed" notice,
+        # since the ticket is what the person actually needs at the door.
+        if registrant.ticket is not None:
+            resend_ticket_email(registrant)
+            return "ticket (PDF)"
+
         send_payment_confirmed_email(
             to=registrant.email,
             full_name=registrant.full_name,
             reference_number=registrant.reference_number,
         )
+        return "'payment confirmed' email (no ticket on file yet)"
 
-    elif registrant.status == models.RegistrantStatus.awaiting_payment:
+    if registrant.status == models.RegistrantStatus.awaiting_payment:
         send_awaiting_payment_email(
             to=registrant.email,
             full_name=registrant.full_name,
             reference_number=registrant.reference_number,
         )
+        return "'awaiting payment' email"
 
-    else:
-        raise HTTPException(
-            status_code=400,
-            detail=(
-                f"No email template configured for status "
-                f"'{registrant.status.value}'."
-            ),
-        )
+    raise HTTPException(
+        status_code=400,
+        detail=(
+            f"No email template configured for status "
+            f"'{registrant.status.value}'."
+        ),
+    )
 
 
 @router.post(
@@ -322,7 +345,7 @@ def resend_email(
 ):
     registrant = _get_registrant_or_404(db, reference_number)
 
-    _send_status_email(registrant)
+    sent_description = _send_status_email(registrant)
 
     log_action(
         db,
@@ -330,13 +353,13 @@ def resend_email(
         "resend_email",
         target_type="registrant",
         target_reference=registrant.reference_number,
-        detail=f"Resent '{registrant.status.value}' email",
+        detail=f"Resent {sent_description}",
     )
 
     return schemas.AdminActionResponse(
         id=str(registrant.id),
         status=registrant.status.value,
-        message=f"Email resent for status '{registrant.status.value}'.",
+        message=f"Resent {sent_description}.",
     )
 
 
@@ -354,6 +377,29 @@ def approve_registrant(
     admin: models.Admin = Depends(require_role(*ACTION_ROLES)),
 ):
     registrant = _get_registrant_or_404(db, reference_number)
+
+    # For the paid categories, approval is a formality once payment has
+    # gone through: a confirmed + ticketed registrant must never be
+    # bumped back to "approved" (that would tell the scanner to refuse
+    # them, and would email a paid person asking them to pay again).
+    if (
+        registrant.category in PAID_CATEGORIES
+        and registrant.status == models.RegistrantStatus.confirmed
+    ):
+        log_action(
+            db,
+            admin,
+            "approve_registrant",
+            target_type="registrant",
+            target_reference=registrant.reference_number,
+            detail="No-op — already confirmed and paid",
+        )
+
+        return schemas.AdminActionResponse(
+            id=str(registrant.id),
+            status=registrant.status.value,
+            message="Already paid and confirmed — no change made.",
+        )
 
     registrant.status = models.RegistrantStatus.approved
     db.commit()
@@ -400,6 +446,16 @@ def reject_registrant(
 ):
     registrant = _get_registrant_or_404(db, reference_number)
 
+    # A paid registrant can still be rejected (e.g. a problem is found
+    # after the fact), but this is no longer a simple formality — it
+    # needs a refund — so the admin gets a clear warning either way.
+    detail_obj = None
+    relation_name = DETAIL_RELATION_BY_CATEGORY.get(registrant.category)
+    if relation_name:
+        detail_obj = getattr(registrant, relation_name, None)
+
+    was_paid = bool(getattr(detail_obj, "is_paid", False))
+
     registrant.status = models.RegistrantStatus.rejected
     db.commit()
 
@@ -415,12 +471,17 @@ def reject_registrant(
         "reject_registrant",
         target_type="registrant",
         target_reference=registrant.reference_number,
+        detail="Already paid — refund required" if was_paid else None,
     )
 
     return schemas.AdminActionResponse(
         id=str(registrant.id),
         status=registrant.status.value,
-        message="Registrant rejected.",
+        message=(
+            "Registrant rejected. They had already paid — process a refund."
+            if was_paid
+            else "Registrant rejected."
+        ),
     )
 
 

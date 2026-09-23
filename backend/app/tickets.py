@@ -1,27 +1,17 @@
 import base64
-from io import BytesIO
 
-import qrcode
 from sqlalchemy.orm import Session
 
-from app import models, utils
+from app import models, utils, ticket_pdf
 from app.emailer import send_ticket_email
-
-
-def _generate_qr_base64(data: str) -> str:
-    img = qrcode.make(data)
-    buffer = BytesIO()
-    img.save(buffer, format="PNG")
-    return base64.b64encode(buffer.getvalue()).decode("utf-8")
 
 
 def issue_ticket_and_email(db: Session, registrant: models.Registrant) -> models.Ticket:
     """
     Creates a Ticket for a registrant whose payment has just been
-    confirmed, and emails them the ticket number + QR code as an
-    attachment. Safe to call more than once for the same registrant —
-    if a ticket already exists, it's reused rather than duplicated or
-    re-emailed.
+    confirmed, and emails them the PDF ticket as an attachment. Safe to
+    call more than once for the same registrant — if a ticket already
+    exists, it's reused rather than duplicated or re-emailed.
     """
     if registrant.ticket is not None:
         return registrant.ticket
@@ -40,19 +30,58 @@ def issue_ticket_and_email(db: Session, registrant: models.Registrant) -> models
     db.commit()
     db.refresh(ticket)
 
-    qr_base64 = _generate_qr_base64(ticket_number)
-    tag = utils.get_ticket_tag(registrant)
-
-    try:
-        send_ticket_email(
-            to=registrant.email,
-            full_name=registrant.full_name,
-            ticket_number=ticket_number,
-            category_tag=tag,
-            qr_base64=qr_base64,
-        )
-    except Exception as e:
-        # Don't let a failed email crash the payment/verify flow.
-        print(f"Failed to send ticket email to {registrant.email}: {e}")
+    _send_ticket_pdf_email(registrant, ticket_number)
 
     return ticket
+
+
+def resend_ticket_email(registrant: models.Registrant) -> bool:
+    """
+    Re-sends the PDF ticket for a registrant who already has one, e.g.
+    from the admin "resend email" action. Returns False (without
+    raising) if the registrant has no ticket to resend.
+    """
+    if registrant.ticket is None:
+        return False
+
+    return _send_ticket_pdf_email(registrant, registrant.ticket.ticket_number)
+
+
+def _send_ticket_pdf_email(registrant: models.Registrant, ticket_number: str) -> bool:
+    """
+    Builds the PDF for the registrant's current ticket type and emails
+    it. Reads the ticket type live, so an upgraded Attendee's PDF always
+    shows their current tier, even if this is a resend of an old ticket.
+    """
+    ticket_label, holder_label = ticket_pdf.ticket_labels_for(registrant)
+
+    try:
+        pdf_bytes = ticket_pdf.generate_ticket_pdf(
+            ticket_number=ticket_number,
+            full_name=registrant.full_name,
+            reference_number=registrant.reference_number,
+            ticket_label=ticket_label,
+            holder_label=holder_label,
+        )
+    except Exception as e:
+        # Don't let a PDF-rendering problem crash the payment/verify flow.
+        print(f"Failed to build ticket PDF for {registrant.reference_number}: {e}")
+        return False
+
+    filename = ticket_pdf.ticket_pdf_filename(registrant.reference_number)
+    pdf_base64 = base64.b64encode(pdf_bytes).decode("utf-8")
+
+    sent = send_ticket_email(
+        to=registrant.email,
+        full_name=registrant.full_name,
+        pdf_base64=pdf_base64,
+        pdf_filename=filename,
+    )
+
+    if not sent:
+        # Logged here (rather than raised) for the same reason as above:
+        # a failed email must never break payment confirmation. The
+        # admin "resend email" action is the recovery path.
+        print(f"Failed to send ticket email to {registrant.email}")
+
+    return sent

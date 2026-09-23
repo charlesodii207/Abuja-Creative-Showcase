@@ -739,46 +739,49 @@ def send_awaiting_payment_email(
 def send_ticket_email(
     to: str,
     full_name: str,
-    ticket_number: str,
-    category_tag: str,
-    qr_base64: str,
+    pdf_base64: str,
+    pdf_filename: str,
 ) -> bool:
     """
-    Send the issued ticket and QR code to the registrant.
+    Send the issued PDF ticket to the registrant. The ticket number and
+    QR code live inside the attached PDF only — never in the email body.
     """
     html = f"""
-    <p>Hi {_safe(full_name)},</p>
+    <p>Hello {_safe(full_name)},</p>
 
     <p>
-        Your payment has been confirmed — here's your ticket for the
-        Afriqa Creative Showcase.
+        Your registration for Afriqa Creative Showcase 2026 has been
+        successfully confirmed.
     </p>
 
     <p>
-        <strong>Ticket Number:</strong> {_safe(ticket_number)}
+        Your official event ticket is attached to this email.
     </p>
 
     <p>
-        <strong>Category:</strong> {_safe(category_tag)}
+        Please keep your ticket safe and do not share, forward, or
+        publish it. Your ticket contains a unique ticket number and QR
+        code used to verify your entry.
     </p>
 
     <p>
-        Your QR code ticket is attached to this email — show it at the
-        entrance. If it can't be scanned for any reason, staff can type
-        in your ticket number instead.
+        You may print the attached ticket or present the digital copy
+        at check-in.
     </p>
 
-    <p>See you at the show!</p>
+    <p>
+        We look forward to welcoming you to ACS 2026.
+    </p>
     """
 
     return send_email(
         to=[to],
-        subject="Your Afriqa Creative Showcase Ticket",
+        subject="Your ACS 2026 Ticket Is Confirmed",
         html=html,
         attachments=[
             {
-                "filename": "acs-ticket-qr.png",
-                "content": qr_base64,
+                "filename": pdf_filename,
+                "content": pdf_base64,
             }
         ],
     )
