@@ -77,17 +77,16 @@ export default function PressRegistrationPage() {
                 </div>
 
                 <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#00A5A8]">
-                  Application Received
+                  Press Accreditation
                 </p>
 
                 <h1 className="mt-4 font-display text-4xl leading-[1.05] text-[#F5EFE6] sm:text-5xl">
-                  Thank You
+                  Application Received
                 </h1>
 
                 <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-[#B8B3AA]/75 sm:text-lg">
-                  Your press accreditation application has been received and
-                  is now pending review. Our team will contact you with the
-                  outcome.
+                  Thank you for applying. A member of our team will reach out
+                  to you.
                 </p>
 
                 <div className="mt-8 rounded-[1.5rem] border border-[#00A5A8]/20 bg-[#11152F]/60 px-6 py-6 text-left">
@@ -118,7 +117,7 @@ export default function PressRegistrationPage() {
                     href="/register/lookup"
                     className="inline-flex items-center justify-center rounded-full bg-[#00A5A8] px-8 py-3.5 text-sm font-semibold text-[#11152F] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_30px_rgba(0,165,168,0.18)]"
                   >
-                    Check Status
+                    Check Application Status
                     <span className="ml-3">→</span>
                   </Link>
 

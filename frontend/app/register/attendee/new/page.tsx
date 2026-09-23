@@ -120,17 +120,16 @@ export default function AttendeeNewRegistrationPage() {
                 </div>
 
                 <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#00A5A8]">
-                  Registration Complete
+                  Registration Received
                 </p>
 
                 <h1 className="mt-4 font-display text-4xl leading-[1.05] text-[#F5EFE6] sm:text-5xl">
-                  You&apos;re Almost There
+                  Finish Your Registration
                 </h1>
 
                 <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-[#B8B3AA]/75 sm:text-lg">
-                  Your {selectedTier.label} ticket registration has been
-                  received. To confirm your place at ACS, continue through
-                  registration verification.
+                  Your registration has been received and your place has been
+                  reserved.
                 </p>
 
                 <div className="mt-10 grid gap-4 sm:grid-cols-2">
@@ -166,8 +165,8 @@ export default function AttendeeNewRegistrationPage() {
 
                   <p className="mt-3 text-sm leading-relaxed text-[#B8B3AA]/65">
                     Check your email for your reference number. Keep it safe —
-                    you&apos;ll need it to finish your registration, check your
-                    status later, and confirm your payment.
+                    you&apos;ll need it to finish your registration and
+                    complete payment.
                   </p>
                 </div>
 
@@ -442,7 +441,6 @@ export default function AttendeeNewRegistrationPage() {
           </span>
 
           <span className="h-px w-10 bg-white/10" />
-
         </div>
       </div>
     </main>

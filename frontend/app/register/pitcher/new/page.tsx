@@ -88,7 +88,7 @@ export default function PitcherRegistrationPage() {
                 </div>
 
                 <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#00A5A8]">
-                  Registration Complete
+                  Registration Received
                 </p>
 
                 <h1 className="mt-4 font-display text-4xl leading-[1.05] text-[#F5EFE6] sm:text-5xl">
@@ -96,8 +96,8 @@ export default function PitcherRegistrationPage() {
                 </h1>
 
                 <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-[#B8B3AA]/75 sm:text-lg">
-                  To confirm your pitching participation at ACS, continue your
-                  registration using the reference number sent to your email.
+                  Your registration has been received and your place has been
+                  reserved.
                 </p>
 
                 <div className="mt-10 grid gap-4 sm:grid-cols-2">
@@ -133,15 +133,15 @@ export default function PitcherRegistrationPage() {
 
                   <p className="mt-3 text-sm leading-relaxed text-[#B8B3AA]/65">
                     Check your email for your reference number. Keep it safe —
-                    you&apos;ll need it to check your registration status,
-                    continue your registration, and complete your payment.
+                    you&apos;ll need it to finish your registration and
+                    complete payment.
                   </p>
                 </div>
 
                 <div className="mt-8 flex justify-center">
                   <Link
                     href="/verify"
-                    className="inline-flex items-center justify-center rounded-full bg-[#E59200] px-8 py-3.5 text-sm font-semibold text-[#11152F] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_30px_rgba(229,146,0,0.18)]"
+                    className="inline-flex items-center justify-center rounded-full bg-[#00A5A8] px-8 py-3.5 text-sm font-semibold text-[#11152F] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_30px_rgba(0,165,168,0.18)]"
                   >
                     Finish Registration
                     <span className="ml-3">→</span>
@@ -350,7 +350,7 @@ export default function PitcherRegistrationPage() {
               >
                 {status === "submitting"
                   ? "Submitting..."
-                  : "Continue to Payment →"}
+                  : "Complete Registration →"}
               </button>
             </div>
 
@@ -408,9 +408,8 @@ export default function PitcherRegistrationPage() {
 
               <div className="mt-6 border-t border-white/10 pt-6">
                 <p className="text-xs leading-relaxed text-[#B8B3AA]/50">
-                  After submitting your registration, you&apos;ll be redirected
-                  to secure payment. Your reference number will also be sent to
-                  your email.
+                  After submitting your registration, check your email for
+                  your reference number and continue through verification.
                 </p>
               </div>
             </div>
