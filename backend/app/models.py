@@ -2,7 +2,7 @@ import enum
 import uuid
 
 from sqlalchemy import (
-    Column, String, Boolean, DateTime, ForeignKey, Enum, Text, Integer, func
+    Column, String, Boolean, DateTime, Date, ForeignKey, Enum, Text, Integer, func
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
@@ -377,6 +377,9 @@ class Ticket(Base):
     )
     qr_code = Column(String, unique=True)
     ticket_number = Column(String, unique=True)
+    # "First ever" check-in only — kept for the admin registrant detail
+    # screen. Day-by-day entries live in ScanLog below, since one flag
+    # can't represent "already came in today" vs "came in yesterday".
     checked_in = Column(Boolean, default=False)
     checked_in_at = Column(DateTime(timezone=True))
 
@@ -384,3 +387,40 @@ class Ticket(Base):
         "Registrant",
         back_populates="ticket",
     )
+
+
+class ScanLog(Base):
+    """
+    One row per check-in attempt at the door — accepted or duplicate.
+    event_day is the Nigeria/WAT calendar date the scan counts toward,
+    which is what makes "one accepted entry per ticket per day" and the
+    admin date-picker scan log possible. Every attempt is logged, not
+    just accepted ones, so a disputed entry at the gate can be checked.
+    """
+
+    __tablename__ = "scan_logs"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    ticket_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("tickets.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    event_day = Column(Date, nullable=False, index=True)
+    result = Column(String, nullable=False)  # "accepted" | "duplicate"
+    scanned_at = Column(DateTime(timezone=True), server_default=func.now())
+    # For a "duplicate" row, the time of that day's original accepted
+    # scan — saved here too so the admin log doesn't need a join to
+    # show "already arrived at 08:00" next to each duplicate.
+    first_entry_at = Column(DateTime(timezone=True), nullable=True)
+    checked_in_by_admin_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("admins.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    # Snapshot, same reasoning as AdminLog.admin_name: stays intact even
+    # if the admin account is later deleted.
+    checked_in_by_name = Column(String, nullable=True)
+
+    ticket = relationship("Ticket")

@@ -803,6 +803,56 @@ def send_ticket_email(
     )
 
 
+def send_ticket_upgraded_email(
+    to: str,
+    full_name: str,
+    new_tier_label: str,
+    pdf_base64: str,
+    pdf_filename: str,
+) -> bool:
+    """
+    Send the updated PDF ticket after an upgrade. The ticket number and
+    QR code stay the same as before — only the access type changes —
+    so the wording here is deliberately different from the first-issue
+    email, which could otherwise read as if this were a brand-new ticket.
+    """
+    html = f"""
+    <p>Hello {_safe(full_name)},</p>
+
+    <p>
+        Your ticket for Afriqa Creative Showcase 2026 has been upgraded
+        to <strong>{_safe(new_tier_label)}</strong>.
+    </p>
+
+    <p>
+        Your ticket number and QR code remain the same as before —
+        only your access type has changed. Your updated ticket is
+        attached to this email.
+    </p>
+
+    <p>
+        Please use this attached ticket at check-in going forward, and
+        keep it safe. Do not share, forward, or publish it.
+    </p>
+
+    <p>
+        We look forward to welcoming you to ACS 2026.
+    </p>
+    """
+
+    return send_email(
+        to=[to],
+        subject="Your ACS Ticket Has Been Upgraded",
+        html=html,
+        attachments=[
+            {
+                "filename": pdf_filename,
+                "content": pdf_base64,
+            }
+        ],
+    )
+
+
 def registration_verify_url(reference_number: str) -> str:
     """
     Build the generic registration continuation URL.

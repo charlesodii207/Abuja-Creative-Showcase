@@ -379,3 +379,25 @@ class ResumePaymentResponse(BaseModel):
     amount_kobo: int
     paystack_authorization_url: str
     message: str
+
+
+# ---------------------------------------------------------------------------
+# Scan log (multi-day check-in)
+# ---------------------------------------------------------------------------
+
+class ScanLogEntry(BaseModel):
+    id: str
+    ticket_number: str
+    full_name: str
+    category_tag: str
+    result: str  # "accepted" | "duplicate"
+    scanned_at: datetime
+    checked_in_by: str | None = None
+
+
+class ScanLogResponse(BaseModel):
+    event_day: str
+    total_scans: int
+    accepted_count: int
+    duplicate_count: int
+    entries: list[ScanLogEntry]

@@ -5,7 +5,7 @@ from app.config import settings
 from app.database import get_db
 from app import models, schemas, utils
 from app.paystack import initialize_transaction, verify_transaction, PaystackError
-from app.tickets import issue_ticket_and_email
+from app.tickets import issue_ticket_and_email, send_upgraded_ticket_email
 
 router = APIRouter(prefix="/payments", tags=["payments"])
 
@@ -332,6 +332,17 @@ def verify_payment(
     if upgrade_detail:
         registrant = upgrade_detail.registrant
 
+        # The reference is kept (not nulled) once an upgrade is applied,
+        # specifically so a page refresh lands here instead of falling
+        # through to a 404. pending_upgrade_ticket_type is cleared on
+        # success, so its absence is what tells us "already handled".
+        if upgrade_detail.pending_upgrade_ticket_type is None:
+            return schemas.PaystackVerifyResponse(
+                reference_number=registrant.reference_number,
+                status="confirmed",
+                message=f"Upgrade confirmed — ticket is now {upgrade_detail.ticket_type.value}.",
+            )
+
         success_txn, txn = _verify_with_paystack(reference)
 
         if not success_txn:
@@ -368,9 +379,16 @@ def verify_payment(
             (upgrade_detail.amount_kobo or 0) + paid_amount
         )
         upgrade_detail.pending_upgrade_ticket_type = None
-        upgrade_detail.pending_upgrade_reference = None
+        # pending_upgrade_reference is deliberately left as-is (not set
+        # to None) — see the early-return guard above.
 
         db.commit()
+
+        # registrant.attendee_detail.ticket_type is now new_tier, so this
+        # reads the new type live and sends a PDF showing it — same
+        # ticket number and QR as before, per the "no new ticket ID on
+        # upgrade" decision.
+        send_upgraded_ticket_email(registrant)
 
         return schemas.PaystackVerifyResponse(
             reference_number=registrant.reference_number,

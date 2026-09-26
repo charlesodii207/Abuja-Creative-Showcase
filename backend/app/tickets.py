@@ -3,7 +3,7 @@ import base64
 from sqlalchemy.orm import Session
 
 from app import models, utils, ticket_pdf
-from app.emailer import send_ticket_email
+from app.emailer import send_ticket_email, send_ticket_upgraded_email
 
 
 def issue_ticket_and_email(db: Session, registrant: models.Registrant) -> models.Ticket:
@@ -45,6 +45,53 @@ def resend_ticket_email(registrant: models.Registrant) -> bool:
         return False
 
     return _send_ticket_pdf_email(registrant, registrant.ticket.ticket_number)
+
+
+def send_upgraded_ticket_email(registrant: models.Registrant) -> bool:
+    """
+    Called right after an upgrade payment is confirmed. Builds a fresh
+    PDF showing the registrant's new (current) ticket type and emails
+    it with upgrade-specific wording. The ticket number and QR stay the
+    same as before — only the type printed on the PDF changes, because
+    it's read live from the registrant's current ticket_type.
+    """
+    if registrant.ticket is None:
+        # An upgrade should never happen before the original ticket
+        # exists (the /upgrade route already requires is_paid), but
+        # this guards against calling it out of order regardless.
+        print(f"No ticket to upgrade for {registrant.reference_number}")
+        return False
+
+    ticket_label, holder_label = ticket_pdf.ticket_labels_for(registrant)
+    ticket_number = registrant.ticket.ticket_number
+
+    try:
+        pdf_bytes = ticket_pdf.generate_ticket_pdf(
+            ticket_number=ticket_number,
+            full_name=registrant.full_name,
+            reference_number=registrant.reference_number,
+            ticket_label=ticket_label,
+            holder_label=holder_label,
+        )
+    except Exception as e:
+        print(f"Failed to build upgraded ticket PDF for {registrant.reference_number}: {e}")
+        return False
+
+    filename = ticket_pdf.ticket_pdf_filename(registrant.reference_number)
+    pdf_base64 = base64.b64encode(pdf_bytes).decode("utf-8")
+
+    sent = send_ticket_upgraded_email(
+        to=registrant.email,
+        full_name=registrant.full_name,
+        new_tier_label=ticket_label.title(),
+        pdf_base64=pdf_base64,
+        pdf_filename=filename,
+    )
+
+    if not sent:
+        print(f"Failed to send upgrade ticket email to {registrant.email}")
+
+    return sent
 
 
 def _send_ticket_pdf_email(registrant: models.Registrant, ticket_number: str) -> bool:

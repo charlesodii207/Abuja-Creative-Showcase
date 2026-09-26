@@ -48,6 +48,23 @@ CHECKIN_NOTE = (
     "Do not share, forward or publish it."
 )
 
+# Two-colour gradient (left -> right) for the ticket-type banner, so
+# General/VIP/Masterclass/Exhibitor/Pitcher are distinguishable at a
+# glance, not just by the printed label.
+ACCENT_GRADIENTS: dict[str, tuple] = {
+    "GENERAL ADMISSION": (TEAL, GOLD),
+    "VIP ACCESS": (GOLD, RED),
+    "MASTERCLASS ACCESS": (RED, GOLD),
+    "EXHIBITOR ACCESS": (TEAL, RED),
+    "PITCHER ACCESS": (GOLD, TEAL),
+}
+DEFAULT_ACCENT = (TEAL, GOLD)
+
+
+def _accent_for(ticket_label: str) -> tuple:
+    return ACCENT_GRADIENTS.get(ticket_label.upper(), DEFAULT_ACCENT)
+
+
 PAGE_W = 180 * mm
 PAGE_H = 100 * mm
 DIVIDER_X = 128  # mm: where the main panel ends and the stub begins
@@ -242,7 +259,7 @@ def _draw_pinwheel(c, cx, cy, r, alpha):
     c.restoreState()
 
 
-def _draw_banner(c, x0, y0, w, h, lines, size, text_x, slant=3.0):
+def _draw_banner(c, x0, y0, w, h, lines, size, text_x, accent, slant=3.0):
     """Gradient type banner with a slanted right edge and 1-2 lines of text."""
     c.saveState()
     p = c.beginPath()
@@ -252,7 +269,7 @@ def _draw_banner(c, x0, y0, w, h, lines, size, text_x, slant=3.0):
     p.lineTo(x0 * mm, (y0 + h) * mm)
     p.close()
     c.clipPath(p, stroke=0, fill=0)
-    _h_gradient(c, x0, y0, w + slant, h, [(0.0, TEAL), (1.0, GOLD)])
+    _h_gradient(c, x0, y0, w + slant, h, [(0.0, accent[0]), (1.0, accent[1])])
     c.restoreState()
 
     n = len(lines)
@@ -356,10 +373,11 @@ def generate_ticket_pdf(
 
     # ticket type banner
     lines = _split_label(ticket_label)
+    accent = _accent_for(ticket_label)
     banner_size = 17
     widest = max(_text_width(l, "Helvetica-Bold", banner_size, 0.3) for l in lines)
     banner_w = max(58, widest + 9 + 10)
-    _draw_banner(c, 0, 57, banner_w, 16, lines, banner_size, text_x=9)
+    _draw_banner(c, 0, 57, banner_w, 16, lines, banner_size, text_x=9, accent=accent)
 
     _text(c, "EVENT TICKET", 9, 51.6, "Helvetica-Bold", 8.5, white, spacing=3.2)
 
@@ -420,7 +438,7 @@ def generate_ticket_pdf(
     stub_size = 8.8
     stub_widest = max(_text_width(l, "Helvetica-Bold", stub_size, 0.3) for l in lines)
     _draw_banner(c, stub_x + 4, 69.5, min(inner_w + 1, stub_widest + 8), 12, lines, stub_size,
-                 text_x=stub_x + 7, slant=2.0)
+                 text_x=stub_x + 7, accent=accent, slant=2.0)
 
     stub_name, stub_name_size = _fit_text(full_name, name_font, 9.5, inner_w)
     _text(c, stub_name, left, 64.6, name_font, stub_name_size, NAVY)
