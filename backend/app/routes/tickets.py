@@ -41,12 +41,21 @@ def checkin_ticket(
     # A ticket existing doesn't mean the registrant is still cleared for entry —
     # someone can be rejected (or otherwise fall out of good standing) after
     # their ticket was already issued. Only "confirmed" registrants get in.
-    if registrant.status != models.RegistrantStatus.confirmed:
+    # A ticket only ever gets created after payment (issue_ticket_and_email
+    # is only called once paid), so reaching this point already implies
+    # the person paid. "approved" is treated as good standing too —
+    # only rejected, awaiting_payment, or pending are refused entry.
+    ALLOWED_ENTRY_STATUSES = {
+        models.RegistrantStatus.approved,
+        models.RegistrantStatus.confirmed,
+    }
+
+    if registrant.status not in ALLOWED_ENTRY_STATUSES:
         raise HTTPException(
             status_code=403,
             detail=(
-                f"{registrant.full_name}'s registration is '{registrant.status.value}', "
-                "not confirmed — do not admit. Check with an organizer."
+                f"{registrant.full_name}'s registration is '{registrant.status.value}' — "
+                "do not admit. Check with an organizer."
             ),
         )
 
