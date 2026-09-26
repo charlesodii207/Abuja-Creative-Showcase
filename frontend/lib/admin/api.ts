@@ -293,6 +293,36 @@ export async function checkinTicket(ticketNumber: string) {
   });
 }
 
+// --- Scan log (multi-day check-in history) ---
+
+export type ScanLogEntry = {
+  id: string;
+  ticket_number: string;
+  full_name: string;
+  category_tag: string;
+  result: "accepted" | "duplicate";
+  scanned_at: string;
+  checked_in_by: string | null;
+};
+
+export type ScanLogResponse = {
+  event_day: string;
+  total_scans: number;
+  accepted_count: number;
+  duplicate_count: number;
+  entries: ScanLogEntry[];
+};
+
+/**
+ * eventDay must be an ISO date string (YYYY-MM-DD), the Nigeria (WAT)
+ * calendar date to look up — not a full timestamp.
+ */
+export async function getScanLog(eventDay: string) {
+  return adminFetch<ScanLogResponse>(
+    `/tickets/scan-log?event_day=${encodeURIComponent(eventDay)}`
+  );
+}
+
 // --- Admin logs ---
 
 export type AdminLogSummary = {
