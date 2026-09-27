@@ -1,4 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+import hashlib
+import hmac
+import json
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 
 from app.config import settings
@@ -319,8 +323,17 @@ def verify_payment(
     payload: schemas.PaystackVerifyRequest,
     db: Session = Depends(get_db),
 ):
-    reference = payload.reference_number.strip()
+    return _confirm_payment(db, payload.reference_number.strip())
 
+
+def _confirm_payment(db: Session, reference: str) -> schemas.PaystackVerifyResponse:
+    """
+    The actual payment-confirmation logic, factored out so both the
+    /payments/verify route (called when the browser redirects back) and
+    the Paystack webhook (called server-to-server, independent of the
+    browser) go through the exact same three cases below. Keeping one
+    implementation means the two paths can never quietly drift apart.
+    """
     # ---------------------------------------------------------------
     # Case 1: ticket upgrade
     # ---------------------------------------------------------------
@@ -550,3 +563,79 @@ def verify_payment(
         status="confirmed",
         message="Payment confirmed — registration complete.",
     )
+
+
+# ---------------------------------------------------------------------------
+# Paystack webhook
+# ---------------------------------------------------------------------------
+#
+# Paystack calls this directly, server-to-server, the moment a payment
+# succeeds — independent of whether the customer's browser ever makes it
+# back to /verify. Without this, someone who pays and then closes their
+# browser (or loses signal) before the redirect completes would have
+# paid Paystack with no ticket ever issued on our side.
+#
+# This route is intentionally NOT behind admin auth — Paystack can't log
+# in as an admin. It's protected instead by verifying Paystack's HMAC
+# signature on the raw request body, using the same secret key already
+# used to talk to Paystack's API. Only someone who has that secret key
+# (i.e. actually Paystack, or us) can produce a valid signature.
+#
+# Paystack retries a webhook delivery if it doesn't get back a 2xx
+# response, so every branch below returns 200 once the signature check
+# passes — including "reference not found" or "amount mismatch" cases —
+# because retrying won't fix either of those; they need a human to look,
+# not another delivery attempt.
+
+@router.post("/webhook")
+async def paystack_webhook(
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    raw_body = await request.body()
+    signature = request.headers.get("x-paystack-signature", "")
+
+    if not settings.paystack_secret_key:
+        # Misconfiguration on our end, not Paystack's fault — a 500 here
+        # is correct so it shows up loudly in logs rather than being
+        # silently swallowed as "ignored".
+        raise HTTPException(status_code=500, detail="Paystack secret key not configured.")
+
+    expected_signature = hmac.new(
+        settings.paystack_secret_key.encode("utf-8"),
+        raw_body,
+        hashlib.sha512,
+    ).hexdigest()
+
+    if not hmac.compare_digest(expected_signature, signature):
+        # Deliberately vague — never confirm/deny *why* a signature is
+        # wrong, that just helps an attacker iterate.
+        raise HTTPException(status_code=401, detail="Invalid signature.")
+
+    try:
+        payload = json.loads(raw_body)
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Invalid JSON body.")
+
+    event = payload.get("event")
+
+    if event != "charge.success":
+        # Paystack sends many event types (transfer, subscription, etc.)
+        # — anything that isn't a successful charge is simply acknowledged
+        # and ignored, since this project doesn't use those features.
+        return {"status": "ignored", "event": event}
+
+    reference = (payload.get("data") or {}).get("reference")
+
+    if not reference:
+        return {"status": "ignored", "reason": "no reference in payload"}
+
+    try:
+        _confirm_payment(db, reference)
+    except HTTPException as e:
+        # Logged, not raised — a reference we don't recognise, or an
+        # amount mismatch, is something for a human to check in the
+        # logs, not something Paystack should keep retrying forever.
+        print(f"Webhook: could not confirm reference {reference}: {e.detail}")
+
+    return {"status": "ok"}
