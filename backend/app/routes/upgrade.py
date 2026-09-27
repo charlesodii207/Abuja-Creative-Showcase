@@ -6,6 +6,7 @@ from app.database import get_db
 from app import models, schemas, utils
 from app.emailer import send_payment_required_email
 from app.paystack import initialize_transaction, PaystackError
+from app.routes.payments import _confirm_payment
 
 router = APIRouter(prefix="/upgrade", tags=["upgrade"])
 
@@ -38,6 +39,32 @@ def upgrade_ticket(
             status_code=400,
             detail="Your original ticket must be paid for before you can upgrade.",
         )
+
+    # A previous upgrade attempt is still unresolved (pending_upgrade_ticket_type
+    # only clears once one succeeds). Rather than blindly overwrite it and
+    # risk orphaning a payment that actually went through on the old link,
+    # check with Paystack directly first — the same check the webhook and
+    # /verify already trust.
+    if (
+        attendee_detail.pending_upgrade_reference
+        and attendee_detail.pending_upgrade_ticket_type is not None
+    ):
+        old_result = _confirm_payment(db, attendee_detail.pending_upgrade_reference)
+
+        if old_result.status == "confirmed":
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "Your previous upgrade payment already went through — "
+                    f"{old_result.message} No new payment is needed. "
+                    "Refresh your status page to see it reflected."
+                ),
+            )
+
+        # old_result.status == "failed" (abandoned/declined/never paid) —
+        # safe to let a fresh attempt below replace it. db refresh picks
+        # up any changes _confirm_payment made (it made none on failure).
+        db.refresh(attendee_detail)
 
     try:
         diff_amount_kobo = utils.get_upgrade_amount_kobo(

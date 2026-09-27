@@ -20,8 +20,20 @@ from app.routes.tickets import router as tickets_router
 from app.routes.attendee_status import router as attendee_status_router
 
 
+# Public API docs (/docs, /redoc, /openapi.json) list every route this
+# API has, which is fine while building locally but shouldn't be handed
+# to the public once this is a live event site. They're only left on
+# when ENVIRONMENT clearly looks like a local/dev setup — anything else
+# (production, staging, unset, a typo) disables them, since "off by
+# default" is the safer mistake to make here.
+_DEV_ENVIRONMENTS = {"development", "dev", "local"}
+_is_dev = (settings.environment or "").strip().lower() in _DEV_ENVIRONMENTS
+
 app = FastAPI(
-    title="Afriqa Creative Showcase API"
+    title="Afriqa Creative Showcase API",
+    docs_url="/docs" if _is_dev else None,
+    redoc_url="/redoc" if _is_dev else None,
+    openapi_url="/openapi.json" if _is_dev else None,
 )
 
 
@@ -60,4 +72,5 @@ def root():
     return {
         "status": "ok",
         "environment": settings.environment,
+        "docs_enabled": _is_dev,
     }
