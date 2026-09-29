@@ -57,6 +57,8 @@ ACCENT_GRADIENTS: dict[str, tuple] = {
     "MASTERCLASS ACCESS": (RED, GOLD),
     "EXHIBITOR ACCESS": (TEAL, RED),
     "PITCHER ACCESS": (GOLD, TEAL),
+    "INVESTOR ACCESS": (GOLD, GOLD),   # solid gold — reads as a premium credential
+    "PRESS ACCREDITATION": (RED, TEAL),
 }
 DEFAULT_ACCENT = (TEAL, GOLD)
 
@@ -259,7 +261,7 @@ def _draw_pinwheel(c, cx, cy, r, alpha):
     c.restoreState()
 
 
-def _draw_banner(c, x0, y0, w, h, lines, size, text_x, accent, slant=3.0):
+def _draw_banner(c, x0, y0, w, h, lines, size, text_x, accent, slant=3.0, text_color=None):
     """Gradient type banner with a slanted right edge and 1-2 lines of text."""
     c.saveState()
     p = c.beginPath()
@@ -280,7 +282,7 @@ def _draw_banner(c, x0, y0, w, h, lines, size, text_x, accent, slant=3.0):
     first_baseline = last_baseline + (n - 1) * line_h
     for i, line in enumerate(lines):
         _text(c, line, text_x, first_baseline - i * line_h,
-              "Helvetica-Bold", size, NAVY_DEEP, spacing=0.3)
+              "Helvetica-Bold", size, text_color or NAVY_DEEP, spacing=0.3)
 
 
 # ---------------------------------------------------------------------------
@@ -312,6 +314,12 @@ def ticket_labels_for(registrant) -> tuple[str, str]:
 
     if category == models.RegistrantCategory.pitcher:
         return "PITCHER ACCESS", "PITCHER"
+
+    if category == models.RegistrantCategory.investor:
+        return "INVESTOR ACCESS", "INVESTOR"
+
+    if category == models.RegistrantCategory.press:
+        return "PRESS ACCREDITATION", "PRESS"
 
     name = category.value.upper()
     return f"{name} PASS", name
@@ -479,6 +487,188 @@ def generate_ticket_pdf(
     c.setFillColor(white)
     c.circle(div * mm, PAGE_H, 3.2 * mm, stroke=0, fill=1)
     c.circle(div * mm, 0, 3.2 * mm, stroke=0, fill=1)
+
+    c.showPage()
+    c.save()
+    return buffer.getvalue()
+
+# ---------------------------------------------------------------------------
+# Badge (Investor / Press)
+#
+# A simple single-panel name badge — not a ticket. No QR code, no ticket
+# number and no tear-off stub: these two groups aren't ticketed, so the
+# badge just says who they are and in what capacity they're attending. The
+# name is the largest text, so it reads from a distance. The registration
+# reference is printed small, so staff can look the person up in admin if
+# they ever need to.
+# ---------------------------------------------------------------------------
+
+BADGE_W = 95 * mm
+BADGE_H = 150 * mm
+
+
+def badge_pdf_filename(reference_number: str) -> str:
+    """ACS-92KT7XMD -> ACS-2026-Badge-ACS92KT7XMD.pdf"""
+    return f"ACS-2026-Badge-{reference_number.replace('-', '')}.pdf"
+
+
+def badge_labels_for(registrant) -> tuple[str, str, str | None]:
+    """
+    Returns (badge_label, role_label, organisation) for an Investor or
+    Press registrant, e.g. ("INVESTOR ACCESS", "INVESTOR", "Acme Capital").
+    badge_label picks the colour scheme; role_label is the big word printed
+    on the badge.
+    """
+    from app import models  # local import keeps this module easy to test
+
+    category = registrant.category
+
+    if category == models.RegistrantCategory.investor:
+        detail = registrant.investor_detail
+        org = detail.organization_name if detail else None
+        return "INVESTOR ACCESS", "INVESTOR", org
+
+    if category == models.RegistrantCategory.press:
+        detail = registrant.press_detail
+        org = detail.outlet_name if detail else None
+        return "PRESS ACCREDITATION", "PRESS", org
+
+    raise ValueError(f"No badge is issued for the '{category.value}' category.")
+
+
+def _name_lines(name: str, font: str, max_w: float, size: float = 24.0,
+                single_min: float = 15.0, multi_min: float = 11.0):
+    """
+    Lays a name out as one big line if it fits at a comfortable size,
+    otherwise as two balanced lines. Returns (lines, font_size).
+    """
+    name = " ".join(name.split())
+    if _text_width(name, font, single_min) <= max_w:
+        return [name], _fit_size(name, font, size, max_w, min_size=single_min)
+
+    words = name.split()
+    if len(words) >= 2:
+        best = None
+        for i in range(1, len(words)):
+            a, b = " ".join(words[:i]), " ".join(words[i:])
+            widest = max(_text_width(a, font, size), _text_width(b, font, size))
+            if best is None or widest < best[0]:
+                best = (widest, [a, b])
+        lines = best[1]
+        fitted = [_fit_text(line, font, size, max_w, min_size=multi_min) for line in lines]
+        common = min(s for _, s in fitted)
+        return [t for t, _ in fitted], common
+
+    text, fitted_size = _fit_text(name, font, size, max_w, min_size=9.0)
+    return [text], fitted_size
+
+
+def generate_badge_pdf(
+    *,
+    full_name: str,
+    reference_number: str,
+    badge_label: str,
+    role_label: str,
+    organization: str | None = None,
+) -> bytes:
+    """Renders an Investor/Press badge and returns the PDF as bytes."""
+    buffer = BytesIO()
+    c = canvas.Canvas(buffer, pagesize=(BADGE_W, BADGE_H))
+    c.setTitle(f"ACS 2026 {role_label.title()} Badge")
+    c.setAuthor("Afriqa Creative Showcase")
+    c.setSubject("Event badge")
+
+    W, H = 95, 150  # working in mm throughout
+    accent = _accent_for(badge_label)
+
+    c.saveState()
+    clip = c.beginPath()
+    clip.roundRect(0, 0, W * mm, H * mm, 4 * mm)
+    c.clipPath(clip, stroke=0, fill=0)
+
+    _v_gradient(c, 0, 0, W, H, [(0.0, NAVY_DEEP), (0.55, NAVY), (1.0, NAVY_LIGHT)])
+
+    # subtle decoration, kept away from the text
+    c.setLineWidth(0.3 * mm)
+    c.setStrokeColor(GOLD)
+    c.setStrokeAlpha(0.14)
+    c.circle(W - 6, 26, 34 * mm, stroke=1, fill=0)
+    c.setStrokeColor(TEAL)
+    c.setStrokeAlpha(0.14)
+    c.circle(4, H - 62, 24 * mm, stroke=1, fill=0)
+    c.setStrokeAlpha(1)
+    _draw_pinwheel(c, W - 10, 44, 13, alpha=0.16)
+
+    # top tricolour strip
+    seg = W / 3
+    for i, col in enumerate((RED, GOLD, TEAL)):
+        c.setFillColor(col)
+        c.rect(i * seg * mm, (H - 1.6) * mm, (seg + 0.1) * mm, 1.6 * mm, stroke=0, fill=1)
+
+    # logo + event name
+    _draw_logo(c, W / 2 - 8.5, H - 26, 17)
+    _text(c, EVENT_SHORT, W / 2, H - 30.5, "Helvetica-Bold", 14, white,
+          spacing=0.5, align="center")
+    _text(c, EVENT_NAME, W / 2, H - 34.6, "Helvetica-Bold", 5.4, GOLD,
+          spacing=1.1, align="center")
+
+    # role banner, full badge width
+    banner_size = 26
+    banner_y, banner_h = H - 58, 17
+    # dark navy text reads well on gold/teal, but not on red — go white there
+    left = accent[0]
+    brightness = 0.299 * left.red + 0.587 * left.green + 0.114 * left.blue
+    banner_text = white if brightness < 0.3 else NAVY_DEEP
+    _draw_banner(c, 0, banner_y, W + 3, banner_h, [role_label.upper()], banner_size,
+                 text_x=9, accent=accent, slant=3.0, text_color=banner_text)
+    _text(c, "EVENT BADGE", W / 2, banner_y - 6, "Helvetica-Bold", 6.4, white,
+          spacing=2.6, align="center")
+
+    # name + organisation, centred in the space between banner and footer
+    name_font = _font_for(full_name)
+    lines, name_size = _name_lines(full_name, name_font, W - 14)
+    name_line_h = name_size * 0.3528 * 1.2
+    name_cap = name_size * 0.3528 * 0.72
+
+    org_txt, org_size = (None, 0)
+    if organization:
+        org_txt, org_size = _fit_text(organization, _font_for(organization, "Helvetica"),
+                                      10.5, W - 14, min_size=7.0)
+
+    ORG_GAP = 9  # mm from the last name baseline down to the organisation baseline
+    block_h = name_cap + (len(lines) - 1) * name_line_h
+    if org_txt:
+        block_h += ORG_GAP
+
+    zone_top, zone_bottom = banner_y - 12, 32
+    y = (zone_top + zone_bottom) / 2 + block_h / 2 - name_cap
+    for line in lines:
+        _text(c, line, W / 2, y, name_font, name_size, white, align="center")
+        y -= name_line_h
+    if org_txt:
+        last_name_baseline = y + name_line_h  # y was stepped down once past the last line
+        _text(c, org_txt, W / 2, last_name_baseline - ORG_GAP,
+              _font_for(org_txt, "Helvetica"), org_size, MUTED, align="center")
+
+    # footer: reference number + event details
+    c.setStrokeColor(white)
+    c.setStrokeAlpha(0.14)
+    c.setLineWidth(0.25 * mm)
+    c.line(9 * mm, 27 * mm, (W - 9) * mm, 27 * mm)
+    c.setStrokeAlpha(1)
+
+    _text(c, "REGISTRATION REF.", W / 2, 21.6, "Helvetica-Bold", 5.0, GOLD,
+          spacing=1.2, align="center")
+    _text(c, reference_number, W / 2, 16.6, "Helvetica-Bold", 10.5, white,
+          spacing=0.7, align="center")
+    _text(c, f"{EVENT_DATES}  \u00b7  {EVENT_VENUE}", W / 2, 9.4, "Helvetica-Bold", 6.0,
+          white, align="center")
+    _text(c, WEBSITE, W / 2, 5.0, "Helvetica", 5.2, MUTED, align="center")
+
+    c.restoreState()
+
+    c.setFillColor(white)
+    c.circle(W / 2 * mm, H * mm, 3.2 * mm, stroke=0, fill=1)  # lanyard punch mark
 
     c.showPage()
     c.save()

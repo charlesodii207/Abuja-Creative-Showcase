@@ -15,7 +15,7 @@ from app.emailer import (
     send_payment_confirmed_email,
     send_awaiting_payment_email,
 )
-from app.tickets import issue_ticket_and_email, resend_ticket_email
+from app.tickets import issue_ticket_and_email, resend_ticket_email, issue_badge_and_email
 from app.dependencies import require_role
 from app.audit import log_action
 
@@ -28,6 +28,12 @@ PAID_CATEGORIES = {
     models.RegistrantCategory.attendee,
     models.RegistrantCategory.exhibitor,
     models.RegistrantCategory.pitcher,
+}
+
+# Investor and Press aren't ticketed — approval sends them a badge instead.
+BADGE_CATEGORIES = {
+    models.RegistrantCategory.investor,
+    models.RegistrantCategory.press,
 }
 
 DETAIL_RELATION_BY_CATEGORY = {
@@ -269,6 +275,14 @@ def _send_status_email(registrant: models.Registrant) -> str:
     message and the admin log."""
 
     if registrant.status == models.RegistrantStatus.approved:
+        if registrant.category in BADGE_CATEGORIES:
+            if not issue_badge_and_email(registrant):
+                raise HTTPException(
+                    status_code=502,
+                    detail="Could not send the badge email. Check the server logs.",
+                )
+            return "badge (PDF)"
+
         is_exhibitor = registrant.category == models.RegistrantCategory.exhibitor
 
         next_steps = (
@@ -307,7 +321,11 @@ def _send_status_email(registrant: models.Registrant) -> str:
         # PDF ticket rather than the old "payment confirmed" notice,
         # since the ticket is what the person actually needs at the door.
         if registrant.ticket is not None:
-            resend_ticket_email(registrant)
+            if not resend_ticket_email(registrant):
+                raise HTTPException(
+                    status_code=502,
+                    detail="Could not send the ticket email. Check the server logs.",
+                )
             return "ticket (PDF)"
 
         send_payment_confirmed_email(
@@ -404,21 +422,36 @@ def approve_registrant(
     registrant.status = models.RegistrantStatus.approved
     db.commit()
 
-    is_exhibitor = registrant.category == models.RegistrantCategory.exhibitor
+    message = "Registrant approved."
+    log_detail = None
 
-    next_steps = (
-        "You'll need to complete payment of the exhibitor fee to secure your spot — "
-        "look out for a follow-up email with payment details."
-        if is_exhibitor
-        else "No further action is needed on your end — we look forward to having you!"
-    )
+    if registrant.category in BADGE_CATEGORIES:
+        # Investor / Press: approval email carries their event badge.
+        if issue_badge_and_email(registrant):
+            message = "Registrant approved and badge emailed."
+            log_detail = "Badge emailed"
+        else:
+            message = (
+                "Registrant approved, but the badge email could not be sent. "
+                "Use 'Resend status email' to try again."
+            )
+            log_detail = "Badge email FAILED"
+    else:
+        is_exhibitor = registrant.category == models.RegistrantCategory.exhibitor
 
-    send_application_approved_email(
-        to=registrant.email,
-        full_name=registrant.full_name,
-        reference_number=registrant.reference_number,
-        next_steps=next_steps,
-    )
+        next_steps = (
+            "You'll need to complete payment of the exhibitor fee to secure your spot — "
+            "look out for a follow-up email with payment details."
+            if is_exhibitor
+            else "No further action is needed on your end — we look forward to having you!"
+        )
+
+        send_application_approved_email(
+            to=registrant.email,
+            full_name=registrant.full_name,
+            reference_number=registrant.reference_number,
+            next_steps=next_steps,
+        )
 
     log_action(
         db,
@@ -426,12 +459,13 @@ def approve_registrant(
         "approve_registrant",
         target_type="registrant",
         target_reference=registrant.reference_number,
+        detail=log_detail,
     )
 
     return schemas.AdminActionResponse(
         id=str(registrant.id),
         status=registrant.status.value,
-        message="Registrant approved.",
+        message=message,
     )
 
 

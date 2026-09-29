@@ -853,6 +853,59 @@ def send_ticket_upgraded_email(
     )
 
 
+def send_badge_email(
+    to: str,
+    full_name: str,
+    role_label: str,
+    reference_number: str,
+    pdf_base64: str,
+    pdf_filename: str,
+) -> bool:
+    """
+    Send an approved Investor/Press applicant their event badge as a PDF.
+    Unlike the ticket email there is no ticket number here (these groups
+    aren't ticketed) — the badge shows their name, role and reference.
+    """
+    html = f"""
+    <p>Hello {_safe(full_name)},</p>
+
+    <p>
+        Good news — your application to the Afriqa Creative Showcase has
+        been <strong>approved</strong>.
+    </p>
+
+    {_reference_card(reference_number)}
+
+    <p>
+        Your ACS 2026 <strong>{_safe(role_label)}</strong> badge is
+        attached to this email.
+    </p>
+
+    <p>
+        You may print the attached badge or keep the digital copy on your
+        phone, and have it ready when you arrive. Your reference number
+        is printed on the badge.
+    </p>
+
+    <p>
+        ACS 2026 takes place on 04 &ndash; 05 December 2026 in Abuja,
+        Nigeria. We look forward to welcoming you.
+    </p>
+    """
+
+    return send_email(
+        to=[to],
+        subject=f"Your ACS 2026 {role_label} Badge",
+        html=html,
+        attachments=[
+            {
+                "filename": pdf_filename,
+                "content": pdf_base64,
+            }
+        ],
+    )
+
+
 def registration_verify_url(reference_number: str) -> str:
     """
     Build the generic registration continuation URL.
