@@ -7,7 +7,9 @@ import {
   listRegistrants,
   ApiError,
   type RegistrantSummary,
+  type SortOrder,
 } from "../../../../lib/admin/api";
+import { downloadCsv, todayForFilename } from "../../../../lib/admin/csv";
 import RegistrantDetailPanel from "../../../components/admin/RegistrantDetailPanel";
 
 const TABS: { label: string; value: string | null }[] = [
@@ -31,6 +33,7 @@ export default function RegistrantsPage() {
   const router = useRouter();
   const [registrants, setRegistrants] = useState<RegistrantSummary[]>([]);
   const [activeTab, setActiveTab] = useState<string | null>(null);
+  const [sort, setSort] = useState<SortOrder>("alpha");
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -40,9 +43,10 @@ export default function RegistrantsPage() {
     setLoading(true);
     setError(null);
     try {
-      const data = await listRegistrants(
-        activeTab ? { category: activeTab } : undefined
-      );
+      const data = await listRegistrants({
+        ...(activeTab ? { category: activeTab } : {}),
+        sort,
+      });
       setRegistrants(data);
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
@@ -55,7 +59,7 @@ export default function RegistrantsPage() {
     } finally {
       setLoading(false);
     }
-  }, [activeTab, router]);
+  }, [activeTab, sort, router]);
 
   useEffect(() => {
     loadData();
@@ -73,7 +77,32 @@ export default function RegistrantsPage() {
 
   return (
     <div className="px-8 py-8 max-w-5xl">
-      <h1 className="font-display text-3xl text-cream mb-8">Registrants</h1>
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="font-display text-3xl text-cream">Registrants</h1>
+
+        <div className="flex rounded-sm border border-ink-raised overflow-hidden">
+          <button
+            onClick={() => setSort("alpha")}
+            className={`font-body text-xs px-3 py-2 transition-colors ${
+              sort === "alpha"
+                ? "bg-gold text-ink"
+                : "text-muted hover:text-cream"
+            }`}
+          >
+            A–Z
+          </button>
+          <button
+            onClick={() => setSort("recent")}
+            className={`font-body text-xs px-3 py-2 transition-colors border-l border-ink-raised ${
+              sort === "recent"
+                ? "bg-gold text-ink"
+                : "text-muted hover:text-cream"
+            }`}
+          >
+            Most recent
+          </button>
+        </div>
+      </div>
 
       {/* Tabs */}
       <div className="flex flex-wrap gap-1 mb-6 border-b border-ink-raised">
@@ -92,8 +121,8 @@ export default function RegistrantsPage() {
         ))}
       </div>
 
-      {/* Search */}
-      <div className="mb-6">
+      {/* Search + download */}
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <input
           type="text"
           value={search}
@@ -101,6 +130,27 @@ export default function RegistrantsPage() {
           placeholder="Search by name, email, or reference number"
           className="w-full max-w-sm bg-ink-raised border border-ink-raised rounded-sm px-4 py-2 font-body text-sm text-cream placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-gold"
         />
+
+        <button
+          onClick={() =>
+            downloadCsv(
+              `registrants-${activeTab || "all"}-${todayForFilename()}`,
+              filtered,
+              [
+                { header: "Full name", value: (r) => r.full_name },
+                { header: "Email", value: (r) => r.email },
+                { header: "Phone", value: (r) => r.phone },
+                { header: "Category", value: (r) => r.category },
+                { header: "Reference", value: (r) => r.reference_number },
+                { header: "Status", value: (r) => r.status },
+              ]
+            )
+          }
+          disabled={filtered.length === 0}
+          className="font-body text-xs rounded-sm px-3 py-1.5 border border-ink-raised text-muted hover:text-cream hover:border-teal/60 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          ⭳ Download CSV
+        </button>
       </div>
 
       {error && (

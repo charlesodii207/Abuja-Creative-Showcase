@@ -177,13 +177,17 @@ export type RegistrantDetail = {
   ticket: TicketInfo | null;
 };
 
+export type SortOrder = "alpha" | "recent";
+
 export async function listRegistrants(filters?: {
   category?: string;
   status?: string;
+  sort?: SortOrder;
 }) {
   const params = new URLSearchParams();
   if (filters?.category) params.set("category", filters.category);
   if (filters?.status) params.set("status", filters.status);
+  if (filters?.sort) params.set("sort", filters.sort);
   const qs = params.toString();
   return adminFetch<RegistrantSummary[]>(
     `/admin/registrants${qs ? `?${qs}` : ""}`
@@ -246,8 +250,13 @@ export type AdminSummary = {
   last_login_at: string | null;
 };
 
-export async function listAdmins() {
-  return adminFetch<AdminSummary[]>("/admin/auth/admins");
+export async function listAdmins(filters?: { sort?: SortOrder }) {
+  const params = new URLSearchParams();
+  if (filters?.sort) params.set("sort", filters.sort);
+  const qs = params.toString();
+  return adminFetch<AdminSummary[]>(
+    `/admin/auth/admins${qs ? `?${qs}` : ""}`
+  );
 }
 
 export async function createAdmin(payload: {

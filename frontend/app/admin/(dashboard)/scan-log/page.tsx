@@ -8,6 +8,7 @@ import {
   type ScanLogResponse,
   type ScanLogEntry,
 } from "../../../../lib/admin/api";
+import { downloadCsv } from "../../../../lib/admin/csv";
 
 type Filter = "all" | "accepted" | "duplicate";
 
@@ -103,6 +104,28 @@ export default function ScanLogPage() {
             placeholder="e.g. Kelly Doty or TBGDX92BXM"
             className="mt-1 w-full rounded-sm border border-ink-raised bg-ink px-4 py-2.5 font-body text-sm text-cream outline-none focus:ring-2 focus:ring-gold"
           />
+        </div>
+
+        <div className="flex items-end gap-2">
+          <button
+            onClick={() =>
+              downloadCsv(`scan-log-${data?.event_day || eventDay}-${filter}`, entries, [
+                { header: "Time", value: (e) => formatTime(e.scanned_at) },
+                { header: "Name", value: (e) => e.full_name },
+                { header: "Category", value: (e) => e.category_tag },
+                { header: "Ticket number", value: (e) => e.ticket_number },
+                {
+                  header: "Result",
+                  value: (e) => (e.result === "accepted" ? "Approved" : "Duplicate"),
+                },
+                { header: "Scanned by", value: (e) => e.checked_in_by || "" },
+              ])
+            }
+            disabled={entries.length === 0}
+            className="rounded-sm border border-ink-raised px-4 py-2.5 font-body text-sm text-muted transition-colors hover:text-cream hover:border-teal/60 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            ⭳ Download CSV
+          </button>
         </div>
 
         <div className="flex gap-2">

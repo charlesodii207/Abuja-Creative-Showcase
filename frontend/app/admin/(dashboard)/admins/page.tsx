@@ -10,12 +10,15 @@ import {
   getAdminProfile,
   ApiError,
   type AdminSummary,
+  type SortOrder,
 } from "../../../../lib/admin/api";
+import { downloadCsv, todayForFilename } from "../../../../lib/admin/csv";
 
 export default function AdminsPage() {
   const [admins, setAdmins] = useState<AdminSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [sort, setSort] = useState<SortOrder>("alpha");
 
   const [showForm, setShowForm] = useState(false);
   const [fullName, setFullName] = useState("");
@@ -28,11 +31,15 @@ export default function AdminsPage() {
   const myProfile = getAdminProfile();
   const canCreateSuperAdmin = myProfile?.role === "system_owner";
   const isSystemOwner = myProfile?.role === "system_owner";
+  // Plain "admin" accounts only ever get their fellow admins back from
+  // the API — the backend does the actual filtering, this is just the
+  // heads-up so it doesn't look like admins are missing.
+  const isTierRestricted = myProfile?.role === "admin";
 
-  function loadAdmins() {
+  function loadAdmins(currentSort: SortOrder = sort) {
     setLoading(true);
     setError(null);
-    listAdmins()
+    listAdmins({ sort: currentSort })
       .then(setAdmins)
       .catch((err) =>
         setError(err instanceof ApiError ? err.message : "Couldn't load admins.")
@@ -41,8 +48,9 @@ export default function AdminsPage() {
   }
 
   useEffect(() => {
-    loadAdmins();
-  }, []);
+    loadAdmins(sort);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sort]);
 
   async function handleCreate(e: FormEvent) {
     e.preventDefault();
@@ -104,7 +112,7 @@ export default function AdminsPage() {
 
   return (
     <div className="px-8 py-8 max-w-4xl">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-2">
         <h1 className="font-display text-3xl text-cream">Admins</h1>
         <button
           onClick={() => setShowForm((v) => !v)}
@@ -113,6 +121,13 @@ export default function AdminsPage() {
           {showForm ? "Cancel" : "Create admin"}
         </button>
       </div>
+
+      {isTierRestricted && (
+        <p className="font-body text-xs text-muted mb-6">
+          You're viewing fellow Admin accounts only.
+        </p>
+      )}
+      {!isTierRestricted && <div className="mb-6" />}
 
       {showForm && (
         <form
@@ -188,6 +203,49 @@ export default function AdminsPage() {
         </form>
       )}
 
+      <div className="flex items-center justify-end gap-3 mb-3">
+        <button
+          onClick={() =>
+            downloadCsv(`admins-${todayForFilename()}`, admins, [
+              { header: "Full name", value: (a) => a.full_name },
+              { header: "Username", value: (a) => a.username },
+              { header: "Role", value: (a) => a.role },
+              {
+                header: "Status",
+                value: (a) =>
+                  !a.is_active
+                    ? "Deactivated"
+                    : a.must_change_password
+                    ? "Awaiting first login"
+                    : "Active",
+              },
+              { header: "Last login", value: (a) => a.last_login_at || "" },
+            ])
+          }
+          disabled={admins.length === 0}
+          className="font-body text-xs rounded-sm px-3 py-1.5 border border-ink-raised text-muted hover:text-cream hover:border-teal/60 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          ⭳ Download CSV
+        </button>
+
+        <div className="flex items-center gap-1.5">
+          <span className="font-body text-xs text-muted mr-1">Sort:</span>
+          {(["alpha", "recent"] as SortOrder[]).map((s) => (
+            <button
+              key={s}
+              onClick={() => setSort(s)}
+              className={`font-body text-xs rounded-sm px-3 py-1.5 border transition-colors ${
+                sort === s
+                  ? "border-gold text-gold bg-gold/10"
+                  : "border-ink-raised text-muted hover:text-cream"
+              }`}
+            >
+              {s === "alpha" ? "A–Z" : "Most recent"}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {loading && <p className="font-body text-sm text-muted">Loading…</p>}
       {error && <p className="font-body text-sm text-red">{error}</p>}
 
@@ -204,45 +262,53 @@ export default function AdminsPage() {
               </tr>
             </thead>
             <tbody>
-              {admins.map((a) => (
-                <tr
-                  key={a.id}
-                  className="border-b border-ink-raised last:border-b-0"
-                >
-                  <td className="px-4 py-3 text-cream">{a.full_name}</td>
-                  <td className="px-4 py-3 text-muted">{a.username}</td>
-                  <td className="px-4 py-3 text-muted capitalize">
-                    {a.role.replace("_", " ")}
-                  </td>
-                  <td className="px-4 py-3">
-                    {!a.is_active ? (
-                      <span className="text-red">Deactivated</span>
-                    ) : a.must_change_password ? (
-                      <span className="text-gold">Awaiting first login</span>
-                    ) : (
-                      <span className="text-teal">Active</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-right space-x-3">
-                    {a.is_active && a.role !== "system_owner" && (
-                      <button
-                        onClick={() => handleDeactivate(a)}
-                        className="font-body text-xs text-red hover:underline"
-                      >
-                        Deactivate
-                      </button>
-                    )}
-                    {isSystemOwner && a.role !== "system_owner" && (
-                      <button
-                        onClick={() => handleDelete(a)}
-                        className="font-body text-xs text-red hover:underline"
-                      >
-                        Delete
-                      </button>
-                    )}
+              {admins.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-4 py-8 text-center text-muted">
+                    No admins found.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                admins.map((a) => (
+                  <tr
+                    key={a.id}
+                    className="border-b border-ink-raised last:border-b-0"
+                  >
+                    <td className="px-4 py-3 text-cream">{a.full_name}</td>
+                    <td className="px-4 py-3 text-muted">{a.username}</td>
+                    <td className="px-4 py-3 text-muted capitalize">
+                      {a.role.replace("_", " ")}
+                    </td>
+                    <td className="px-4 py-3">
+                      {!a.is_active ? (
+                        <span className="text-red">Deactivated</span>
+                      ) : a.must_change_password ? (
+                        <span className="text-gold">Awaiting first login</span>
+                      ) : (
+                        <span className="text-teal">Active</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-right space-x-3">
+                      {a.is_active && a.role !== "system_owner" && (
+                        <button
+                          onClick={() => handleDeactivate(a)}
+                          className="font-body text-xs text-red hover:underline"
+                        >
+                          Deactivate
+                        </button>
+                      )}
+                      {isSystemOwner && a.role !== "system_owner" && (
+                        <button
+                          onClick={() => handleDelete(a)}
+                          className="font-body text-xs text-red hover:underline"
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
