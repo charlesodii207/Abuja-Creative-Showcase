@@ -87,6 +87,7 @@ def _serialize_detail(registrant: models.Registrant) -> dict:
 def list_registrants(
     category: str | None = Query(default=None),
     status: str | None = Query(default=None),
+    sort: str = Query(default="alpha", pattern="^(alpha|recent)$"),
     db: Session = Depends(get_db),
     _admin: models.Admin = Depends(require_role(*VIEW_ROLES)),
 ):
@@ -98,9 +99,12 @@ def list_registrants(
     if status:
         query = query.filter(models.Registrant.status == status)
 
-    registrants = query.order_by(
-        models.Registrant.created_at.desc()
-    ).all()
+    if sort == "recent":
+        query = query.order_by(models.Registrant.created_at.desc())
+    else:
+        query = query.order_by(models.Registrant.full_name.asc())
+
+    registrants = query.all()
 
     return [
         schemas.RegistrantSummary(

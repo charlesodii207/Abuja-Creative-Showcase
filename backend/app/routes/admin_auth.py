@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -118,10 +118,27 @@ def create_admin(
 
 @router.get("/admins", response_model=list[schemas.AdminSummary])
 def list_admins(
+    sort: str = Query(default="alpha", pattern="^(alpha|recent)$"),
     db: Session = Depends(get_db),
-    current_admin: models.Admin = Depends(require_role("system_owner", "super_admin")),
+    # Any logged-in admin can view this list — the filtering below is
+    # what actually restricts what a plain "admin" gets to see. This is
+    # deliberately different from create/deactivate/delete, which stay
+    # locked to system_owner/super_admin only.
+    current_admin: models.Admin = Depends(require_role("system_owner", "super_admin", "admin")),
 ):
-    admins = db.query(models.Admin).order_by(models.Admin.created_at.desc()).all()
+    query = db.query(models.Admin)
+
+    # A plain "admin" only sees their fellow admins — never super_admin
+    # or system_owner accounts. Owners and super admins see everyone.
+    if current_admin.role == models.AdminRole.admin:
+        query = query.filter(models.Admin.role == models.AdminRole.admin)
+
+    if sort == "recent":
+        query = query.order_by(models.Admin.created_at.desc())
+    else:
+        query = query.order_by(models.Admin.full_name.asc())
+
+    admins = query.all()
 
     return [
         schemas.AdminSummary(
