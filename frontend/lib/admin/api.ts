@@ -340,12 +340,23 @@ export type AdminLogSummary = {
   action: string;
   target_type: string | null;
   target_reference: string | null;
+  target_name: string | null;
   detail: string | null;
   created_at: string | null;
 };
 
-export async function listAdminLogs(limit = 100) {
-  return adminFetch<AdminLogSummary[]>(`/admin/logs?limit=${limit}`);
+export async function listAdminLogs(filters?: {
+  limit?: number;
+  search?: string;
+  action?: string;
+  admin_name?: string;
+}) {
+  const params = new URLSearchParams();
+  params.set("limit", String(filters?.limit ?? 300));
+  if (filters?.search) params.set("search", filters.search);
+  if (filters?.action) params.set("action", filters.action);
+  if (filters?.admin_name) params.set("admin_name", filters.admin_name);
+  return adminFetch<AdminLogSummary[]>(`/admin/logs?${params.toString()}`);
 }
 
 // --- Messages ---

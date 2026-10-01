@@ -38,6 +38,8 @@ export default function RegistrantsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedRef, setSelectedRef] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 100;
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -74,6 +76,22 @@ export default function RegistrantsPage() {
       r.reference_number.toLowerCase().includes(q)
     );
   });
+
+  // Reset to page 1 whenever the tab, sort, or search changes the
+  // underlying list — otherwise you could land on "page 5" of a
+  // filtered set that only has 2 pages.
+  useEffect(() => {
+    setPage(1);
+  }, [activeTab, sort, search]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const pageItems = filtered.slice(
+    (safePage - 1) * PAGE_SIZE,
+    safePage * PAGE_SIZE
+  );
+  const rangeStart = filtered.length === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1;
+  const rangeEnd = Math.min(safePage * PAGE_SIZE, filtered.length);
 
   return (
     <div className="px-8 py-8 max-w-5xl">
@@ -192,7 +210,7 @@ export default function RegistrantsPage() {
                 </td>
               </tr>
             ) : (
-              filtered.map((r) => (
+              pageItems.map((r) => (
                 <tr
                   key={r.id}
                   onClick={() => setSelectedRef(r.reference_number)}
@@ -218,6 +236,36 @@ export default function RegistrantsPage() {
           </tbody>
         </table>
       </div>
+
+      {!loading && filtered.length > 0 && (
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+          <p className="font-body text-xs text-muted">
+            Showing {rangeStart}–{rangeEnd} of {filtered.length}
+          </p>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={safePage <= 1}
+              className="font-body text-xs rounded-sm px-3 py-1.5 border border-ink-raised text-muted hover:text-cream disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              ← Previous
+            </button>
+
+            <span className="font-body text-xs text-muted px-2">
+              Page {safePage} of {totalPages}
+            </span>
+
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={safePage >= totalPages}
+              className="font-body text-xs rounded-sm px-3 py-1.5 border border-ink-raised text-muted hover:text-cream disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Next →
+            </button>
+          </div>
+        </div>
+      )}
 
       <RegistrantDetailPanel
         referenceNumber={selectedRef}
