@@ -3,7 +3,7 @@ import io
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
-from sqlalchemy import func
+from sqlalchemy import func, and_, or_
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -659,13 +659,46 @@ def export_registrants(
     response_model=list[schemas.AdminLogSummary],
 )
 def list_admin_logs(
-    limit: int = Query(default=100, le=500),
+    limit: int = Query(default=300, le=1000),
+    search: str | None = Query(default=None),
+    action: str | None = Query(default=None),
+    admin_name: str | None = Query(default=None),
     db: Session = Depends(get_db),
     _admin: models.Admin = Depends(require_role(*VIEW_ROLES)),
 ):
-    logs = (
-        db.query(models.AdminLog)
-        .order_by(models.AdminLog.created_at.desc())
+    """
+    search matches across the registrant's name (via a join — a log only
+    ever stores the reference number, not the name), the admin's name,
+    the reference number itself, and the free-text detail field. This is
+    what powers "search an applicant, see every admin who acted on them".
+    """
+    query = db.query(models.AdminLog, models.Registrant.full_name).outerjoin(
+        models.Registrant,
+        and_(
+            models.AdminLog.target_type == "registrant",
+            models.Registrant.reference_number == models.AdminLog.target_reference,
+        ),
+    )
+
+    if action:
+        query = query.filter(models.AdminLog.action == action)
+
+    if admin_name:
+        query = query.filter(models.AdminLog.admin_name == admin_name)
+
+    if search:
+        like = f"%{search.strip()}%"
+        query = query.filter(
+            or_(
+                models.AdminLog.target_reference.ilike(like),
+                models.AdminLog.admin_name.ilike(like),
+                models.AdminLog.detail.ilike(like),
+                models.Registrant.full_name.ilike(like),
+            )
+        )
+
+    rows = (
+        query.order_by(models.AdminLog.created_at.desc())
         .limit(limit)
         .all()
     )
@@ -677,8 +710,9 @@ def list_admin_logs(
             action=log.action,
             target_type=log.target_type,
             target_reference=log.target_reference,
+            target_name=registrant_name,
             detail=log.detail,
             created_at=log.created_at,
         )
-        for log in logs
+        for log, registrant_name in rows
     ]

@@ -349,6 +349,11 @@ class AdminLogSummary(BaseModel):
     action: str
     target_type: str | None
     target_reference: str | None
+    # The registrant's name, filled in via a join when target_type is
+    # "registrant" and that reference still exists — lets the logs page
+    # show "Kelly Doty" instead of making the reader cross-reference the
+    # reference number themselves, and makes searching by name work.
+    target_name: str | None = None
     detail: str | None
     created_at: datetime | None
 
