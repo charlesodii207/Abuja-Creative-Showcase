@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 export default function AccommodationPage() {
   return (
     <main className="min-h-screen overflow-hidden bg-[#11152F]">
-      <div className="mx-auto max-w-7xl px-6 pb-20 pt-28 sm:px-8 md:pb-28 md:pt-36 lg:px-10">
+      <div className="mx-auto max-w-7xl px-6 pb-20 pt-10 sm:px-8 md:pb-28 md:pt-14 lg:px-10">
         <Link
           href="/"
           className="group mb-10 inline-flex items-center gap-3 text-sm font-medium text-[#00A5A8] transition-colors duration-300 hover:text-[#F5EFE6]"

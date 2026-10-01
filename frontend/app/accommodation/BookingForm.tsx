@@ -5,10 +5,14 @@ import { useState } from "react";
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 const BOOKING_ENDPOINT = `${API_URL}/hotel-bookings`;
 
-// Limits for the people / rooms steppers
-const MAX_PER_ROOM = 2;
-const MAX_GUESTS = 20;
+// Room and guest rules
+const ADULTS_PER_ROOM = 2; // standard room
+const ADULTS_PER_ROOM_EXTRA_BED = 3; // with an extra bed / rollaway
+const CHILD_MAX_AGE = 12; // children under this age share the parents' bed
+const MAX_ADULTS = 20;
+const MAX_CHILDREN = 10;
 const MAX_ROOMS = 10;
+const MAX_NIGHTS = 30;
 
 const BUDGET_OPTIONS = [
   "Under ₦50,000",
@@ -25,22 +29,28 @@ type FormState = {
   email: string;
   phone: string;
   checkIn: string;
-  checkOut: string;
-  guests: string;
+  nights: string;
+  adults: string;
+  children: string;
   rooms: string;
+  extraBed: boolean;
   budgetRange: string;
   preferredArea: string;
   notes: string;
 };
+
+type Errors = Partial<Record<keyof FormState, string>>;
 
 const initialForm: FormState = {
   fullName: "",
   email: "",
   phone: "",
   checkIn: "",
-  checkOut: "",
-  guests: "1",
+  nights: "1",
+  adults: "1",
+  children: "0",
   rooms: "1",
+  extraBed: false,
   budgetRange: "",
   preferredArea: "",
   notes: "",
@@ -48,6 +58,38 @@ const initialForm: FormState = {
 
 const inputClass =
   "w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-[#F5EFE6] placeholder:text-white/30 outline-none transition-colors duration-200 focus:border-[#E59200]/70 [color-scheme:dark]";
+
+// Adds days to a YYYY-MM-DD date using local time (avoids timezone shifts)
+function addDays(dateStr: string, days: number): string {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const date = new Date(y, m - 1, d + days);
+  const yy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const dd = String(date.getDate()).padStart(2, "0");
+  return `${yy}-${mm}-${dd}`;
+}
+
+function formatDate(dateStr: string): string {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString("en-GB", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function minRoomsFor(adults: number, extraBed: boolean) {
+  const perRoom = extraBed ? ADULTS_PER_ROOM_EXTRA_BED : ADULTS_PER_ROOM;
+  return Math.ceil(adults / perRoom);
+}
+
+// Keeps rooms between "enough for all adults" and "one adult per room"
+function normalizeRooms(adults: number, rooms: number, extraBed: boolean) {
+  const min = minRoomsFor(adults, extraBed);
+  const max = Math.min(MAX_ROOMS, adults);
+  return Math.min(Math.max(rooms, min), max);
+}
 
 function Field({
   label,
@@ -80,7 +122,7 @@ function Stepper({
   onChange,
 }: {
   label: string;
-  hint: string;
+  hint?: string;
   value: number;
   min: number;
   max: number;
@@ -93,11 +135,8 @@ function Stepper({
 
   return (
     <div>
-      <span className="block text-[10px] font-semibold uppercase tracking-[0.25em] text-[#F5EFE6]/50">
+      <span className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.25em] text-[#F5EFE6]/50">
         {label}
-      </span>
-      <span className="mb-3 mt-1 block text-xs leading-relaxed text-white/40">
-        {hint}
       </span>
 
       <div className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2">
@@ -128,6 +167,10 @@ function Stepper({
           +
         </button>
       </div>
+
+      {hint && (
+        <span className="mt-2 block text-xs leading-relaxed text-white/40">{hint}</span>
+      )}
     </div>
   );
 }
@@ -160,57 +203,61 @@ function Chip({
 export default function BookingForm() {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [form, setForm] = useState<FormState>(initialForm);
-  const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({});
+  const [errors, setErrors] = useState<Errors>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [reference, setReference] = useState("");
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = addDays(
+    new Date().toISOString().split("T")[0],
+    0
+  );
 
-  const guests = Number(form.guests);
+  const adults = Number(form.adults);
+  const children = Number(form.children);
   const rooms = Number(form.rooms);
+  const nights = Number(form.nights);
 
-  // Rooms must be enough to fit everyone, and never more than the number of people
-  const minRooms = Math.ceil(guests / MAX_PER_ROOM);
-  const maxRooms = Math.min(MAX_ROOMS, guests);
+  const minRooms = minRoomsFor(adults, form.extraBed);
+  const maxRooms = Math.min(MAX_ROOMS, adults);
 
-  const update = (key: keyof FormState, value: string) => {
+  const checkOut = form.checkIn ? addDays(form.checkIn, nights) : "";
+
+  const update = <K extends keyof FormState>(key: K, value: FormState[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
     if (errors[key]) setErrors((prev) => ({ ...prev, [key]: undefined }));
   };
 
-  const changeGuests = (nextGuests: number) => {
-    const neededRooms = Math.ceil(nextGuests / MAX_PER_ROOM);
-    let nextRooms = rooms;
-
-    if (nextRooms < neededRooms) nextRooms = neededRooms;
-    if (nextRooms > nextGuests) nextRooms = nextGuests;
-
+  const changeAdults = (next: number) => {
     setForm((prev) => ({
       ...prev,
-      guests: String(nextGuests),
-      rooms: String(nextRooms),
+      adults: String(next),
+      rooms: String(normalizeRooms(next, Number(prev.rooms), prev.extraBed)),
+    }));
+  };
+
+  const toggleExtraBed = (checked: boolean) => {
+    setForm((prev) => ({
+      ...prev,
+      extraBed: checked,
+      rooms: String(normalizeRooms(Number(prev.adults), Number(prev.rooms), checked)),
     }));
   };
 
   const validateStep1 = () => {
-    const next: Partial<Record<keyof FormState, string>> = {};
+    const next: Errors = {};
 
     if (form.fullName.trim().length < 2) next.fullName = "Enter your full name.";
     if (!/^\S+@\S+\.\S+$/.test(form.email)) next.email = "Enter a valid email address.";
     if (form.phone.replace(/\D/g, "").length < 7) next.phone = "Enter a valid phone number.";
-    if (!form.checkIn) next.checkIn = "Choose a check-in date.";
-    if (!form.checkOut) next.checkOut = "Choose a check-out date.";
-    if (form.checkIn && form.checkOut && form.checkOut <= form.checkIn) {
-      next.checkOut = "Check-out must be after check-in.";
-    }
+    if (!form.checkIn) next.checkIn = "Choose your arrival date.";
 
     setErrors(next);
     return Object.keys(next).length === 0;
   };
 
   const validateStep2 = () => {
-    const next: Partial<Record<keyof FormState, string>> = {};
+    const next: Errors = {};
     if (!form.budgetRange) next.budgetRange = "Select a budget range.";
     setErrors(next);
     return Object.keys(next).length === 0;
@@ -236,9 +283,13 @@ export default function BookingForm() {
           email: form.email.trim(),
           phone: form.phone.trim(),
           check_in: form.checkIn,
-          check_out: form.checkOut,
-          guests,
+          check_out: checkOut,
+          nights,
+          adults,
+          children,
+          guests: adults + children,
           rooms,
+          extra_bed_requested: form.extraBed,
           budget_range: form.budgetRange,
           preferred_area: form.preferredArea || null,
           notes: form.notes.trim() || null,
@@ -268,6 +319,15 @@ export default function BookingForm() {
   };
 
   const steps = ["Your details", "Budget & preferences"];
+
+  const summary = [
+    `${nights} ${nights === 1 ? "night" : "nights"}`,
+    `${adults} ${adults === 1 ? "adult" : "adults"}`,
+    children > 0 ? `${children} ${children === 1 ? "child" : "children"}` : null,
+    `${rooms} ${rooms === 1 ? "room" : "rooms"}`,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
     <div className="relative px-3 pb-3 sm:px-5 sm:pb-5">
@@ -345,8 +405,9 @@ export default function BookingForm() {
               </Field>
             </div>
 
+            {/* Dates: arrival + nights */}
             <div className="grid gap-5 sm:grid-cols-2">
-              <Field label="Check-in" error={errors.checkIn}>
+              <Field label="Arrival date" error={errors.checkIn}>
                 <input
                   type="date"
                   min={today}
@@ -356,40 +417,74 @@ export default function BookingForm() {
                 />
               </Field>
 
-              <Field label="Check-out" error={errors.checkOut}>
-                <input
-                  type="date"
-                  min={form.checkIn || today}
-                  value={form.checkOut}
-                  onChange={(e) => update("checkOut", e.target.value)}
-                  className={inputClass}
-                />
-              </Field>
+              <Stepper
+                label="Nights"
+                value={nights}
+                min={1}
+                max={MAX_NIGHTS}
+                singular="night"
+                plural="nights"
+                onChange={(n) => update("nights", String(n))}
+              />
             </div>
 
+            {checkOut && (
+              <p className="-mt-1 rounded-xl border border-[#00A5A8]/25 bg-[#00A5A8]/10 px-4 py-3 text-sm text-[#F5EFE6]/80">
+                Check-out: <span className="font-semibold">{formatDate(checkOut)}</span>
+              </p>
+            )}
+
+            {/* Guests */}
             <div className="grid gap-5 sm:grid-cols-2">
               <Stepper
-                label="People staying"
-                hint="Everyone who will sleep at the hotel, including you and any children."
-                value={guests}
+                label="Adults"
+                hint={`Aged ${CHILD_MAX_AGE} and above. A standard room fits ${ADULTS_PER_ROOM} adults.`}
+                value={adults}
                 min={1}
-                max={MAX_GUESTS}
-                singular="person"
-                plural="people"
-                onChange={changeGuests}
+                max={MAX_ADULTS}
+                singular="adult"
+                plural="adults"
+                onChange={changeAdults}
               />
 
               <Stepper
-                label="Rooms needed"
-                hint={`Separate hotel rooms. Each standard room fits up to ${MAX_PER_ROOM} people.`}
-                value={rooms}
-                min={minRooms}
-                max={maxRooms}
-                singular="room"
-                plural="rooms"
-                onChange={(n) => update("rooms", String(n))}
+                label={`Children (under ${CHILD_MAX_AGE})`}
+                hint="Usually stay free when sharing a bed with parents. Policies vary by hotel."
+                value={children}
+                min={0}
+                max={MAX_CHILDREN}
+                singular="child"
+                plural="children"
+                onChange={(n) => update("children", String(n))}
               />
             </div>
+
+            <Stepper
+              label="Rooms needed"
+              hint={`Each room needs at least 1 adult. Rooms are set to fit all adults.`}
+              value={rooms}
+              min={minRooms}
+              max={maxRooms}
+              singular="room"
+              plural="rooms"
+              onChange={(n) => update("rooms", String(n))}
+            />
+
+            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+              <input
+                type="checkbox"
+                checked={form.extraBed}
+                onChange={(e) => toggleExtraBed(e.target.checked)}
+                className="mt-1 h-4 w-4 shrink-0 cursor-pointer accent-[#E59200]"
+              />
+              <span className="text-sm leading-relaxed text-white/65">
+                <span className="font-medium text-[#F5EFE6]">
+                  A third adult can share a room (extra bed)
+                </span>
+                <br />
+                An extra person fee may apply, depending on the hotel and room size.
+              </span>
+            </label>
 
             <button
               type="button"
@@ -502,6 +597,10 @@ export default function BookingForm() {
             <p className="mx-auto mt-4 max-w-sm text-sm leading-relaxed text-white/65 sm:text-base">
               Thank you, {form.fullName.split(" ")[0]}. Our team will review
               your request and reply to {form.email} with available options.
+            </p>
+
+            <p className="mt-5 text-xs uppercase tracking-[0.2em] text-[#F5EFE6]/50">
+              {summary}
             </p>
 
             {reference && (
