@@ -1,9 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
+import Link from "next/link";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 const BOOKING_ENDPOINT = `${API_URL}/hotel-bookings`;
+
+// Change this to wherever your privacy policy page lives
+const PRIVACY_POLICY_URL = "/privacy-policy";
 
 // Room and guest rules
 const ADULTS_PER_ROOM = 2; // standard room
@@ -59,14 +63,17 @@ const initialForm: FormState = {
 const inputClass =
   "w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-[#F5EFE6] placeholder:text-white/30 outline-none transition-colors duration-200 focus:border-[#E59200]/70 [color-scheme:dark]";
 
-// Adds days to a YYYY-MM-DD date using local time (avoids timezone shifts)
-function addDays(dateStr: string, days: number): string {
-  const [y, m, d] = dateStr.split("-").map(Number);
-  const date = new Date(y, m - 1, d + days);
+function toDateString(date: Date): string {
   const yy = date.getFullYear();
   const mm = String(date.getMonth() + 1).padStart(2, "0");
   const dd = String(date.getDate()).padStart(2, "0");
   return `${yy}-${mm}-${dd}`;
+}
+
+// Adds days to a YYYY-MM-DD date using local time (avoids timezone shifts)
+function addDays(dateStr: string, days: number): string {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  return toDateString(new Date(y, m - 1, d + days));
 }
 
 function formatDate(dateStr: string): string {
@@ -200,18 +207,55 @@ function Chip({
   );
 }
 
+function ReviewBlock({
+  title,
+  onEdit,
+  children,
+}: {
+  title: string;
+  onEdit: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+      <div className="mb-4 flex items-center justify-between">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.25em] text-[#F5EFE6]/50">
+          {title}
+        </span>
+        <button
+          type="button"
+          onClick={onEdit}
+          className="text-xs font-medium text-[#00A5A8] transition-colors duration-300 hover:text-[#F5EFE6]"
+        >
+          Edit
+        </button>
+      </div>
+
+      <dl className="space-y-3">{children}</dl>
+    </div>
+  );
+}
+
+function ReviewRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex flex-col gap-0.5 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
+      <dt className="text-sm text-white/45">{label}</dt>
+      <dd className="break-words text-sm text-[#F5EFE6] sm:text-right">{value}</dd>
+    </div>
+  );
+}
+
 export default function BookingForm() {
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [form, setForm] = useState<FormState>(initialForm);
   const [errors, setErrors] = useState<Errors>({});
+  const [consent, setConsent] = useState(false);
+  const [consentError, setConsentError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [reference, setReference] = useState("");
 
-  const today = addDays(
-    new Date().toISOString().split("T")[0],
-    0
-  );
+  const today = toDateString(new Date());
 
   const adults = Number(form.adults);
   const children = Number(form.children);
@@ -267,9 +311,18 @@ export default function BookingForm() {
     if (validateStep1()) setStep(2);
   };
 
+  const goReview = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (validateStep2()) setStep(3);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateStep2()) return;
+
+    if (!consent) {
+      setConsentError("Please accept the privacy policy to submit your request.");
+      return;
+    }
 
     setSubmitting(true);
     setSubmitError("");
@@ -293,6 +346,7 @@ export default function BookingForm() {
           budget_range: form.budgetRange,
           preferred_area: form.preferredArea || null,
           notes: form.notes.trim() || null,
+          privacy_accepted: true,
         }),
       });
 
@@ -300,7 +354,7 @@ export default function BookingForm() {
 
       const data = await res.json().catch(() => ({}));
       setReference(String(data.reference ?? data.id ?? ""));
-      setStep(3);
+      setStep(4);
     } catch {
       setSubmitError(
         "We couldn't send your request. Please check your connection and try again."
@@ -313,12 +367,14 @@ export default function BookingForm() {
   const reset = () => {
     setForm(initialForm);
     setErrors({});
+    setConsent(false);
+    setConsentError("");
     setReference("");
     setSubmitError("");
     setStep(1);
   };
 
-  const steps = ["Your details", "Budget & preferences"];
+  const steps = ["Details", "Preferences", "Review"];
 
   const summary = [
     `${nights} ${nights === 1 ? "night" : "nights"}`,
@@ -336,38 +392,43 @@ export default function BookingForm() {
       <div className="absolute -bottom-1 -left-1 h-24 w-24 rounded-full border border-[#00A5A8]/30 bg-[#00A5A8]/10 blur-[1px] sm:h-28 sm:w-28" />
 
       <div className="relative rounded-[2.5rem] rounded-br-[5rem] rounded-tl-[1rem] border border-white/10 bg-[#0D1128] p-6 shadow-[0_25px_80px_rgba(0,0,0,0.22)] sm:p-10">
-        {step !== 3 && (
+        {step !== 4 && (
           <div className="mb-8 flex items-center gap-3">
             {steps.map((label, i) => {
               const n = i + 1;
               const active = step === n;
               const done = step > n;
               return (
-                <div key={label} className="flex flex-1 items-center gap-3">
-                  <span
-                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-xs font-semibold ${
-                      active || done
-                        ? "border-[#E59200] bg-[#E59200] text-[#0D1128]"
-                        : "border-white/20 text-white/40"
-                    }`}
-                  >
-                    {done ? "✓" : n}
-                  </span>
-                  <span
-                    className={`text-[10px] font-semibold uppercase tracking-[0.2em] ${
-                      active ? "text-[#F5EFE6]" : "text-[#F5EFE6]/40"
-                    }`}
-                  >
-                    {label}
-                  </span>
-                  {i === 0 && <span className="hidden h-px flex-1 bg-white/10 sm:block" />}
-                </div>
+                <Fragment key={label}>
+                  <div className="flex items-center gap-2.5">
+                    <span
+                      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-xs font-semibold ${
+                        active || done
+                          ? "border-[#E59200] bg-[#E59200] text-[#0D1128]"
+                          : "border-white/20 text-white/40"
+                      }`}
+                    >
+                      {done ? "✓" : n}
+                    </span>
+                    <span
+                      className={`text-[10px] font-semibold uppercase tracking-[0.2em] ${
+                        active ? "inline text-[#F5EFE6]" : "hidden text-[#F5EFE6]/40 sm:inline"
+                      }`}
+                    >
+                      {label}
+                    </span>
+                  </div>
+
+                  {i < steps.length - 1 && (
+                    <span className="h-px min-w-3 flex-1 bg-white/10" />
+                  )}
+                </Fragment>
               );
             })}
           </div>
         )}
 
-        {/* Step 1 */}
+        {/* Step 1: details */}
         {step === 1 && (
           <div className="space-y-5">
             <Field label="Full name" error={errors.fullName}>
@@ -461,7 +522,7 @@ export default function BookingForm() {
 
             <Stepper
               label="Rooms needed"
-              hint={`Each room needs at least 1 adult. Rooms are set to fit all adults.`}
+              hint="Each room needs at least 1 adult. Rooms are set to fit all adults."
               value={rooms}
               min={minRooms}
               max={maxRooms}
@@ -499,9 +560,9 @@ export default function BookingForm() {
           </div>
         )}
 
-        {/* Step 2 */}
+        {/* Step 2: budget and preferences */}
         {step === 2 && (
-          <form onSubmit={handleSubmit} className="space-y-7" noValidate>
+          <form onSubmit={goReview} className="space-y-7" noValidate>
             <div>
               <span className="mb-3 block text-[10px] font-semibold uppercase tracking-[0.25em] text-[#F5EFE6]/50">
                 Budget per night
@@ -556,6 +617,118 @@ export default function BookingForm() {
               />
             </Field>
 
+            <div className="flex flex-col-reverse gap-3 sm:flex-row">
+              <button
+                type="button"
+                onClick={() => setStep(1)}
+                className="rounded-full border border-white/15 px-8 py-4 text-sm font-medium text-[#F5EFE6]/80 transition-colors duration-300 hover:border-white/40 hover:text-[#F5EFE6]"
+              >
+                ← Back
+              </button>
+
+              <button
+                type="submit"
+                className="group flex-1 rounded-full bg-[#E59200] px-8 py-4 text-sm font-semibold text-[#0D1128] transition-colors duration-300 hover:bg-[#F5EFE6]"
+              >
+                <span>Review request</span>
+                <span className="ml-3 inline-block transition-transform duration-300 group-hover:translate-x-1">
+                  →
+                </span>
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* Step 3: review and consent */}
+        {step === 3 && (
+          <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+            <div>
+              <h3 className="font-display text-2xl text-[#F5EFE6]">
+                Review your request
+              </h3>
+              <p className="mt-2 text-sm text-white/55">
+                Check everything below before you submit.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <ReviewBlock title="Contact" onEdit={() => setStep(1)}>
+                <ReviewRow label="Name" value={form.fullName.trim()} />
+                <ReviewRow label="Email" value={form.email.trim()} />
+                <ReviewRow label="Phone" value={form.phone.trim()} />
+              </ReviewBlock>
+
+              <ReviewBlock title="Your stay" onEdit={() => setStep(1)}>
+                <ReviewRow label="Arrival" value={formatDate(form.checkIn)} />
+                <ReviewRow label="Check-out" value={formatDate(checkOut)} />
+                <ReviewRow
+                  label="Length of stay"
+                  value={`${nights} ${nights === 1 ? "night" : "nights"}`}
+                />
+                <ReviewRow
+                  label="Adults"
+                  value={`${adults}`}
+                />
+                <ReviewRow
+                  label={`Children (under ${CHILD_MAX_AGE})`}
+                  value={`${children}`}
+                />
+                <ReviewRow
+                  label="Rooms"
+                  value={`${rooms}`}
+                />
+                {form.extraBed && (
+                  <ReviewRow
+                    label="Extra bed"
+                    value="Third adult may share a room (extra fee may apply)"
+                  />
+                )}
+              </ReviewBlock>
+
+              <ReviewBlock title="Preferences" onEdit={() => setStep(2)}>
+                <ReviewRow label="Budget per night" value={form.budgetRange} />
+                <ReviewRow
+                  label="Preferred area"
+                  value={form.preferredArea || "Not specified"}
+                />
+                <ReviewRow
+                  label="Special requests"
+                  value={form.notes.trim() || "None"}
+                />
+              </ReviewBlock>
+            </div>
+
+            <div>
+              <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+                <input
+                  type="checkbox"
+                  checked={consent}
+                  onChange={(e) => {
+                    setConsent(e.target.checked);
+                    if (e.target.checked) setConsentError("");
+                  }}
+                  className="mt-1 h-4 w-4 shrink-0 cursor-pointer accent-[#E59200]"
+                />
+                <span className="text-sm leading-relaxed text-white/65">
+                  I have read and agree to the{" "}
+                  <Link
+                    href={PRIVACY_POLICY_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-[#00A5A8] underline underline-offset-2 transition-colors duration-300 hover:text-[#F5EFE6]"
+                  >
+                    Privacy Policy
+                  </Link>
+                  . I understand my details will be used to process this request and
+                  may be shared with partner hotels.
+                </span>
+              </label>
+
+              {consentError && (
+                <span className="mt-2 block text-xs text-red-400">{consentError}</span>
+              )}
+            </div>
+
             {submitError && (
               <p className="rounded-xl border border-red-400/30 bg-red-400/10 px-4 py-3 text-sm text-red-300">
                 {submitError}
@@ -565,7 +738,7 @@ export default function BookingForm() {
             <div className="flex flex-col-reverse gap-3 sm:flex-row">
               <button
                 type="button"
-                onClick={() => setStep(1)}
+                onClick={() => setStep(2)}
                 disabled={submitting}
                 className="rounded-full border border-white/15 px-8 py-4 text-sm font-medium text-[#F5EFE6]/80 transition-colors duration-300 hover:border-white/40 hover:text-[#F5EFE6] disabled:opacity-50"
               >
@@ -583,8 +756,8 @@ export default function BookingForm() {
           </form>
         )}
 
-        {/* Step 3 */}
-        {step === 3 && (
+        {/* Step 4: confirmation */}
+        {step === 4 && (
           <div className="py-6 text-center">
             <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full border border-[#00A5A8]/50 bg-[#00A5A8]/10 text-2xl text-[#00A5A8]">
               ✓
@@ -595,8 +768,8 @@ export default function BookingForm() {
             </h3>
 
             <p className="mx-auto mt-4 max-w-sm text-sm leading-relaxed text-white/65 sm:text-base">
-              Thank you, {form.fullName.split(" ")[0]}. Our team will review
-              your request and reply to {form.email} with available options.
+              Thank you, {form.fullName.trim().split(" ")[0]}. Our team will review
+              your request and reply to {form.email.trim()} with available options.
             </p>
 
             <p className="mt-5 text-xs uppercase tracking-[0.2em] text-[#F5EFE6]/50">
