@@ -6,6 +6,7 @@ import ConvenersNote from "./components/ConvenersNote";
 import CreativeEcosystem from "./components/CreativeEcosystem";
 import ParticipationSection from "./components/ParticipationSection";
 import ProgrammeSection from "./components/ProgrammeSection";
+import HotelBookingSection from "./components/HotelBookingSection";
 import SponsorsSection from "./components/SponsorsSection";
 import InsideAfriqa from "./components/InsideAfriqa";
 import FAQSection from "./components/FAQSection";
@@ -57,6 +58,7 @@ export default function Home() {
       <CreativeEcosystem />
       <ParticipationSection />
       <ProgrammeSection />
+      <HotelBookingSection />
       <SponsorsSection />
       <InsideAfriqa />
       <FAQSection />
