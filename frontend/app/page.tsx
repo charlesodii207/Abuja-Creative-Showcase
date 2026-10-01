@@ -1,5 +1,6 @@
 import CountdownBanner from "./components/CountdownBanner";
 import Hero from "./components/Hero";
+import TrailerSection from "./components/TrailerSection";
 import AboutSection from "./components/AboutSection";
 import ConvenersNote from "./components/ConvenersNote";
 import CreativeEcosystem from "./components/CreativeEcosystem";
@@ -50,6 +51,7 @@ export default function Home() {
 
       <CountdownBanner />
       <Hero />
+      <TrailerSection />
       <AboutSection />
       <ConvenersNote />
       <CreativeEcosystem />
