@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Reveal from "./Reveal";
 
 const TRAILER_VIDEO_ID = "tntxfedFMpw";
@@ -10,6 +10,38 @@ const TRAILER_VIDEO_ID = "tntxfedFMpw";
 // Leave as "" to use the thumbnail set on YouTube.
 const CUSTOM_THUMBNAIL = "";
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+declare global {
+  interface Window {
+    YT?: any;
+    onYouTubeIframeAPIReady?: () => void;
+  }
+}
+
+let apiPromise: Promise<void> | null = null;
+
+function loadYouTubeApi(): Promise<void> {
+  if (typeof window === "undefined") return Promise.resolve();
+  if (window.YT && window.YT.Player) return Promise.resolve();
+  if (apiPromise) return apiPromise;
+
+  apiPromise = new Promise<void>((resolve) => {
+    const previous = window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady = () => {
+      previous?.();
+      resolve();
+    };
+
+    if (!document.querySelector('script[src="https://www.youtube.com/iframe_api"]')) {
+      const tag = document.createElement("script");
+      tag.src = "https://www.youtube.com/iframe_api";
+      document.head.appendChild(tag);
+    }
+  });
+
+  return apiPromise;
+}
+
 export default function TrailerSection() {
   const [playing, setPlaying] = useState(false);
   const [thumbSrc, setThumbSrc] = useState(
@@ -17,10 +49,56 @@ export default function TrailerSection() {
       `https://img.youtube.com/vi/${TRAILER_VIDEO_ID}/maxresdefault.jpg`
   );
 
+  const playerHostRef = useRef<HTMLDivElement | null>(null);
+  const playerRef = useRef<any>(null);
+
+  // Preload the YouTube API in the background so the click feels instant
+  useEffect(() => {
+    loadYouTubeApi();
+    return () => {
+      playerRef.current?.destroy?.();
+      playerRef.current = null;
+    };
+  }, []);
+
   const handleThumbError = () => {
     // maxresdefault doesn't exist for every video, so fall back to hqdefault
     const fallback = `https://img.youtube.com/vi/${TRAILER_VIDEO_ID}/hqdefault.jpg`;
     if (thumbSrc !== fallback) setThumbSrc(fallback);
+  };
+
+  const handlePlay = async () => {
+    if (playing) return;
+    setPlaying(true);
+
+    await loadYouTubeApi();
+
+    const host = playerHostRef.current;
+    if (!host || !window.YT) return;
+
+    // Create a plain div outside React's control for the player to replace
+    const target = document.createElement("div");
+    host.appendChild(target);
+
+    playerRef.current = new window.YT.Player(target, {
+      videoId: TRAILER_VIDEO_ID,
+      width: "100%",
+      height: "100%",
+      playerVars: {
+        autoplay: 1,
+        rel: 0,
+        playsinline: 1,
+        modestbranding: 1,
+      },
+      events: {
+        onReady: (event: any) => {
+          const iframe = event.target.getIframe();
+          iframe.className = "absolute inset-0 h-full w-full border-0";
+          iframe.setAttribute("referrerpolicy", "strict-origin-when-cross-origin");
+          event.target.playVideo();
+        },
+      },
+    });
   };
 
   return (
@@ -68,22 +146,16 @@ export default function TrailerSection() {
 
             {/* Video / thumbnail */}
             <div className="relative overflow-hidden rounded-[2.5rem] rounded-br-[5rem] rounded-tl-[1rem] border border-white/10 bg-[#11152F] shadow-[0_25px_80px_rgba(0,0,0,0.22)]">
-              <div className="relative aspect-video w-full">
-                {playing ? (
-                  <iframe
-                    src={`https://www.youtube.com/embed/${TRAILER_VIDEO_ID}?rel=0&autoplay=1`}
-                    title="AFRIQA Creative Showcase 2026 - Event Trailer"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                    referrerPolicy="strict-origin-when-cross-origin"
-                    allowFullScreen
-                    className="absolute inset-0 h-full w-full border-0"
-                  />
-                ) : (
+              <div className="relative aspect-video w-full bg-black">
+                {/* YouTube player gets injected here after the click */}
+                <div ref={playerHostRef} className="absolute inset-0" />
+
+                {!playing && (
                   <button
                     type="button"
-                    onClick={() => setPlaying(true)}
+                    onClick={handlePlay}
                     aria-label="Play the AFRIQA Creative Showcase trailer"
-                    className="group absolute inset-0 h-full w-full cursor-pointer"
+                    className="group absolute inset-0 z-10 h-full w-full cursor-pointer"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
