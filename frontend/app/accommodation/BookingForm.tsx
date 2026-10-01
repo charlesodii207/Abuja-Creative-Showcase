@@ -5,6 +5,11 @@ import { useState } from "react";
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 const BOOKING_ENDPOINT = `${API_URL}/hotel-bookings`;
 
+// Limits for the people / rooms steppers
+const MAX_PER_ROOM = 2;
+const MAX_GUESTS = 20;
+const MAX_ROOMS = 10;
+
 const BUDGET_OPTIONS = [
   "Under ₦50,000",
   "₦50,000 – ₦100,000",
@@ -64,6 +69,69 @@ function Field({
   );
 }
 
+function Stepper({
+  label,
+  hint,
+  value,
+  min,
+  max,
+  singular,
+  plural,
+  onChange,
+}: {
+  label: string;
+  hint: string;
+  value: number;
+  min: number;
+  max: number;
+  singular: string;
+  plural: string;
+  onChange: (next: number) => void;
+}) {
+  const buttonClass =
+    "flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/15 text-xl leading-none text-[#F5EFE6] transition-colors duration-200 hover:border-[#E59200] hover:text-[#E59200] disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:border-white/15 disabled:hover:text-[#F5EFE6]";
+
+  return (
+    <div>
+      <span className="block text-[10px] font-semibold uppercase tracking-[0.25em] text-[#F5EFE6]/50">
+        {label}
+      </span>
+      <span className="mb-3 mt-1 block text-xs leading-relaxed text-white/40">
+        {hint}
+      </span>
+
+      <div className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2">
+        <button
+          type="button"
+          aria-label={`Decrease ${label.toLowerCase()}`}
+          onClick={() => onChange(Math.max(min, value - 1))}
+          disabled={value <= min}
+          className={buttonClass}
+        >
+          −
+        </button>
+
+        <div className="text-center" aria-live="polite">
+          <span className="block text-xl font-semibold text-[#F5EFE6]">{value}</span>
+          <span className="block text-[10px] uppercase tracking-[0.2em] text-white/40">
+            {value === 1 ? singular : plural}
+          </span>
+        </div>
+
+        <button
+          type="button"
+          aria-label={`Increase ${label.toLowerCase()}`}
+          onClick={() => onChange(Math.min(max, value + 1))}
+          disabled={value >= max}
+          className={buttonClass}
+        >
+          +
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function Chip({
   active,
   onClick,
@@ -99,9 +167,30 @@ export default function BookingForm() {
 
   const today = new Date().toISOString().split("T")[0];
 
+  const guests = Number(form.guests);
+  const rooms = Number(form.rooms);
+
+  // Rooms must be enough to fit everyone, and never more than the number of people
+  const minRooms = Math.ceil(guests / MAX_PER_ROOM);
+  const maxRooms = Math.min(MAX_ROOMS, guests);
+
   const update = (key: keyof FormState, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
     if (errors[key]) setErrors((prev) => ({ ...prev, [key]: undefined }));
+  };
+
+  const changeGuests = (nextGuests: number) => {
+    const neededRooms = Math.ceil(nextGuests / MAX_PER_ROOM);
+    let nextRooms = rooms;
+
+    if (nextRooms < neededRooms) nextRooms = neededRooms;
+    if (nextRooms > nextGuests) nextRooms = nextGuests;
+
+    setForm((prev) => ({
+      ...prev,
+      guests: String(nextGuests),
+      rooms: String(nextRooms),
+    }));
   };
 
   const validateStep1 = () => {
@@ -115,8 +204,6 @@ export default function BookingForm() {
     if (form.checkIn && form.checkOut && form.checkOut <= form.checkIn) {
       next.checkOut = "Check-out must be after check-in.";
     }
-    if (Number(form.guests) < 1) next.guests = "At least 1 guest.";
-    if (Number(form.rooms) < 1) next.rooms = "At least 1 room.";
 
     setErrors(next);
     return Object.keys(next).length === 0;
@@ -150,8 +237,8 @@ export default function BookingForm() {
           phone: form.phone.trim(),
           check_in: form.checkIn,
           check_out: form.checkOut,
-          guests: Number(form.guests),
-          rooms: Number(form.rooms),
+          guests,
+          rooms,
           budget_range: form.budgetRange,
           preferred_area: form.preferredArea || null,
           notes: form.notes.trim() || null,
@@ -281,27 +368,27 @@ export default function BookingForm() {
             </div>
 
             <div className="grid gap-5 sm:grid-cols-2">
-              <Field label="Guests" error={errors.guests}>
-                <input
-                  type="number"
-                  min={1}
-                  max={20}
-                  value={form.guests}
-                  onChange={(e) => update("guests", e.target.value)}
-                  className={inputClass}
-                />
-              </Field>
+              <Stepper
+                label="People staying"
+                hint="Everyone who will sleep at the hotel, including you and any children."
+                value={guests}
+                min={1}
+                max={MAX_GUESTS}
+                singular="person"
+                plural="people"
+                onChange={changeGuests}
+              />
 
-              <Field label="Rooms" error={errors.rooms}>
-                <input
-                  type="number"
-                  min={1}
-                  max={10}
-                  value={form.rooms}
-                  onChange={(e) => update("rooms", e.target.value)}
-                  className={inputClass}
-                />
-              </Field>
+              <Stepper
+                label="Rooms needed"
+                hint={`Separate hotel rooms. Each standard room fits up to ${MAX_PER_ROOM} people.`}
+                value={rooms}
+                min={minRooms}
+                max={maxRooms}
+                singular="room"
+                plural="rooms"
+                onChange={(n) => update("rooms", String(n))}
+              />
             </div>
 
             <button
