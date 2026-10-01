@@ -162,22 +162,24 @@ export default function TrailerSection() {
                       src={thumbSrc}
                       alt="AFRIQA Creative Showcase 2026 trailer thumbnail"
                       onError={handleThumbError}
-                      className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      className="h-full w-full object-cover"
                     />
 
-                    <div className="absolute inset-0 bg-gradient-to-tr from-[#11152F]/50 via-transparent to-[#E59200]/10" />
+                    {/* Soft shade so the button stands out on bright thumbnails */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/10" />
 
-                    {/* Play button */}
-                    <span className="absolute left-1/2 top-1/2 flex h-20 w-20 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-[#E59200]/50 bg-[#11152F]/80 shadow-[0_0_40px_rgba(229,146,0,0.25)] backdrop-blur-md transition-all duration-300 group-hover:scale-110 group-hover:border-[#E59200] sm:h-24 sm:w-24">
-                      <span className="ml-1 h-0 w-0 border-y-[11px] border-l-[18px] border-y-transparent border-l-[#E59200] sm:border-y-[13px] sm:border-l-[22px]" />
-                    </span>
-
-                    <span className="absolute bottom-5 left-5 flex items-center gap-3 rounded-full border border-white/15 bg-[#11152F]/80 px-4 py-2 backdrop-blur-md">
-                      <span className="h-2 w-2 rounded-full bg-[#E59200]" />
-                      <span className="text-[10px] font-medium uppercase tracking-[0.28em] text-[#F5EFE6]/80">
-                        Play trailer
-                      </span>
-                    </span>
+                    {/* YouTube-style play button */}
+                    <svg
+                      viewBox="0 0 68 48"
+                      aria-hidden="true"
+                      className="absolute left-1/2 top-1/2 h-12 w-[68px] -translate-x-1/2 -translate-y-1/2 transition-transform duration-200 group-hover:scale-110 sm:h-14 sm:w-[82px]"
+                    >
+                      <path
+                        d="M66.52 7.74c-.78-2.93-2.49-5.41-5.42-6.19C55.79.13 34 0 34 0S12.21.13 6.9 1.55C3.97 2.33 2.27 4.81 1.48 7.74.06 13.05 0 24 0 24s.06 10.95 1.48 16.26c.78 2.93 2.49 5.41 5.42 6.19C12.21 47.87 34 48 34 48s21.79-.13 27.1-1.55c2.93-.78 4.64-3.26 5.42-6.19C67.94 34.95 68 24 68 24s-.06-10.95-1.48-16.26z"
+                        className="fill-[#212121]/80 transition-colors duration-200 group-hover:fill-[#FF0000]"
+                      />
+                      <path d="M45 24 27 14v20" fill="#fff" />
+                    </svg>
                   </button>
                 )}
               </div>
