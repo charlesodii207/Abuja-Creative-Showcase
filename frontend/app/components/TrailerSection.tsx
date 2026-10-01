@@ -1,57 +1,69 @@
+import Reveal from "./Reveal";
+
 const TRAILER_VIDEO_ID = "tntxfedFMpw";
 
 export default function TrailerSection() {
   return (
     <section
       id="trailer"
-      aria-labelledby="trailer-heading"
-      style={{
-        width: "100%",
-        maxWidth: "960px",
-        margin: "0 auto",
-        padding: "64px 20px",
-        boxSizing: "border-box",
-      }}
+      className="overflow-hidden border-b border-white/10 bg-[#0D1128]"
     >
-      <h2
-        id="trailer-heading"
-        style={{
-          textAlign: "center",
-          marginBottom: "24px",
-          fontSize: "clamp(1.5rem, 4vw, 2.25rem)",
-          fontWeight: 700,
-        }}
-      >
-        Watch the Trailer
-      </h2>
+      <div className="mx-auto max-w-7xl px-6 py-20 sm:px-8 md:py-28 lg:px-10">
+        {/* Eyebrow */}
+        <div className="mb-6 flex items-center gap-3">
+          <div className="tricolor-rule">
+            <span />
+            <span />
+            <span />
+          </div>
 
-      <div
-        style={{
-          position: "relative",
-          width: "100%",
-          aspectRatio: "16 / 9",
-          borderRadius: "16px",
-          overflow: "hidden",
-          boxShadow: "0 10px 40px rgba(0, 0, 0, 0.25)",
-          background: "#000",
-        }}
-      >
-        <iframe
-          src={`https://www.youtube.com/embed/${TRAILER_VIDEO_ID}?rel=0`}
-          title="Afriqa Creative Showcase 2026 - Event Trailer"
-          loading="lazy"
-          allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-          referrerPolicy="strict-origin-when-cross-origin"
-          allowFullScreen
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            border: 0,
-          }}
-        />
+          <span className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#F5EFE6]/45">
+            Event Trailer
+          </span>
+        </div>
+
+        <Reveal delay={80}>
+          <h2 className="max-w-2xl font-display text-4xl leading-[1.05] text-[#F5EFE6] sm:text-5xl lg:text-6xl">
+            Watch the trailer
+          </h2>
+        </Reveal>
+
+        <Reveal delay={160}>
+          <p className="mt-6 max-w-xl text-base leading-relaxed text-white/65 sm:text-lg">
+            Get a first look at two days of film, music, fashion, art, and
+            technology coming together in Abuja.
+          </p>
+        </Reveal>
+
+        <Reveal delay={240}>
+          <div className="relative mx-auto mt-12 max-w-5xl px-3 pb-3 sm:px-5 sm:pb-5">
+            {/* Decorative frame */}
+            <div className="absolute inset-3 rounded-[2.5rem] border border-[#E59200]/30 sm:inset-5" />
+
+            <div className="absolute -bottom-1 -left-1 h-24 w-24 rounded-full border border-[#00A5A8]/30 bg-[#00A5A8]/10 blur-[1px] sm:h-28 sm:w-28" />
+
+            <div className="absolute -right-1 -top-3 z-20 flex h-14 w-14 items-center justify-center rounded-full border border-[#E59200]/40 bg-[#0D1128] shadow-[0_0_30px_rgba(229,146,0,0.12)] sm:-right-3 sm:-top-5 sm:h-16 sm:w-16">
+              <span className="h-2.5 w-2.5 rounded-full bg-[#E59200]" />
+            </div>
+
+            {/* Video */}
+            <div className="relative overflow-hidden rounded-[2.5rem] rounded-br-[5rem] rounded-tl-[1rem] border border-white/10 bg-[#11152F] shadow-[0_25px_80px_rgba(0,0,0,0.22)]">
+              <div className="aspect-video w-full">
+                <iframe
+                  src={`https://www.youtube.com/embed/${TRAILER_VIDEO_ID}?rel=0`}
+                  title="AFRIQA Creative Showcase 2026 - Event Trailer"
+                  loading="lazy"
+                  allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  allowFullScreen
+                  className="h-full w-full border-0"
+                />
+              </div>
+
+              <div className="pointer-events-none absolute inset-3 z-20 rounded-[2rem] rounded-br-[4.5rem] border border-white/10" />
+            </div>
+          </div>
+        </Reveal>
       </div>
     </section>
   );
