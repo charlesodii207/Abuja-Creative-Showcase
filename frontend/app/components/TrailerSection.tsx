@@ -168,18 +168,23 @@ export default function TrailerSection() {
                     {/* Soft shade so the button stands out on bright thumbnails */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/10" />
 
-                    {/* YouTube-style play button */}
-                    <svg
-                      viewBox="0 0 68 48"
-                      aria-hidden="true"
-                      className="absolute left-1/2 top-1/2 h-12 w-[68px] -translate-x-1/2 -translate-y-1/2 transition-transform duration-200 group-hover:scale-110 sm:h-14 sm:w-[82px]"
-                    >
-                      <path
-                        d="M66.52 7.74c-.78-2.93-2.49-5.41-5.42-6.19C55.79.13 34 0 34 0S12.21.13 6.9 1.55C3.97 2.33 2.27 4.81 1.48 7.74.06 13.05 0 24 0 24s.06 10.95 1.48 16.26c.78 2.93 2.49 5.41 5.42 6.19C12.21 47.87 34 48 34 48s21.79-.13 27.1-1.55c2.93-.78 4.64-3.26 5.42-6.19C67.94 34.95 68 24 68 24s-.06-10.95-1.48-16.26z"
-                        className="fill-[#212121]/80 transition-colors duration-200 group-hover:fill-[#FF0000]"
-                      />
-                      <path d="M45 24 27 14v20" fill="#fff" />
-                    </svg>
+                    {/* YouTube-style play button: red, glows on hover */}
+                    <span className="absolute left-1/2 top-1/2 block h-12 w-[68px] -translate-x-1/2 -translate-y-1/2 transition-transform duration-300 group-hover:scale-110 sm:h-14 sm:w-[82px]">
+                      {/* Red glow beam, hidden until hover */}
+                      <span className="pointer-events-none absolute inset-0 rounded-2xl bg-[#FF0000] opacity-0 blur-xl transition-opacity duration-300 group-hover:animate-pulse group-hover:opacity-80" />
+
+                      <svg
+                        viewBox="0 0 68 48"
+                        aria-hidden="true"
+                        className="relative h-full w-full transition-[filter] duration-300 group-hover:drop-shadow-[0_0_14px_rgba(255,0,0,0.9)]"
+                      >
+                        <path
+                          d="M66.52 7.74c-.78-2.93-2.49-5.41-5.42-6.19C55.79.13 34 0 34 0S12.21.13 6.9 1.55C3.97 2.33 2.27 4.81 1.48 7.74.06 13.05 0 24 0 24s.06 10.95 1.48 16.26c.78 2.93 2.49 5.41 5.42 6.19C12.21 47.87 34 48 34 48s21.79-.13 27.1-1.55c2.93-.78 4.64-3.26 5.42-6.19C67.94 34.95 68 24 68 24s-.06-10.95-1.48-16.26z"
+                          fill="#FF0000"
+                        />
+                        <path d="M45 24 27 14v20" fill="#fff" />
+                      </svg>
+                    </span>
                   </button>
                 )}
               </div>
