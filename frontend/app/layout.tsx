@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import Script from "next/script";
 import "./globals.css";
 import SiteChrome from "./components/SiteChrome";
+import PageTracker from "./components/PageTracker";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://africacreativeshowcase.com"),
@@ -92,6 +94,16 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="en" className="h-full antialiased">
       <body className="min-h-full flex flex-col">
         <SiteChrome>{children}</SiteChrome>
+
+        {/*
+          First-party traffic tracking — records each page view (with IP
+          and social source) to our own API, shown at /admin/traffic.
+          Wrapped in Suspense because it reads the URL's query string.
+          It skips /admin pages on its own.
+        */}
+        <Suspense fallback={null}>
+          <PageTracker />
+        </Suspense>
 
         {/*
           Site analytics (Umami) — page views, visits per day, referrers,
