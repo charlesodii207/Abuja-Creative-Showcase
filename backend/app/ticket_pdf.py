@@ -41,7 +41,10 @@ MUTED_DARK = HexColor("#6B6660")
 EVENT_NAME = "AFRIQA CREATIVE SHOWCASE"
 EVENT_SHORT = "ACS 2026"
 EVENT_DATES = "04 \u2013 05 Dec 2026"
-EVENT_VENUE = "Abuja, Nigeria"
+EVENT_VENUE = "Old Parade Ground, Abuja, Nigeria"
+# Shorter form for the ticket's tight 3-column footer, where the full
+# name would run into the next column. Locals know the venue by name.
+EVENT_VENUE_SHORT = "Old Parade Ground"
 WEBSITE = "africacreativeshowcase.com"
 CHECKIN_NOTE = (
     "Present this ticket at check-in each day. "
@@ -409,14 +412,16 @@ def generate_ticket_pdf(
     c.setStrokeAlpha(1)
 
     access_display = ticket_label.title().replace("Vip", "VIP")
+    col_width = 34  # mm available per column before the next one starts
     cols = [
         (9, "EVENT DATE", EVENT_DATES),
-        (46, "VENUE", EVENT_VENUE),
+        (46, "VENUE", EVENT_VENUE_SHORT),
         (80, "ACCESS", access_display),
     ]
     for cx, lab, val in cols:
         _text(c, lab, cx, 13.4, "Helvetica-Bold", 5.2, GOLD, spacing=1.1)
-        _text(c, val, cx, 9.0, "Helvetica-Bold", 8.4, white)
+        fitted_val, fitted_size = _fit_text(val, "Helvetica-Bold", 8.4, col_width, min_size=6.0)
+        _text(c, fitted_val, cx, 9.0, "Helvetica-Bold", fitted_size, white)
 
     _text(c, CHECKIN_NOTE, 9, 4.2, "Helvetica", 5.3, MUTED)
     _text(c, WEBSITE, 122, 4.2, "Helvetica", 5.3, MUTED, align="right")
@@ -661,8 +666,9 @@ def generate_badge_pdf(
           spacing=1.2, align="center")
     _text(c, reference_number, W / 2, 16.6, "Helvetica-Bold", 10.5, white,
           spacing=0.7, align="center")
-    _text(c, f"{EVENT_DATES}  \u00b7  {EVENT_VENUE}", W / 2, 9.4, "Helvetica-Bold", 6.0,
-          white, align="center")
+    venue_line = f"{EVENT_DATES}  \u00b7  {EVENT_VENUE}"
+    venue_line, venue_size = _fit_text(venue_line, "Helvetica-Bold", 6.0, W - 14, min_size=4.6)
+    _text(c, venue_line, W / 2, 9.4, "Helvetica-Bold", venue_size, white, align="center")
     _text(c, WEBSITE, W / 2, 5.0, "Helvetica", 5.2, MUTED, align="center")
 
     c.restoreState()

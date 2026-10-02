@@ -1,5 +1,6 @@
 import csv
 import io
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
@@ -587,6 +588,59 @@ def get_stats(
         .count()
     )
 
+    pitchers_paid = (
+        db.query(models.PitcherDetail)
+        .filter(models.PitcherDetail.is_paid == True)
+        .count()
+    )
+
+    pitchers_unpaid = (
+        db.query(models.PitcherDetail)
+        .filter(models.PitcherDetail.is_paid == False)
+        .count()
+    )
+
+    # Revenue: sum amount_kobo across the three paid categories, only
+    # where is_paid is True — unpaid rows may have an amount set (what
+    # they owe) but that's not money actually received.
+    revenue_by_category: dict[str, int] = {}
+    total_revenue = 0
+
+    for label, model_cls in (
+        ("attendee", models.AttendeeDetail),
+        ("exhibitor", models.ExhibitorDetail),
+        ("pitcher", models.PitcherDetail),
+    ):
+        amount = (
+            db.query(func.coalesce(func.sum(model_cls.amount_kobo), 0))
+            .filter(model_cls.is_paid == True)
+            .scalar()
+        )
+        revenue_by_category[label] = amount
+        total_revenue += amount
+
+    # Today's check-in activity, Nigeria calendar day (WAT, fixed
+    # UTC+1) — same convention the check-in route and scan log use.
+    today_wat = datetime.now(timezone.utc).astimezone(timezone(timedelta(hours=1))).date()
+
+    today_checked_in = (
+        db.query(models.ScanLog)
+        .filter(
+            models.ScanLog.event_day == today_wat,
+            models.ScanLog.result == "accepted",
+        )
+        .count()
+    )
+
+    today_duplicate_scans = (
+        db.query(models.ScanLog)
+        .filter(
+            models.ScanLog.event_day == today_wat,
+            models.ScanLog.result == "duplicate",
+        )
+        .count()
+    )
+
     return schemas.StatsResponse(
         total_registrants=total,
         by_category=by_category,
@@ -595,6 +649,12 @@ def get_stats(
         attendees_unpaid=attendees_unpaid,
         exhibitors_paid=exhibitors_paid,
         exhibitors_unpaid=exhibitors_unpaid,
+        pitchers_paid=pitchers_paid,
+        pitchers_unpaid=pitchers_unpaid,
+        revenue_kobo_total=total_revenue,
+        revenue_kobo_by_category=revenue_by_category,
+        today_checked_in=today_checked_in,
+        today_duplicate_scans=today_duplicate_scans,
     )
 
 

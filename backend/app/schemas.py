@@ -159,6 +159,15 @@ class StatsResponse(BaseModel):
     attendees_unpaid: int
     exhibitors_paid: int
     exhibitors_unpaid: int
+    # Added for the Analytics page's Revenue and Today's check-ins
+    # sections. All additive — existing consumers of this response
+    # (e.g. Overview) are unaffected by fields they don't read.
+    pitchers_paid: int
+    pitchers_unpaid: int
+    revenue_kobo_total: int
+    revenue_kobo_by_category: dict[str, int]
+    today_checked_in: int
+    today_duplicate_scans: int
 
 
 class SponsorInquiryRequest(BaseModel):
