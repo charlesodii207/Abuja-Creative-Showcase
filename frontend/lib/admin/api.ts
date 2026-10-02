@@ -3,6 +3,7 @@
 // Small helper for talking to the admin API: stores the JWT in localStorage,
 // attaches it to requests, and centralizes the base URL.
 //
+
 // Set NEXT_PUBLIC_API_URL in your .env.local, e.g.:
 // NEXT_PUBLIC_API_URL=http://localhost:8000
 
@@ -38,6 +39,7 @@ export function clearSession() {
 
 export class ApiError extends Error {
   status: number;
+
   constructor(message: string, status: number) {
     super(message);
     this.status = status;
@@ -65,6 +67,7 @@ export async function adminFetch<T>(
 
   if (!res.ok) {
     let detail = "Something went wrong.";
+
     try {
       const body = await res.json();
       detail = body.detail || detail;
@@ -81,9 +84,11 @@ export async function adminFetch<T>(
 
   // some endpoints (e.g. CSV export) won't return JSON
   const contentType = res.headers.get("content-type") || "";
+
   if (contentType.includes("application/json")) {
     return res.json();
   }
+
   return res as unknown as T;
 }
 
@@ -122,10 +127,26 @@ export type StatsResponse = {
   total_registrants: number;
   by_category: Record<string, number>;
   by_status: Record<string, number>;
+
   attendees_paid: number;
   attendees_unpaid: number;
+
   exhibitors_paid: number;
   exhibitors_unpaid: number;
+
+  pitchers_paid: number;
+  pitchers_unpaid: number;
+
+  revenue_kobo_total: number;
+
+  revenue_kobo_by_category: {
+    attendee?: number;
+    exhibitor?: number;
+    pitcher?: number;
+  };
+
+  today_checked_in: number;
+  today_duplicate_scans: number;
 };
 
 export async function getStats() {
@@ -185,10 +206,13 @@ export async function listRegistrants(filters?: {
   sort?: SortOrder;
 }) {
   const params = new URLSearchParams();
+
   if (filters?.category) params.set("category", filters.category);
   if (filters?.status) params.set("status", filters.status);
   if (filters?.sort) params.set("sort", filters.sort);
+
   const qs = params.toString();
+
   return adminFetch<RegistrantSummary[]>(
     `/admin/registrants${qs ? `?${qs}` : ""}`
   );
@@ -206,7 +230,10 @@ export async function editRegistrant(
 ) {
   return adminFetch<{ id: string; status: string; message: string }>(
     `/admin/registrants/${encodeURIComponent(referenceNumber)}`,
-    { method: "PATCH", body: JSON.stringify(payload) }
+    {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }
   );
 }
 
@@ -252,8 +279,11 @@ export type AdminSummary = {
 
 export async function listAdmins(filters?: { sort?: SortOrder }) {
   const params = new URLSearchParams();
+
   if (filters?.sort) params.set("sort", filters.sort);
+
   const qs = params.toString();
+
   return adminFetch<AdminSummary[]>(
     `/admin/auth/admins${qs ? `?${qs}` : ""}`
   );
@@ -352,10 +382,13 @@ export async function listAdminLogs(filters?: {
   admin_name?: string;
 }) {
   const params = new URLSearchParams();
+
   params.set("limit", String(filters?.limit ?? 300));
+
   if (filters?.search) params.set("search", filters.search);
   if (filters?.action) params.set("action", filters.action);
   if (filters?.admin_name) params.set("admin_name", filters.admin_name);
+
   return adminFetch<AdminLogSummary[]>(`/admin/logs?${params.toString()}`);
 }
 
@@ -394,8 +427,11 @@ export async function listMessageThreads(filters?: {
   status?: MessageThreadStatus;
 }) {
   const params = new URLSearchParams();
+
   if (filters?.status) params.set("status", filters.status);
+
   const qs = params.toString();
+
   return adminFetch<MessageThreadSummary[]>(
     `/admin/messages${qs ? `?${qs}` : ""}`
   );
@@ -417,7 +453,10 @@ export async function markThreadRead(threadId: string) {
 export async function replyToThread(threadId: string, body: string) {
   return adminFetch<{ id: string; status: string; message: string }>(
     `/admin/messages/${encodeURIComponent(threadId)}/reply`,
-    { method: "POST", body: JSON.stringify({ body }) }
+    {
+      method: "POST",
+      body: JSON.stringify({ body }),
+    }
   );
 }
 
@@ -441,5 +480,6 @@ export async function reopenThread(threadId: string) {
  */
 export async function getUnreadMessageCount() {
   const threads = await listMessageThreads({ status: "open" });
+
   return threads.reduce((sum, t) => sum + t.unread_count, 0);
 }

@@ -2,11 +2,12 @@
 
 import { Fragment, useState } from "react";
 import Link from "next/link";
+import { legal } from "@/lib/legal";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 const BOOKING_ENDPOINT = `${API_URL}/hotel-bookings`;
 
-// Change this to wherever your privacy policy page lives
+const TERMS_URL = "/terms-and-conditions";
 const PRIVACY_POLICY_URL = "/privacy-policy";
 
 // Room and guest rules
@@ -45,6 +46,8 @@ type FormState = {
 
 type Errors = Partial<Record<keyof FormState, string>>;
 
+type ConsentErrors = { terms?: string; hotels?: string };
+
 const initialForm: FormState = {
   fullName: "",
   email: "",
@@ -62,6 +65,9 @@ const initialForm: FormState = {
 
 const inputClass =
   "w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-[#F5EFE6] placeholder:text-white/30 outline-none transition-colors duration-200 focus:border-[#E59200]/70 [color-scheme:dark]";
+
+const linkClass =
+  "font-medium text-[#00A5A8] underline underline-offset-2 transition-colors duration-300 hover:text-[#F5EFE6]";
 
 function toDateString(date: Date): string {
   const yy = date.getFullYear();
@@ -207,6 +213,34 @@ function Chip({
   );
 }
 
+function ConsentCheckbox({
+  checked,
+  onChange,
+  error,
+  children,
+}: {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  error?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={(e) => onChange(e.target.checked)}
+          className="mt-1 h-4 w-4 shrink-0 cursor-pointer accent-[#E59200]"
+        />
+        <span className="text-sm leading-relaxed text-white/65">{children}</span>
+      </label>
+
+      {error && <span className="mt-2 block text-xs text-red-400">{error}</span>}
+    </div>
+  );
+}
+
 function ReviewBlock({
   title,
   onEdit,
@@ -249,8 +283,9 @@ export default function BookingForm() {
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [form, setForm] = useState<FormState>(initialForm);
   const [errors, setErrors] = useState<Errors>({});
-  const [consent, setConsent] = useState(false);
-  const [consentError, setConsentError] = useState("");
+  const [consentTerms, setConsentTerms] = useState(false);
+  const [consentHotels, setConsentHotels] = useState(false);
+  const [consentErrors, setConsentErrors] = useState<ConsentErrors>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [reference, setReference] = useState("");
@@ -319,10 +354,20 @@ export default function BookingForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!consent) {
-      setConsentError("Please accept the privacy policy to submit your request.");
-      return;
+    const nextConsentErrors: ConsentErrors = {};
+
+    if (!consentTerms) {
+      nextConsentErrors.terms =
+        "Please accept the Terms and Conditions and the Privacy Policy to continue.";
     }
+
+    if (!consentHotels) {
+      nextConsentErrors.hotels =
+        "We need your permission to share your details with partner hotels. Without it, we can't process this request.";
+    }
+
+    setConsentErrors(nextConsentErrors);
+    if (Object.keys(nextConsentErrors).length > 0) return;
 
     setSubmitting(true);
     setSubmitError("");
@@ -346,7 +391,10 @@ export default function BookingForm() {
           budget_range: form.budgetRange,
           preferred_area: form.preferredArea || null,
           notes: form.notes.trim() || null,
+          terms_accepted: true,
           privacy_accepted: true,
+          hotel_sharing_consent: true,
+          legal_version: legal.legalVersion,
         }),
       });
 
@@ -367,8 +415,9 @@ export default function BookingForm() {
   const reset = () => {
     setForm(initialForm);
     setErrors({});
-    setConsent(false);
-    setConsentError("");
+    setConsentTerms(false);
+    setConsentHotels(false);
+    setConsentErrors({});
     setReference("");
     setSubmitError("");
     setStep(1);
@@ -431,6 +480,11 @@ export default function BookingForm() {
         {/* Step 1: details */}
         {step === 1 && (
           <div className="space-y-5">
+            <p className="rounded-xl border border-[#00A5A8]/25 bg-[#00A5A8]/10 px-4 py-3 text-sm leading-relaxed text-[#F5EFE6]/80">
+              We share the details you enter here with partner hotels so they can
+              offer you options. You will be asked to agree before you submit.
+            </p>
+
             <Field label="Full name" error={errors.fullName}>
               <input
                 type="text"
@@ -665,18 +719,12 @@ export default function BookingForm() {
                   label="Length of stay"
                   value={`${nights} ${nights === 1 ? "night" : "nights"}`}
                 />
-                <ReviewRow
-                  label="Adults"
-                  value={`${adults}`}
-                />
+                <ReviewRow label="Adults" value={`${adults}`} />
                 <ReviewRow
                   label={`Children (under ${CHILD_MAX_AGE})`}
                   value={`${children}`}
                 />
-                <ReviewRow
-                  label="Rooms"
-                  value={`${rooms}`}
-                />
+                <ReviewRow label="Rooms" value={`${rooms}`} />
                 {form.extraBed && (
                   <ReviewRow
                     label="Extra bed"
@@ -698,35 +746,50 @@ export default function BookingForm() {
               </ReviewBlock>
             </div>
 
-            <div>
-              <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-                <input
-                  type="checkbox"
-                  checked={consent}
-                  onChange={(e) => {
-                    setConsent(e.target.checked);
-                    if (e.target.checked) setConsentError("");
-                  }}
-                  className="mt-1 h-4 w-4 shrink-0 cursor-pointer accent-[#E59200]"
-                />
-                <span className="text-sm leading-relaxed text-white/65">
-                  I have read and agree to the{" "}
-                  <Link
-                    href={PRIVACY_POLICY_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-medium text-[#00A5A8] underline underline-offset-2 transition-colors duration-300 hover:text-[#F5EFE6]"
-                  >
-                    Privacy Policy
-                  </Link>
-                  . I understand my details will be used to process this request and
-                  may be shared with partner hotels.
-                </span>
-              </label>
+            <div className="space-y-3">
+              <ConsentCheckbox
+                checked={consentTerms}
+                onChange={(checked) => {
+                  setConsentTerms(checked);
+                  if (checked) setConsentErrors((prev) => ({ ...prev, terms: undefined }));
+                }}
+                error={consentErrors.terms}
+              >
+                I have read and agree to the{" "}
+                <Link
+                  href={TERMS_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={linkClass}
+                >
+                  Terms and Conditions
+                </Link>{" "}
+                and the{" "}
+                <Link
+                  href={PRIVACY_POLICY_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={linkClass}
+                >
+                  Privacy Policy
+                </Link>
+                .
+              </ConsentCheckbox>
 
-              {consentError && (
-                <span className="mt-2 block text-xs text-red-400">{consentError}</span>
-              )}
+              <ConsentCheckbox
+                checked={consentHotels}
+                onChange={(checked) => {
+                  setConsentHotels(checked);
+                  if (checked) setConsentErrors((prev) => ({ ...prev, hotels: undefined }));
+                }}
+                error={consentErrors.hotels}
+              >
+                I agree that the details in this request, including my name, contact
+                details, dates, number of guests and any special requests, may be shared
+                with partner hotels so they can check availability and contact me with
+                options. I understand that a hotel handles my details under its own
+                privacy policy once it has them.
+              </ConsentCheckbox>
             </div>
 
             {submitError && (
