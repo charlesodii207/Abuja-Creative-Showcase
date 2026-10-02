@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import "./globals.css";
 import SiteChrome from "./components/SiteChrome";
 
@@ -91,6 +92,22 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="en" className="h-full antialiased">
       <body className="min-h-full flex flex-col">
         <SiteChrome>{children}</SiteChrome>
+
+        {/*
+          Site analytics (Umami) — page views, visits per day, referrers,
+          and location, viewed at cloud.umami.is. Only loads in production
+          builds, so local development and testing don't pollute real
+          traffic numbers. "afterInteractive" means it loads after the
+          page is already usable, so it never blocks or slows the site
+          down for visitors.
+        */}
+        {process.env.NODE_ENV === "production" && (
+          <Script
+            strategy="afterInteractive"
+            src="https://cloud.umami.is/script.js"
+            data-website-id="5ed657e8-e0ba-479b-8bac-060d061455f7"
+          />
+        )}
       </body>
     </html>
   );

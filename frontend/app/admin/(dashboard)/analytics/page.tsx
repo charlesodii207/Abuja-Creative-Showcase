@@ -204,11 +204,32 @@ export default function AnalyticsPage() {
             </div>
           </div>
 
-          <p className="font-body text-xs text-muted mt-8">
-            Site traffic (visits, pages, social clicks) isn't tracked yet —
-            that needs a separate analytics layer and is a bigger, separate
-            piece of work. Revenue and today's check-ins above are now real
-            figures, pulled live from payments and the scan log.
+          {/* NEW: site traffic — now tracked, hosted outside this dashboard */}
+          <div className="border border-ink-raised rounded-sm p-6 mt-6">
+            <h2 className="font-body text-sm text-muted-on-paper mb-2">
+              Site traffic
+            </h2>
+            <p className="font-body text-sm text-muted mb-4">
+              Visits per day/week, top pages, referrers, and location are now
+              tracked. View the full dashboard (calendar date range, social
+              referrer breakdown, and more) on Umami.
+            </p>
+            <a
+              href="https://cloud.umami.is/websites/5ed657e8-e0ba-479b-8bac-060d061455f7"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 font-body text-sm text-teal hover:underline"
+            >
+              Open site analytics ↗
+            </a>
+            <p className="font-body text-xs text-muted mt-3">
+              Requires logging into the Umami account used to set this up.
+            </p>
+          </div>
+
+          <p className="font-body text-xs text-muted mt-6">
+            Revenue, today's check-ins, and site traffic above are now real,
+            live figures.
           </p>
         </>
       )}
