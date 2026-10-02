@@ -424,3 +424,34 @@ class ScanLog(Base):
     checked_in_by_name = Column(String, nullable=True)
 
     ticket = relationship("Ticket")
+
+
+# ---------------------------------------------------------------------------
+# Site traffic
+# ---------------------------------------------------------------------------
+
+class SiteVisit(Base):
+    """
+    One row per page view on the public website, recorded by POST /track.
+    ip is personal data, so keep a retention limit (e.g. delete rows older
+    than 90 days) and mention tracking in the site's privacy notice.
+    """
+
+    __tablename__ = "site_visits"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    created_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+        index=True,
+    )
+    ip = Column(String(45), nullable=False, index=True)
+    path = Column(String(300), nullable=False, index=True)
+    source = Column(String(40), nullable=False, index=True)
+    referrer_host = Column(String(120), nullable=True)
+    country = Column(String(10), nullable=True)
+    device = Column(String(20), nullable=True)
+    # True for the first page view of a browsing session: the actual click
+    # from a social post, search result, etc.
+    is_landing = Column(Boolean, nullable=False, default=False)
