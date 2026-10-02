@@ -153,6 +153,35 @@ export async function getStats() {
   return adminFetch<StatsResponse>("/admin/stats");
 }
 
+// --- Site traffic ---
+
+export type TrafficRange = "today" | "7d" | "30d";
+
+export type TrafficVisit = {
+  id: string;
+  created_at: string;
+  ip: string;
+  path: string;
+  source: string; // "facebook" | "instagram" | "x" | "google" | "direct" ...
+  country: string | null;
+  device: string | null; // "mobile" | "desktop" | "tablet"
+};
+
+export type TrafficResponse = {
+  total_visits: number;
+  unique_visitors: number; // distinct IPs
+  social_clicks: number;
+  by_source: Record<string, number>;
+  top_pages: { path: string; views: number; unique_visitors: number }[];
+  recent_visits: TrafficVisit[]; // newest first, up to ~200
+};
+
+export async function getTraffic(range: TrafficRange) {
+  return adminFetch<TrafficResponse>(
+    `/admin/traffic?range=${encodeURIComponent(range)}`
+  );
+}
+
 // --- Registrants ---
 
 export type RegistrantCategory =
