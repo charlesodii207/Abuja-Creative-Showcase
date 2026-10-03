@@ -565,3 +565,97 @@ export async function getUnreadMessageCount() {
 
   return threads.reduce((sum, t) => sum + t.unread_count, 0);
 }
+
+
+// --- Bookings ---
+
+export type BookingStatus = "new" | "contacted" | "confirmed" | "cancelled";
+
+export type BookingSummary = {
+  id: string;
+  reference_number: string;
+  full_name: string;
+  email: string;
+  phone: string | null;
+  status: BookingStatus;
+  check_in: string | null;
+  check_out: string | null;
+  hotel_preference: string | null;
+  created_at: string | null;
+};
+
+export type BookingDetail = BookingSummary & {
+  guests: number | null;
+  message: string | null;
+  extra: Record<string, string>;
+  hotel_name: string | null;
+  confirmed_check_in: string | null;
+  confirmed_check_out: string | null;
+  amount_paid_kobo: number | null;
+  operator_name: string | null;
+  confirmation_notes: string | null;
+  confirmed_at: string | null;
+  cancelled_by_name: string | null;
+  cancelled_at: string | null;
+};
+
+export type ConfirmBookingPayload = {
+  hotel_name: string;
+  check_in: string; // YYYY-MM-DD
+  check_out: string; // YYYY-MM-DD
+  amount_paid_kobo: number;
+  notes?: string;
+};
+
+type BookingActionResult = { id: string; status: string; message: string };
+
+export async function listBookings(filters?: {
+  status?: string;
+  sort?: SortOrder;
+}) {
+  const params = new URLSearchParams();
+
+  if (filters?.status) params.set("status", filters.status);
+  if (filters?.sort) params.set("sort", filters.sort);
+
+  const qs = params.toString();
+
+  return adminFetch<BookingSummary[]>(`/admin/bookings${qs ? `?${qs}` : ""}`);
+}
+
+export async function getBookingDetail(referenceNumber: string) {
+  return adminFetch<BookingDetail>(
+    `/admin/bookings/${encodeURIComponent(referenceNumber)}`
+  );
+}
+
+export async function markBookingContacted(referenceNumber: string) {
+  return adminFetch<BookingActionResult>(
+    `/admin/bookings/${encodeURIComponent(referenceNumber)}/contacted`,
+    { method: "PATCH" }
+  );
+}
+
+export async function confirmBooking(
+  referenceNumber: string,
+  payload: ConfirmBookingPayload
+) {
+  return adminFetch<BookingActionResult>(
+    `/admin/bookings/${encodeURIComponent(referenceNumber)}/confirm`,
+    { method: "POST", body: JSON.stringify(payload) }
+  );
+}
+
+export async function cancelBooking(referenceNumber: string) {
+  return adminFetch<BookingActionResult>(
+    `/admin/bookings/${encodeURIComponent(referenceNumber)}/cancel`,
+    { method: "PATCH" }
+  );
+}
+
+export async function resendBookingConfirmation(referenceNumber: string) {
+  return adminFetch<BookingActionResult>(
+    `/admin/bookings/${encodeURIComponent(referenceNumber)}/resend-confirmation`,
+    { method: "POST" }
+  );
+}

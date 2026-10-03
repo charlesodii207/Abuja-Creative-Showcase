@@ -25,6 +25,7 @@ type NavItem = {
 const NAV_ITEMS: NavItem[] = [
   { label: "Overview", href: "/admin/overview" },
   { label: "Registrants", href: "/admin/registrants" },
+  { label: "Bookings", href: "/admin/bookings", permission: "hotels" },
   { label: "Messages", href: "/admin/messages", permission: "messages" },
   // Every admin can open this; regular admins get a view-only list.
   { label: "Admins", href: "/admin/admins" },

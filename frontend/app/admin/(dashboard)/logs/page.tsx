@@ -27,6 +27,10 @@ const ACTION_LABELS: Record<string, string> = {
   reply_to_contact_message: "Replied to a message",
   close_contact_thread: "Closed a conversation",
   reopen_contact_thread: "Reopened a conversation",
+  booking_contacted: "Contacted a booking guest",
+  booking_confirmed: "Confirmed a booking",
+  booking_cancelled: "Cancelled a booking",
+  booking_resend_confirmation: "Resent booking confirmation",
 };
 
 type ViewMode = "timeline" | "by_admin" | "by_action" | "by_date";
