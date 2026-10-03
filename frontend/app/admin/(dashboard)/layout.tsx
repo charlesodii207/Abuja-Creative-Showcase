@@ -12,15 +12,57 @@ import {
   type AdminProfile,
 } from "../../../lib/admin/api";
 
-const NAV_ITEMS = [
+type NavItem = {
+  label: string;
+  href: string;
+  // Only these roles can see the item (system owner / super admin).
+  roles?: AdminProfile["role"][];
+  // Regular admins need this permission, granted through their departments.
+  // Super admins and the system owner always see every permission item.
+  permission?: string;
+};
+
+const NAV_ITEMS: NavItem[] = [
   { label: "Overview", href: "/admin/overview" },
   { label: "Registrants", href: "/admin/registrants" },
-  { label: "Messages", href: "/admin/messages" },
-  { label: "Admins", href: "/admin/admins", roles: ["system_owner", "super_admin"] },
-  { label: "Analytics", href: "/admin/analytics" },
-  { label: "Event scan", href: "/admin/scan" },
-  { label: "Admin logs", href: "/admin/logs" },
+  { label: "Messages", href: "/admin/messages", permission: "messages" },
+  // Every admin can open this; regular admins get a view-only list.
+  { label: "Admins", href: "/admin/admins" },
+  { label: "Analytics", href: "/admin/analytics", permission: "analytics" },
+  { label: "Traffic", href: "/admin/traffic", permission: "traffic" },
+  { label: "Event scan", href: "/admin/scan", permission: "event_scan" },
+  { label: "Event log", href: "/admin/scan-log", permission: "event_log" },
+  { label: "Admin logs", href: "/admin/logs", roles: ["system_owner", "super_admin"] },
 ];
+
+// Until login starts returning a permissions list, regular admins keep the
+// sections they already had so nobody is locked out mid-rollout. Once an
+// admin's profile has a permissions array (even an empty one), only what
+// is in that array is shown.
+const LEGACY_ADMIN_PERMISSIONS = ["messages", "analytics", "event_scan"];
+
+function canSee(item: NavItem, profile: AdminProfile | null): boolean {
+  if (!profile) return false;
+
+  if (item.roles && !item.roles.includes(profile.role)) return false;
+
+  if (profile.role === "system_owner" || profile.role === "super_admin") {
+    return true;
+  }
+
+  if (item.permission) {
+    const granted = profile.permissions ?? LEGACY_ADMIN_PERMISSIONS;
+    return granted.includes(item.permission);
+  }
+
+  return true;
+}
+
+// "/admin/scan" must not count as active on "/admin/scan-log".
+function isActive(pathname: string | null, href: string): boolean {
+  if (!pathname) return false;
+  return pathname === href || pathname.startsWith(href + "/");
+}
 
 const UNREAD_POLL_MS = 30000;
 
@@ -49,6 +91,17 @@ export default function DashboardLayout({
   useEffect(() => {
     setMobileNavOpen(false);
   }, [pathname]);
+
+  // Send people away from a section they can't use if they type its address.
+  // This is only a convenience: the API enforces access on its own.
+  useEffect(() => {
+    if (checking || !profile) return;
+
+    const current = NAV_ITEMS.find((item) => isActive(pathname, item.href));
+    if (current && !canSee(current, profile)) {
+      router.replace("/admin/overview");
+    }
+  }, [checking, profile, pathname, router]);
 
   // Poll the unread message count so the sidebar badge stays current
   useEffect(() => {
@@ -81,9 +134,7 @@ export default function DashboardLayout({
 
   if (checking) return null;
 
-  const visibleNav = NAV_ITEMS.filter(
-    (item) => !item.roles || (profile && item.roles.includes(profile.role))
-  );
+  const visibleNav = NAV_ITEMS.filter((item) => canSee(item, profile));
 
   return (
     <div className="min-h-screen bg-ink flex">
@@ -171,7 +222,7 @@ export default function DashboardLayout({
 
         <nav className="flex-1 px-3 overflow-y-auto">
           {visibleNav.map((item) => {
-            const active = pathname?.startsWith(item.href);
+            const active = isActive(pathname, item.href);
             const showBadge = item.href === "/admin/messages" && unreadCount > 0;
 
             return (

@@ -7,12 +7,50 @@ import {
   createAdmin,
   deactivateAdmin,
   deleteAdmin,
+  updateAdminDepartments,
+  changeAdminRole,
   getAdminProfile,
   ApiError,
   type AdminSummary,
   type SortOrder,
 } from "../../../../lib/admin/api";
 import { downloadCsv, todayForFilename } from "../../../../lib/admin/csv";
+import { DEPARTMENTS, departmentLabel } from "../../../../lib/admin/permissions";
+
+function DepartmentPicker({
+  selected,
+  onChange,
+}: {
+  selected: string[];
+  onChange: (next: string[]) => void;
+}) {
+  function toggle(key: string) {
+    onChange(
+      selected.includes(key)
+        ? selected.filter((k) => k !== key)
+        : [...selected, key]
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {DEPARTMENTS.map((d) => (
+        <label key={d.key} className="flex items-start gap-3 font-body text-sm cursor-pointer">
+          <input
+            type="checkbox"
+            checked={selected.includes(d.key)}
+            onChange={() => toggle(d.key)}
+            className="mt-1"
+          />
+          <span>
+            <span className="text-cream">{d.label}</span>
+            <span className="block text-xs text-muted">{d.sections}</span>
+          </span>
+        </label>
+      ))}
+    </div>
+  );
+}
 
 export default function AdminsPage() {
   const [admins, setAdmins] = useState<AdminSummary[]>([]);
@@ -25,16 +63,30 @@ export default function AdminsPage() {
   const [username, setUsername] = useState("");
   const [tempPassword, setTempPassword] = useState("");
   const [role, setRole] = useState<"super_admin" | "admin">("admin");
+  const [newDepartments, setNewDepartments] = useState<string[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
   const [formLoading, setFormLoading] = useState(false);
 
+  const [editing, setEditing] = useState<AdminSummary | null>(null);
+  const [editDepartments, setEditDepartments] = useState<string[]>([]);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [editLoading, setEditLoading] = useState(false);
+
   const myProfile = getAdminProfile();
-  const canCreateSuperAdmin = myProfile?.role === "system_owner";
-  const isSystemOwner = myProfile?.role === "system_owner";
-  // Plain "admin" accounts only ever get their fellow admins back from
-  // the API — the backend does the actual filtering, this is just the
-  // heads-up so it doesn't look like admins are missing.
-  const isTierRestricted = myProfile?.role === "admin";
+  const isOwner = myProfile?.role === "system_owner";
+  const isSenior = isOwner || myProfile?.role === "super_admin";
+  // Plain admins only get fellow admins back from the API (the backend does
+  // the filtering) and have no actions at all.
+  const isViewOnly = !isSenior;
+
+  // The buttons only hide things. The API enforces the same rules.
+  function canBlockOrDelete(a: AdminSummary) {
+    if (a.role === "system_owner") return false;
+    return isOwner || (isSenior && a.role === "admin");
+  }
+  const canUpgrade = (a: AdminSummary) => isSenior && a.role === "admin";
+  const canDowngrade = (a: AdminSummary) => isOwner && a.role === "super_admin";
+  const canEditDepartments = (a: AdminSummary) => isSenior && a.role === "admin";
 
   function loadAdmins(currentSort: SortOrder = sort) {
     setLoading(true);
@@ -68,11 +120,13 @@ export default function AdminsPage() {
         username,
         temp_password: tempPassword,
         role,
+        departments: role === "admin" ? newDepartments : [],
       });
       setFullName("");
       setUsername("");
       setTempPassword("");
       setRole("admin");
+      setNewDepartments([]);
       setShowForm(false);
       loadAdmins();
     } catch (err) {
@@ -110,26 +164,82 @@ export default function AdminsPage() {
     }
   }
 
+  async function handleUpgrade(admin: AdminSummary) {
+    if (
+      !confirm(
+        `Upgrade ${admin.full_name} to Super Admin? They'll get full access to everything, and only the system owner can undo this.`
+      )
+    ) {
+      return;
+    }
+    try {
+      await changeAdminRole(admin.id, "super_admin");
+      loadAdmins();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Couldn't upgrade admin.");
+    }
+  }
+
+  async function handleDowngrade(admin: AdminSummary) {
+    if (
+      !confirm(
+        `Downgrade ${admin.full_name} to Admin? They'll lose full access and only see the departments you assign to them afterwards.`
+      )
+    ) {
+      return;
+    }
+    try {
+      await changeAdminRole(admin.id, "admin");
+      loadAdmins();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Couldn't downgrade admin.");
+    }
+  }
+
+  function startEditing(admin: AdminSummary) {
+    setEditing(admin);
+    setEditDepartments(admin.departments ?? []);
+    setEditError(null);
+  }
+
+  async function handleSaveDepartments() {
+    if (!editing) return;
+    setEditError(null);
+    setEditLoading(true);
+    try {
+      await updateAdminDepartments(editing.id, editDepartments);
+      setEditing(null);
+      loadAdmins();
+    } catch (err) {
+      setEditError(err instanceof ApiError ? err.message : "Couldn't save departments.");
+    } finally {
+      setEditLoading(false);
+    }
+  }
+
   return (
-    <div className="px-8 py-8 max-w-4xl">
+    <div className="px-8 py-8 max-w-5xl">
       <div className="flex items-center justify-between mb-2">
         <h1 className="font-display text-3xl text-cream">Admins</h1>
-        <button
-          onClick={() => setShowForm((v) => !v)}
-          className="font-body text-sm bg-gold text-ink rounded-sm px-4 py-2 hover:bg-gold/90"
-        >
-          {showForm ? "Cancel" : "Create admin"}
-        </button>
+        {isSenior && (
+          <button
+            onClick={() => setShowForm((v) => !v)}
+            className="font-body text-sm bg-gold text-ink rounded-sm px-4 py-2 hover:bg-gold/90"
+          >
+            {showForm ? "Cancel" : "Create admin"}
+          </button>
+        )}
       </div>
 
-      {isTierRestricted && (
+      {isViewOnly ? (
         <p className="font-body text-xs text-muted mb-6">
-          You're viewing fellow Admin accounts only.
+          You're viewing fellow Admin accounts only. This page is view-only for your role.
         </p>
+      ) : (
+        <div className="mb-6" />
       )}
-      {!isTierRestricted && <div className="mb-6" />}
 
-      {showForm && (
+      {showForm && isSenior && (
         <form
           onSubmit={handleCreate}
           className="border border-ink-raised rounded-sm p-6 mb-8 space-y-4"
@@ -173,20 +283,35 @@ export default function AdminsPage() {
               on first login.
             </p>
           </div>
-          {canCreateSuperAdmin && (
+          <div>
+            <label className="block font-body text-sm text-muted-on-paper mb-1.5">
+              Role
+            </label>
+            <select
+              value={role}
+              onChange={(e) => setRole(e.target.value as "super_admin" | "admin")}
+              className="w-full bg-ink border border-ink-raised rounded-sm px-3 py-2 font-body text-sm text-cream focus:outline-none focus:ring-2 focus:ring-gold"
+            >
+              <option value="admin">Admin</option>
+              <option value="super_admin">Super Admin</option>
+            </select>
+          </div>
+
+          {role === "admin" ? (
             <div>
-              <label className="block font-body text-sm text-muted-on-paper mb-1.5">
-                Role
-              </label>
-              <select
-                value={role}
-                onChange={(e) => setRole(e.target.value as "super_admin" | "admin")}
-                className="w-full bg-ink border border-ink-raised rounded-sm px-3 py-2 font-body text-sm text-cream focus:outline-none focus:ring-2 focus:ring-gold"
-              >
-                <option value="admin">Admin</option>
-                <option value="super_admin">Super Admin</option>
-              </select>
+              <p className="font-body text-sm text-muted-on-paper mb-2">
+                Departments
+              </p>
+              <p className="font-body text-xs text-muted mb-3">
+                Overview, Registrants and Admins are visible to every admin.
+                Tick the departments this admin works in.
+              </p>
+              <DepartmentPicker selected={newDepartments} onChange={setNewDepartments} />
             </div>
+          ) : (
+            <p className="font-body text-xs text-muted">
+              Super admins get full access to every section.
+            </p>
           )}
 
           {formError && (
@@ -203,6 +328,38 @@ export default function AdminsPage() {
         </form>
       )}
 
+      {editing && (
+        <div className="border border-ink-raised rounded-sm p-6 mb-8">
+          <h2 className="font-body text-sm text-muted-on-paper mb-1">
+            Departments for {editing.full_name}
+          </h2>
+          <p className="font-body text-xs text-muted mb-4">
+            Overview, Registrants and Admins are visible to every admin.
+          </p>
+          <DepartmentPicker selected={editDepartments} onChange={setEditDepartments} />
+
+          {editError && (
+            <p className="font-body text-sm text-red mt-4">{editError}</p>
+          )}
+
+          <div className="flex gap-3 mt-5">
+            <button
+              onClick={handleSaveDepartments}
+              disabled={editLoading}
+              className="font-body text-sm bg-gold text-ink rounded-sm px-4 py-2 disabled:opacity-60"
+            >
+              {editLoading ? "Saving…" : "Save departments"}
+            </button>
+            <button
+              onClick={() => setEditing(null)}
+              className="font-body text-sm border border-ink-raised text-muted hover:text-cream rounded-sm px-4 py-2"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-end gap-3 mb-3">
         <button
           onClick={() =>
@@ -210,6 +367,13 @@ export default function AdminsPage() {
               { header: "Full name", value: (a) => a.full_name },
               { header: "Username", value: (a) => a.username },
               { header: "Role", value: (a) => a.role },
+              {
+                header: "Departments",
+                value: (a) =>
+                  a.role === "admin"
+                    ? (a.departments ?? []).map(departmentLabel).join("; ")
+                    : "Full access",
+              },
               {
                 header: "Status",
                 value: (a) =>
@@ -250,21 +414,22 @@ export default function AdminsPage() {
       {error && <p className="font-body text-sm text-red">{error}</p>}
 
       {!loading && (
-        <div className="border border-ink-raised rounded-sm overflow-hidden">
+        <div className="border border-ink-raised rounded-sm overflow-x-auto">
           <table className="w-full font-body text-sm">
             <thead>
               <tr className="border-b border-ink-raised text-left">
                 <th className="px-4 py-3 text-muted-on-paper font-medium">Name</th>
                 <th className="px-4 py-3 text-muted-on-paper font-medium">Username</th>
                 <th className="px-4 py-3 text-muted-on-paper font-medium">Role</th>
+                <th className="px-4 py-3 text-muted-on-paper font-medium">Departments</th>
                 <th className="px-4 py-3 text-muted-on-paper font-medium">Status</th>
-                <th className="px-4 py-3 text-muted-on-paper font-medium"></th>
+                {!isViewOnly && <th className="px-4 py-3"></th>}
               </tr>
             </thead>
             <tbody>
               {admins.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-muted">
+                  <td colSpan={6} className="px-4 py-8 text-center text-muted">
                     No admins found.
                   </td>
                 </tr>
@@ -279,6 +444,13 @@ export default function AdminsPage() {
                     <td className="px-4 py-3 text-muted capitalize">
                       {a.role.replace("_", " ")}
                     </td>
+                    <td className="px-4 py-3 text-muted">
+                      {a.role !== "admin"
+                        ? "Full access"
+                        : (a.departments ?? []).length > 0
+                        ? (a.departments ?? []).map(departmentLabel).join(", ")
+                        : "None assigned"}
+                    </td>
                     <td className="px-4 py-3">
                       {!a.is_active ? (
                         <span className="text-red">Deactivated</span>
@@ -288,24 +460,50 @@ export default function AdminsPage() {
                         <span className="text-teal">Active</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-right space-x-3">
-                      {a.is_active && a.role !== "system_owner" && (
-                        <button
-                          onClick={() => handleDeactivate(a)}
-                          className="font-body text-xs text-red hover:underline"
-                        >
-                          Deactivate
-                        </button>
-                      )}
-                      {isSystemOwner && a.role !== "system_owner" && (
-                        <button
-                          onClick={() => handleDelete(a)}
-                          className="font-body text-xs text-red hover:underline"
-                        >
-                          Delete
-                        </button>
-                      )}
-                    </td>
+                    {!isViewOnly && (
+                      <td className="px-4 py-3 text-right whitespace-nowrap space-x-3">
+                        {canEditDepartments(a) && (
+                          <button
+                            onClick={() => startEditing(a)}
+                            className="font-body text-xs text-teal hover:underline"
+                          >
+                            Departments
+                          </button>
+                        )}
+                        {canUpgrade(a) && (
+                          <button
+                            onClick={() => handleUpgrade(a)}
+                            className="font-body text-xs text-gold hover:underline"
+                          >
+                            Upgrade
+                          </button>
+                        )}
+                        {canDowngrade(a) && (
+                          <button
+                            onClick={() => handleDowngrade(a)}
+                            className="font-body text-xs text-gold hover:underline"
+                          >
+                            Downgrade
+                          </button>
+                        )}
+                        {a.is_active && canBlockOrDelete(a) && (
+                          <button
+                            onClick={() => handleDeactivate(a)}
+                            className="font-body text-xs text-red hover:underline"
+                          >
+                            Deactivate
+                          </button>
+                        )}
+                        {canBlockOrDelete(a) && (
+                          <button
+                            onClick={() => handleDelete(a)}
+                            className="font-body text-xs text-red hover:underline"
+                          >
+                            Delete
+                          </button>
+                        )}
+                      </td>
+                    )}
                   </tr>
                 ))
               )}

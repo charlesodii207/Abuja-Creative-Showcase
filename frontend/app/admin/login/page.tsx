@@ -22,6 +22,9 @@ export default function AdminLoginPage() {
       saveSession(result.token, {
         full_name: result.full_name,
         role: result.role,
+        // Sections this admin may use. Undefined until the backend sends it,
+        // in which case the sidebar falls back to the old behaviour.
+        permissions: result.permissions,
       });
 
       if (result.must_change_password) {

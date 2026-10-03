@@ -14,6 +14,9 @@ const ADMIN_KEY = "acs_admin_profile";
 export type AdminProfile = {
   full_name: string;
   role: "system_owner" | "super_admin" | "admin";
+  // Sections a regular admin may use, set by their departments.
+  // Undefined until login returns it; super admins ignore it.
+  permissions?: string[];
 };
 
 export function saveSession(token: string, profile: AdminProfile) {
@@ -98,6 +101,7 @@ export async function login(username: string, password: string) {
     must_change_password: boolean;
     full_name: string;
     role: AdminProfile["role"];
+    permissions?: string[];
   }>("/admin/auth/login", {
     method: "POST",
     body: JSON.stringify({ username, password }),
@@ -304,6 +308,8 @@ export type AdminSummary = {
   is_active: boolean;
   must_change_password: boolean;
   last_login_at: string | null;
+  // Department keys (see lib/admin/permissions.ts). Only used for regular admins.
+  departments: string[];
 };
 
 export async function listAdmins(filters?: { sort?: SortOrder }) {
@@ -323,6 +329,7 @@ export async function createAdmin(payload: {
   username: string;
   temp_password: string;
   role: "super_admin" | "admin";
+  departments?: string[];
 }) {
   return adminFetch<AdminSummary>("/admin/auth/create-admin", {
     method: "POST",
@@ -341,6 +348,33 @@ export async function deleteAdmin(adminId: string) {
   return adminFetch<{ id: string; status: string; message: string }>(
     `/admin/auth/admins/${encodeURIComponent(adminId)}`,
     { method: "DELETE" }
+  );
+}
+
+export async function updateAdminDepartments(
+  adminId: string,
+  departments: string[]
+) {
+  return adminFetch<{ id: string; status: string; message: string }>(
+    `/admin/auth/admins/${encodeURIComponent(adminId)}/departments`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ departments }),
+    }
+  );
+}
+
+// Upgrade (admin -> super_admin) or downgrade (super_admin -> admin).
+export async function changeAdminRole(
+  adminId: string,
+  role: "super_admin" | "admin"
+) {
+  return adminFetch<{ id: string; status: string; message: string }>(
+    `/admin/auth/admins/${encodeURIComponent(adminId)}/role`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ role }),
+    }
   );
 }
 
