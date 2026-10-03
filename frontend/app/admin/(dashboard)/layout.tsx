@@ -270,7 +270,11 @@ export default function DashboardLayout({
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 min-w-0 pt-14 md:pt-0">{children}</main>
+      {/* On phones, any page that uses the standard px-8/py-8 wrapper gets
+          tighter padding automatically, including pages not listed here. */}
+      <main className="flex-1 min-w-0 pt-14 md:pt-0 max-sm:[&>.px-8]:px-4 max-sm:[&>.py-8]:py-6">
+        {children}
+      </main>
     </div>
   );
 }

@@ -80,6 +80,14 @@ export default function MessagesPage() {
       .finally(() => setLoadingThread(false));
   }
 
+  // Phones show the list or the conversation, one at a time. This takes
+  // you back to the list.
+  function backToList() {
+    setSelectedId(null);
+    setSelectedThread(null);
+    setThreadError(null);
+  }
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [selectedThread]);
@@ -120,10 +128,12 @@ export default function MessagesPage() {
   }
 
   return (
-    <div className="h-screen flex flex-col">
-      <div className="px-8 pt-8 pb-4 shrink-0">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="font-display text-3xl text-cream">Messages</h1>
+    // On phones the page sits under the 3.5rem top bar, so it is sized to
+    // the space that is left (dvh follows the phone's moving browser bars).
+    <div className="h-[calc(100dvh-3.5rem)] md:h-screen flex flex-col">
+      <div className="px-4 pt-4 sm:px-8 sm:pt-8 pb-4 shrink-0">
+        <div className="flex items-center justify-between mb-2 sm:mb-4">
+          <h1 className="font-display text-2xl sm:text-3xl text-cream">Messages</h1>
           <div className="flex border border-ink-raised rounded-sm overflow-hidden">
             {(["open", "closed"] as MessageThreadStatus[]).map((s) => (
               <button
@@ -142,9 +152,13 @@ export default function MessagesPage() {
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 px-8 pb-8 flex gap-6">
-        {/* Thread list */}
-        <div className="w-80 shrink-0 border border-ink-raised rounded-sm overflow-y-auto">
+      <div className="flex-1 min-h-0 px-4 pb-4 sm:px-8 sm:pb-8 flex gap-6">
+        {/* Thread list: full width on phones, hidden while a conversation is open */}
+        <div
+          className={`${
+            selectedId ? "hidden" : "block"
+          } md:block w-full md:w-80 shrink-0 border border-ink-raised rounded-sm overflow-y-auto`}
+        >
           {loadingList && (
             <p className="font-body text-sm text-muted px-4 py-4">Loading…</p>
           )}
@@ -184,8 +198,12 @@ export default function MessagesPage() {
           ))}
         </div>
 
-        {/* Thread detail */}
-        <div className="flex-1 min-w-0 border border-ink-raised rounded-sm flex flex-col">
+        {/* Thread detail: only shown on phones once a conversation is opened */}
+        <div
+          className={`${
+            selectedId ? "flex" : "hidden"
+          } md:flex flex-1 min-w-0 border border-ink-raised rounded-sm flex-col`}
+        >
           {!selectedId && (
             <div className="flex-1 flex items-center justify-center">
               <p className="font-body text-sm text-muted">
@@ -201,38 +219,55 @@ export default function MessagesPage() {
           )}
 
           {selectedId && threadError && (
-            <div className="flex-1 flex items-center justify-center">
+            <div className="flex-1 flex flex-col items-center justify-center gap-3 px-4 text-center">
               <p className="font-body text-sm text-red">{threadError}</p>
+              <button
+                onClick={backToList}
+                className="md:hidden font-body text-xs text-teal hover:underline"
+              >
+                ← Back to messages
+              </button>
             </div>
           )}
 
           {selectedThread && !loadingThread && !threadError && (
             <>
-              <div className="px-5 py-4 border-b border-ink-raised flex items-center justify-between shrink-0">
-                <div>
-                  <p className="font-body text-sm text-cream">
-                    {selectedThread.sender_name}
-                  </p>
-                  <p className="font-body text-xs text-muted">
-                    {selectedThread.sender_email}
-                  </p>
+              <div className="px-4 sm:px-5 py-3 sm:py-4 border-b border-ink-raised flex items-center justify-between gap-3 shrink-0">
+                <div className="flex items-center gap-3 min-w-0">
+                  <button
+                    onClick={backToList}
+                    aria-label="Back to messages"
+                    className="md:hidden shrink-0 font-body text-sm text-teal px-1 py-1"
+                  >
+                    ← Back
+                  </button>
+                  <div className="min-w-0">
+                    <p className="font-body text-sm text-cream truncate">
+                      {selectedThread.sender_name}
+                    </p>
+                    <p className="font-body text-xs text-muted truncate">
+                      {selectedThread.sender_email}
+                    </p>
+                  </div>
                 </div>
                 <button
                   onClick={handleToggleStatus}
-                  className="font-body text-xs text-muted-on-paper hover:text-cream border border-ink-raised rounded-sm px-3 py-1.5"
+                  className="shrink-0 font-body text-xs text-muted-on-paper hover:text-cream border border-ink-raised rounded-sm px-3 py-1.5"
                 >
                   {selectedThread.status === "open" ? "Close" : "Reopen"}
                 </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
+              <div className="flex-1 overflow-y-auto px-4 sm:px-5 py-4 space-y-3">
                 {selectedThread.messages.map((m) => (
                   <div
                     key={m.id}
-                    className={`max-w-[75%] ${m.sender === "admin" ? "ml-auto" : ""}`}
+                    className={`max-w-[88%] sm:max-w-[75%] ${
+                      m.sender === "admin" ? "ml-auto" : ""
+                    }`}
                   >
                     <div
-                      className={`rounded-sm px-3 py-2 font-body text-sm ${
+                      className={`rounded-sm px-3 py-2 font-body text-sm whitespace-pre-wrap break-words ${
                         m.sender === "admin"
                           ? "bg-gold text-ink"
                           : "bg-ink-raised text-cream"
@@ -254,7 +289,7 @@ export default function MessagesPage() {
 
               <form
                 onSubmit={handleReply}
-                className="px-5 py-4 border-t border-ink-raised shrink-0"
+                className="px-4 sm:px-5 py-3 sm:py-4 border-t border-ink-raised shrink-0"
               >
                 {sendError && (
                   <p className="font-body text-sm text-red mb-2">{sendError}</p>
@@ -265,7 +300,7 @@ export default function MessagesPage() {
                     onChange={(e) => setReplyBody(e.target.value)}
                     placeholder="Write a reply…"
                     rows={2}
-                    className="flex-1 bg-ink border border-ink-raised rounded-sm px-3 py-2 font-body text-sm text-cream focus:outline-none focus:ring-2 focus:ring-gold resize-none"
+                    className="flex-1 min-w-0 bg-ink border border-ink-raised rounded-sm px-3 py-2 font-body text-sm text-cream focus:outline-none focus:ring-2 focus:ring-gold resize-none"
                   />
                   <button
                     type="submit"

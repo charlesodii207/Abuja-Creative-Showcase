@@ -20,6 +20,13 @@ const ACTION_LABELS: Record<string, string> = {
   create_admin: "Created admin",
   deactivate_admin: "Deactivated admin",
   delete_admin: "Deleted admin",
+  upgrade_admin: "Upgraded admin",
+  downgrade_admin: "Downgraded admin",
+  update_departments: "Changed departments",
+  mark_message_read: "Read a message",
+  reply_to_contact_message: "Replied to a message",
+  close_contact_thread: "Closed a conversation",
+  reopen_contact_thread: "Reopened a conversation",
 };
 
 type ViewMode = "timeline" | "by_admin" | "by_action" | "by_date";
@@ -79,28 +86,61 @@ function LogRow({ log }: { log: AdminLogSummary }) {
   );
 }
 
+// Phones get one compact card per log entry instead of a wide table.
+function LogCard({ log }: { log: AdminLogSummary }) {
+  const who = log.target_name || log.target_reference;
+  return (
+    <div className="border border-ink-raised rounded-sm p-4 font-body text-sm">
+      <div className="flex items-start justify-between gap-3">
+        <p className="text-cream">{ACTION_LABELS[log.action] || log.action}</p>
+        <p className="text-xs text-muted shrink-0">{formatTime(log.created_at)}</p>
+      </div>
+      <p className="mt-1 text-xs text-muted">By {log.admin_name || "System"}</p>
+      {who && (
+        <p className="text-xs text-muted break-words">
+          {who}
+          {log.target_name && log.target_reference && (
+            <span className="text-muted/50"> · {log.target_reference}</span>
+          )}
+        </p>
+      )}
+      {log.detail && (
+        <p className="mt-1 text-xs text-muted break-words">{log.detail}</p>
+      )}
+    </div>
+  );
+}
+
 function LogTable({ logs }: { logs: AdminLogSummary[] }) {
   return (
-    <div className="border border-ink-raised rounded-sm overflow-hidden">
-      <table className="w-full font-body text-sm">
-        <thead>
-          <tr className="border-b border-ink-raised text-left">
-            <th className="px-4 py-3 text-muted-on-paper font-medium">When</th>
-            <th className="px-4 py-3 text-muted-on-paper font-medium">By</th>
-            <th className="px-4 py-3 text-muted-on-paper font-medium">Action</th>
-            <th className="px-4 py-3 text-muted-on-paper font-medium">Target</th>
-            <th className="px-4 py-3 text-muted-on-paper font-medium hidden md:table-cell">
-              Detail
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {logs.map((log) => (
-            <LogRow key={log.id} log={log} />
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <>
+      <div className="md:hidden space-y-2">
+        {logs.map((log) => (
+          <LogCard key={log.id} log={log} />
+        ))}
+      </div>
+
+      <div className="hidden md:block border border-ink-raised rounded-sm overflow-x-auto">
+        <table className="w-full font-body text-sm">
+          <thead>
+            <tr className="border-b border-ink-raised text-left">
+              <th className="px-4 py-3 text-muted-on-paper font-medium">When</th>
+              <th className="px-4 py-3 text-muted-on-paper font-medium">By</th>
+              <th className="px-4 py-3 text-muted-on-paper font-medium">Action</th>
+              <th className="px-4 py-3 text-muted-on-paper font-medium">Target</th>
+              <th className="px-4 py-3 text-muted-on-paper font-medium hidden md:table-cell">
+                Detail
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {logs.map((log) => (
+              <LogRow key={log.id} log={log} />
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
   );
 }
 
@@ -213,7 +253,7 @@ export default function LogsPage() {
   }
 
   return (
-    <div className="px-8 py-8 max-w-5xl">
+    <div className="px-4 py-6 sm:px-8 sm:py-8 max-w-5xl">
       <h1 className="font-display text-3xl text-cream mb-2">Admin logs</h1>
       <p className="font-body text-sm text-muted mb-6">
         A record of who did what, and when.
@@ -226,13 +266,13 @@ export default function LogsPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search by applicant name, reference, admin, or detail"
-          className="flex-1 min-w-[260px] bg-ink-raised border border-ink-raised rounded-sm px-4 py-2 font-body text-sm text-cream placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-gold"
+          className="flex-1 min-w-[240px] bg-ink-raised border border-ink-raised rounded-sm px-4 py-2 font-body text-sm text-cream placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-gold"
         />
 
         <select
           value={actionFilter}
           onChange={(e) => setActionFilter(e.target.value)}
-          className="bg-ink-raised border border-ink-raised rounded-sm px-3 py-2 font-body text-sm text-cream focus:outline-none focus:ring-2 focus:ring-gold"
+          className="max-w-full bg-ink-raised border border-ink-raised rounded-sm px-3 py-2 font-body text-sm text-cream focus:outline-none focus:ring-2 focus:ring-gold"
         >
           <option value="">All actions</option>
           {Object.entries(ACTION_LABELS).map(([value, label]) => (
@@ -245,7 +285,7 @@ export default function LogsPage() {
         <select
           value={adminFilter}
           onChange={(e) => setAdminFilter(e.target.value)}
-          className="bg-ink-raised border border-ink-raised rounded-sm px-3 py-2 font-body text-sm text-cream focus:outline-none focus:ring-2 focus:ring-gold"
+          className="max-w-full bg-ink-raised border border-ink-raised rounded-sm px-3 py-2 font-body text-sm text-cream focus:outline-none focus:ring-2 focus:ring-gold"
         >
           <option value="">All admins</option>
           {knownAdmins.map((name) => (
@@ -264,13 +304,13 @@ export default function LogsPage() {
         </button>
       </div>
 
-      {/* View toggle */}
-      <div className="mb-6 flex gap-1 border-b border-ink-raised">
+      {/* View toggle (swipes sideways on narrow phones) */}
+      <div className="mb-6 flex gap-1 overflow-x-auto border-b border-ink-raised">
         {(Object.keys(VIEW_LABELS) as ViewMode[]).map((v) => (
           <button
             key={v}
             onClick={() => setView(v)}
-            className={`font-body text-sm px-4 py-2.5 border-b-2 transition-colors focus:outline-none ${
+            className={`shrink-0 whitespace-nowrap font-body text-sm px-4 py-2.5 border-b-2 transition-colors focus:outline-none ${
               view === v
                 ? "border-gold text-cream"
                 : "border-transparent text-muted hover:text-cream"
