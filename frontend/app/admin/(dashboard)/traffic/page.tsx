@@ -105,7 +105,7 @@ export default function TrafficPage() {
   const maxPage = data?.top_pages[0]?.views ?? 0;
 
   return (
-    <div className="px-8 py-8 max-w-4xl">
+    <div className="px-4 py-6 sm:px-8 sm:py-8 max-w-4xl">
       <div className="flex flex-wrap items-start justify-between gap-4 mb-8">
         <div>
           <h1 className="font-display text-3xl text-cream mb-2">Traffic</h1>
@@ -228,8 +228,8 @@ export default function TrafficPage() {
                     <th className="py-2 pr-4 font-normal">IP address</th>
                     <th className="py-2 pr-4 font-normal">Page</th>
                     <th className="py-2 pr-4 font-normal">Source</th>
-                    <th className="py-2 pr-4 font-normal">Country</th>
-                    <th className="py-2 font-normal">Device</th>
+                    <th className="py-2 pr-4 font-normal hidden sm:table-cell">Country</th>
+                    <th className="py-2 font-normal hidden sm:table-cell">Device</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -245,8 +245,8 @@ export default function TrafficPage() {
                       <td className="py-2 pr-4 whitespace-nowrap capitalize text-teal">
                         {v.source}
                       </td>
-                      <td className="py-2 pr-4 whitespace-nowrap">{v.country ?? "—"}</td>
-                      <td className="py-2 whitespace-nowrap capitalize">{v.device ?? "—"}</td>
+                      <td className="py-2 pr-4 whitespace-nowrap hidden sm:table-cell">{v.country ?? "—"}</td>
+                      <td className="py-2 whitespace-nowrap capitalize hidden sm:table-cell">{v.device ?? "—"}</td>
                     </tr>
                   ))}
                   {visits.length === 0 && (

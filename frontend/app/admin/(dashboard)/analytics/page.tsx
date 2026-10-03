@@ -62,7 +62,7 @@ export default function AnalyticsPage() {
   }, []);
 
   return (
-    <div className="px-8 py-8 max-w-4xl">
+    <div className="px-4 py-6 sm:px-8 sm:py-8 max-w-4xl">
       <h1 className="font-display text-3xl text-cream mb-2">Analytics</h1>
       <p className="font-body text-sm text-muted mb-8">
         A closer look at registrations, payments, and today's event activity.
@@ -78,7 +78,7 @@ export default function AnalyticsPage() {
             <h2 className="font-body text-sm text-muted-on-paper mb-4">
               Revenue collected
             </h2>
-            <p className="font-display text-4xl text-gold mb-5">
+            <p className="font-display text-3xl sm:text-4xl text-gold mb-5 break-words">
               {naira(stats.revenue_kobo_total)}
             </p>
             <div className="grid sm:grid-cols-3 gap-4">

@@ -256,18 +256,18 @@ export default function RegistrantsPage() {
   }
 
   return (
-    <div className="px-8 py-8 max-w-6xl">
+    <div className="px-4 py-6 sm:px-8 sm:py-8 max-w-6xl">
       <h1 className="font-display text-3xl text-cream mb-6">Registrants</h1>
 
       {/* All filters live in this one bar */}
       <div className="border border-ink-raised rounded-sm mb-6">
         {/* Category */}
-        <div className="flex flex-wrap gap-1 border-b border-ink-raised px-2">
+        <div className="flex gap-1 overflow-x-auto border-b border-ink-raised px-2 sm:flex-wrap">
           {TABS.map((tab) => (
             <button
               key={tab.label}
               onClick={() => setActiveTab(tab.value)}
-              className={`font-body text-sm px-4 py-2.5 border-b-2 transition-colors focus:outline-none ${
+              className={`shrink-0 whitespace-nowrap font-body text-sm px-4 py-2.5 border-b-2 transition-colors focus:outline-none ${
                 activeTab === tab.value
                   ? "border-gold text-cream"
                   : "border-transparent text-muted hover:text-cream"
@@ -478,7 +478,7 @@ export default function RegistrantsPage() {
       )}
 
       {/* Table */}
-      <div className="border border-ink-raised rounded-sm overflow-hidden">
+      <div className="border border-ink-raised rounded-sm overflow-x-auto">
         <table className="w-full font-body text-sm">
           <thead>
             <tr className="border-b border-ink-raised text-left">
@@ -488,7 +488,7 @@ export default function RegistrantsPage() {
               <th className="px-4 py-3 text-muted-on-paper font-medium hidden md:table-cell">
                 Email
               </th>
-              <th className="px-4 py-3 text-muted-on-paper font-medium">
+              <th className="px-4 py-3 text-muted-on-paper font-medium hidden sm:table-cell">
                 Reference
               </th>
               <th className="px-4 py-3 text-muted-on-paper font-medium hidden lg:table-cell">
@@ -519,11 +519,19 @@ export default function RegistrantsPage() {
                   onClick={() => setSelectedRef(r.reference_number)}
                   className="border-b border-ink-raised last:border-b-0 cursor-pointer hover:bg-ink-raised/40 transition-colors"
                 >
-                  <td className="px-4 py-3 text-cream">{r.full_name}</td>
+                  <td className="px-4 py-3 text-cream">
+                    {r.full_name}
+                    <span className="block md:hidden text-xs text-muted break-all">
+                      {r.email}
+                    </span>
+                    <span className="block sm:hidden text-xs text-muted">
+                      {r.reference_number}
+                    </span>
+                  </td>
                   <td className="px-4 py-3 text-muted hidden md:table-cell">
                     {r.email}
                   </td>
-                  <td className="px-4 py-3 text-muted">
+                  <td className="px-4 py-3 text-muted hidden sm:table-cell">
                     {r.reference_number}
                   </td>
                   <td className="px-4 py-3 text-muted hidden lg:table-cell whitespace-nowrap">

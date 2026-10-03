@@ -19,7 +19,7 @@ export default function OverviewPage() {
   }, []);
 
   return (
-    <div className="px-8 py-8 max-w-5xl">
+    <div className="px-4 py-6 sm:px-8 sm:py-8 max-w-5xl">
       <h1 className="font-display text-3xl text-cream mb-8">Overview</h1>
 
       {loading && <p className="font-body text-sm text-muted">Loading…</p>}

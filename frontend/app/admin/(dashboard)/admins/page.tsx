@@ -217,8 +217,68 @@ export default function AdminsPage() {
     }
   }
 
+  function renderActions(a: AdminSummary) {
+    return (
+      <>
+        {canEditDepartments(a) && (
+          <button
+            onClick={() => startEditing(a)}
+            className="font-body text-xs text-teal hover:underline py-1"
+          >
+            Departments
+          </button>
+        )}
+        {canUpgrade(a) && (
+          <button
+            onClick={() => handleUpgrade(a)}
+            className="font-body text-xs text-gold hover:underline py-1"
+          >
+            Upgrade
+          </button>
+        )}
+        {canDowngrade(a) && (
+          <button
+            onClick={() => handleDowngrade(a)}
+            className="font-body text-xs text-gold hover:underline py-1"
+          >
+            Downgrade
+          </button>
+        )}
+        {a.is_active && canBlockOrDelete(a) && (
+          <button
+            onClick={() => handleDeactivate(a)}
+            className="font-body text-xs text-red hover:underline py-1"
+          >
+            Deactivate
+          </button>
+        )}
+        {canBlockOrDelete(a) && (
+          <button
+            onClick={() => handleDelete(a)}
+            className="font-body text-xs text-red hover:underline py-1"
+          >
+            Delete
+          </button>
+        )}
+      </>
+    );
+  }
+
+  function statusText(a: AdminSummary) {
+    if (!a.is_active) return <span className="text-red">Deactivated</span>;
+    if (a.must_change_password)
+      return <span className="text-gold">Awaiting first login</span>;
+    return <span className="text-teal">Active</span>;
+  }
+
+  function departmentText(a: AdminSummary) {
+    if (a.role !== "admin") return "Full access";
+    const keys = a.departments ?? [];
+    return keys.length > 0 ? keys.map(departmentLabel).join(", ") : "None assigned";
+  }
+
   return (
-    <div className="px-8 py-8 max-w-5xl">
+    <div className="px-4 py-6 sm:px-8 sm:py-8 max-w-5xl">
       <div className="flex items-center justify-between mb-2">
         <h1 className="font-display text-3xl text-cream">Admins</h1>
         {isSenior && (
@@ -414,102 +474,87 @@ export default function AdminsPage() {
       {error && <p className="font-body text-sm text-red">{error}</p>}
 
       {!loading && (
-        <div className="border border-ink-raised rounded-sm overflow-x-auto">
-          <table className="w-full font-body text-sm">
-            <thead>
-              <tr className="border-b border-ink-raised text-left">
-                <th className="px-4 py-3 text-muted-on-paper font-medium">Name</th>
-                <th className="px-4 py-3 text-muted-on-paper font-medium">Username</th>
-                <th className="px-4 py-3 text-muted-on-paper font-medium">Role</th>
-                <th className="px-4 py-3 text-muted-on-paper font-medium">Departments</th>
-                <th className="px-4 py-3 text-muted-on-paper font-medium">Status</th>
-                {!isViewOnly && <th className="px-4 py-3"></th>}
-              </tr>
-            </thead>
-            <tbody>
-              {admins.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-muted">
-                    No admins found.
-                  </td>
+        <>
+          {/* Phones: one card per admin */}
+          <div className="md:hidden space-y-3">
+            {admins.length === 0 ? (
+              <p className="border border-ink-raised rounded-sm px-4 py-8 text-center font-body text-sm text-muted">
+                No admins found.
+              </p>
+            ) : (
+              admins.map((a) => (
+                <div
+                  key={a.id}
+                  className="border border-ink-raised rounded-sm p-4 font-body text-sm"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-cream break-words">{a.full_name}</p>
+                      <p className="text-xs text-muted break-all">{a.username}</p>
+                    </div>
+                    <span className="shrink-0 text-xs text-right">
+                      {statusText(a)}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-xs text-muted capitalize">
+                    {a.role.replace("_", " ")}
+                  </p>
+                  <p className="text-xs text-muted">{departmentText(a)}</p>
+                  {!isViewOnly && (
+                    <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1">
+                      {renderActions(a)}
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Larger screens: table */}
+          <div className="hidden md:block border border-ink-raised rounded-sm overflow-x-auto">
+            <table className="w-full font-body text-sm">
+              <thead>
+                <tr className="border-b border-ink-raised text-left">
+                  <th className="px-4 py-3 text-muted-on-paper font-medium">Name</th>
+                  <th className="px-4 py-3 text-muted-on-paper font-medium">Username</th>
+                  <th className="px-4 py-3 text-muted-on-paper font-medium">Role</th>
+                  <th className="px-4 py-3 text-muted-on-paper font-medium">Departments</th>
+                  <th className="px-4 py-3 text-muted-on-paper font-medium">Status</th>
+                  {!isViewOnly && <th className="px-4 py-3"></th>}
                 </tr>
-              ) : (
-                admins.map((a) => (
-                  <tr
-                    key={a.id}
-                    className="border-b border-ink-raised last:border-b-0"
-                  >
-                    <td className="px-4 py-3 text-cream">{a.full_name}</td>
-                    <td className="px-4 py-3 text-muted">{a.username}</td>
-                    <td className="px-4 py-3 text-muted capitalize">
-                      {a.role.replace("_", " ")}
+              </thead>
+              <tbody>
+                {admins.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-8 text-center text-muted">
+                      No admins found.
                     </td>
-                    <td className="px-4 py-3 text-muted">
-                      {a.role !== "admin"
-                        ? "Full access"
-                        : (a.departments ?? []).length > 0
-                        ? (a.departments ?? []).map(departmentLabel).join(", ")
-                        : "None assigned"}
-                    </td>
-                    <td className="px-4 py-3">
-                      {!a.is_active ? (
-                        <span className="text-red">Deactivated</span>
-                      ) : a.must_change_password ? (
-                        <span className="text-gold">Awaiting first login</span>
-                      ) : (
-                        <span className="text-teal">Active</span>
-                      )}
-                    </td>
-                    {!isViewOnly && (
-                      <td className="px-4 py-3 text-right whitespace-nowrap space-x-3">
-                        {canEditDepartments(a) && (
-                          <button
-                            onClick={() => startEditing(a)}
-                            className="font-body text-xs text-teal hover:underline"
-                          >
-                            Departments
-                          </button>
-                        )}
-                        {canUpgrade(a) && (
-                          <button
-                            onClick={() => handleUpgrade(a)}
-                            className="font-body text-xs text-gold hover:underline"
-                          >
-                            Upgrade
-                          </button>
-                        )}
-                        {canDowngrade(a) && (
-                          <button
-                            onClick={() => handleDowngrade(a)}
-                            className="font-body text-xs text-gold hover:underline"
-                          >
-                            Downgrade
-                          </button>
-                        )}
-                        {a.is_active && canBlockOrDelete(a) && (
-                          <button
-                            onClick={() => handleDeactivate(a)}
-                            className="font-body text-xs text-red hover:underline"
-                          >
-                            Deactivate
-                          </button>
-                        )}
-                        {canBlockOrDelete(a) && (
-                          <button
-                            onClick={() => handleDelete(a)}
-                            className="font-body text-xs text-red hover:underline"
-                          >
-                            Delete
-                          </button>
-                        )}
-                      </td>
-                    )}
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                ) : (
+                  admins.map((a) => (
+                    <tr
+                      key={a.id}
+                      className="border-b border-ink-raised last:border-b-0"
+                    >
+                      <td className="px-4 py-3 text-cream">{a.full_name}</td>
+                      <td className="px-4 py-3 text-muted">{a.username}</td>
+                      <td className="px-4 py-3 text-muted capitalize">
+                        {a.role.replace("_", " ")}
+                      </td>
+                      <td className="px-4 py-3 text-muted">{departmentText(a)}</td>
+                      <td className="px-4 py-3">{statusText(a)}</td>
+                      {!isViewOnly && (
+                        <td className="px-4 py-3 text-right whitespace-nowrap space-x-3">
+                          {renderActions(a)}
+                        </td>
+                      )}
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </div>
   );
