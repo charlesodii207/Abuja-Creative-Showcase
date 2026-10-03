@@ -5,6 +5,7 @@ import jwt
 from app.database import get_db
 from app import models
 from app.auth import decode_access_token
+from app.permissions import SENIOR_ROLES, permissions_for
 
 
 def _get_admin_from_token(authorization: str, db: Session) -> tuple[models.Admin, dict]:
@@ -55,5 +56,21 @@ def require_role(*allowed_roles: str):
     def checker(admin: models.Admin = Depends(get_current_admin)) -> models.Admin:
         if admin.role.value not in allowed_roles:
             raise HTTPException(status_code=403, detail="You don't have permission to do this.")
+        return admin
+    return checker
+
+
+def require_permission(*needed: str):
+    """Usage: Depends(require_permission("traffic"))
+
+    Super admins and the system owner always pass. A regular admin passes
+    if their departments give them at least one of the listed sections."""
+    def checker(admin: models.Admin = Depends(get_current_admin)) -> models.Admin:
+        if admin.role.value in SENIOR_ROLES:
+            return admin
+
+        if not set(permissions_for(admin)).intersection(needed):
+            raise HTTPException(status_code=403, detail="You don't have access to this section.")
+
         return admin
     return checker

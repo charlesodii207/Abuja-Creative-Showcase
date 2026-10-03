@@ -4,7 +4,7 @@ import uuid
 from sqlalchemy import (
     Column, String, Boolean, DateTime, Date, ForeignKey, Enum, Text, Integer, func
 )
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import relationship
 
 from app.database import Base
@@ -62,6 +62,8 @@ class Admin(Base):
     role = Column(Enum(AdminRole), nullable=False)
     must_change_password = Column(Boolean, default=True, nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
+    # Department keys (see app/permissions.py). Only used for regular admins.
+    departments = Column(ARRAY(String), nullable=False, default=list, server_default="{}")
     created_by = Column(
         UUID(as_uuid=True),
         ForeignKey("admins.id", ondelete="SET NULL"),

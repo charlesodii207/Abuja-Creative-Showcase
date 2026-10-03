@@ -15,11 +15,11 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app import models
-from app.dependencies import require_role
+from app.dependencies import require_permission
+from app.permissions import SENIOR_ROLES
 
 router = APIRouter(tags=["traffic"])
 
-VIEW_ROLES = ("system_owner", "super_admin", "admin")
 WAT = timezone(timedelta(hours=1))  # Nigeria, same convention as /admin/stats
 
 SOCIAL_SOURCES = {"facebook", "instagram", "x", "linkedin", "tiktok", "whatsapp", "youtube"}
@@ -143,6 +143,14 @@ def _country(request: Request) -> str | None:
     return code if len(code) == 2 and code.isalpha() and code not in ("XX", "T1") else None
 
 
+def _mask_ip(ip: str) -> str:
+    """Regular admins only see the start of each address."""
+    if ":" in ip:
+        return ":".join(ip.split(":")[:2]) + ":••••"
+    parts = ip.split(".")
+    return ".".join(parts[:2]) + ".•••.•••" if len(parts) == 4 else "•••"
+
+
 def _range_start(range_: str) -> datetime:
     now = datetime.now(timezone.utc)
     if range_ == "today":
@@ -190,9 +198,10 @@ def track(payload: TrackPayload, request: Request, db: Session = Depends(get_db)
 def get_traffic(
     range: str = Query(default="7d", pattern="^(today|7d|30d)$"),
     db: Session = Depends(get_db),
-    _admin: models.Admin = Depends(require_role(*VIEW_ROLES)),
+    admin: models.Admin = Depends(require_permission("traffic")),
 ):
     in_range = models.SiteVisit.created_at >= _range_start(range)
+    see_full_ip = admin.role.value in SENIOR_ROLES
 
     total_visits = db.query(func.count(models.SiteVisit.id)).filter(in_range).scalar() or 0
     unique_visitors = (
@@ -240,7 +249,7 @@ def get_traffic(
             TrafficVisitOut(
                 id=str(v.id),
                 created_at=v.created_at,
-                ip=v.ip,
+                ip=v.ip if see_full_ip else _mask_ip(v.ip),
                 path=v.path,
                 source=v.source,
                 country=v.country,

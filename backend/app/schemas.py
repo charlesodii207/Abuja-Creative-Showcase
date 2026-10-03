@@ -328,6 +328,9 @@ class LoginResponse(BaseModel):
     must_change_password: bool
     full_name: str
     role: str
+    # Sections this admin can use (from their departments; everything for
+    # super admins and the system owner).
+    permissions: list[str] = []
 
 
 class ChangePasswordRequest(BaseModel):
@@ -340,6 +343,15 @@ class CreateAdminRequest(BaseModel):
     username: str
     temp_password: str
     role: str
+    departments: list[str] = []
+
+
+class UpdateAdminDepartmentsRequest(BaseModel):
+    departments: list[str]
+
+
+class ChangeAdminRoleRequest(BaseModel):
+    role: str
 
 
 class AdminSummary(BaseModel):
@@ -350,6 +362,7 @@ class AdminSummary(BaseModel):
     is_active: bool
     must_change_password: bool
     last_login_at: str | None
+    departments: list[str] = []
 
 
 class AdminLogSummary(BaseModel):

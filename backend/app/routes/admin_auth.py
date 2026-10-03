@@ -8,8 +8,37 @@ from app import models, schemas
 from app.auth import hash_password, verify_password, create_access_token
 from app.dependencies import get_current_admin_allow_password_change, require_role
 from app.audit import log_action
+from app.permissions import ALL_DEPARTMENTS, permissions_for
 
 router = APIRouter(prefix="/admin/auth", tags=["admin-auth"])
+
+
+def _summary(a: models.Admin) -> schemas.AdminSummary:
+    return schemas.AdminSummary(
+        id=str(a.id),
+        full_name=a.full_name,
+        username=a.username,
+        role=a.role.value,
+        is_active=a.is_active,
+        must_change_password=a.must_change_password,
+        last_login_at=a.last_login_at.isoformat() if a.last_login_at else None,
+        departments=list(a.departments or []),
+    )
+
+
+def _get_admin_or_404(db: Session, admin_id: str) -> models.Admin:
+    target = db.query(models.Admin).filter(models.Admin.id == admin_id).first()
+    if not target:
+        raise HTTPException(status_code=404, detail="Admin not found.")
+    return target
+
+
+def _clean_departments(raw: list[str]) -> list[str]:
+    unknown = [d for d in raw if d not in ALL_DEPARTMENTS]
+    if unknown:
+        raise HTTPException(status_code=400, detail=f"Unknown department: {unknown[0]}.")
+    # de-duplicate, keep the order they were ticked in
+    return list(dict.fromkeys(raw))
 
 
 @router.post("/login", response_model=schemas.LoginResponse)
@@ -38,6 +67,7 @@ def login(payload: schemas.LoginRequest, db: Session = Depends(get_db)):
         must_change_password=admin.must_change_password,
         full_name=admin.full_name,
         role=admin.role.value,
+        permissions=permissions_for(admin),
     )
 
 
@@ -74,17 +104,18 @@ def change_password(
 def create_admin(
     payload: schemas.CreateAdminRequest,
     db: Session = Depends(get_db),
+    # Super Admins can create both Admins and Super Admins.
     current_admin: models.Admin = Depends(require_role("system_owner", "super_admin")),
 ):
-    if current_admin.role == models.AdminRole.super_admin and payload.role != "admin":
-        raise HTTPException(status_code=403, detail="Super Admins can only create Admin accounts.")
-
     if payload.role not in ("super_admin", "admin"):
         raise HTTPException(status_code=400, detail="Role must be 'super_admin' or 'admin'.")
 
     existing = db.query(models.Admin).filter(models.Admin.username == payload.username).first()
     if existing:
         raise HTTPException(status_code=400, detail="That username is already taken.")
+
+    # Departments only apply to regular admins; super admins see everything.
+    departments = _clean_departments(payload.departments) if payload.role == "admin" else []
 
     new_admin = models.Admin(
         full_name=payload.full_name,
@@ -93,6 +124,7 @@ def create_admin(
         role=models.AdminRole(payload.role),
         must_change_password=True,
         created_by=current_admin.id,
+        departments=departments,
     )
     db.add(new_admin)
     db.commit()
@@ -102,18 +134,13 @@ def create_admin(
         db, current_admin, "create_admin",
         target_type="admin",
         target_reference=new_admin.username,
-        detail=f"Created as {new_admin.role.value}",
+        detail=(
+            f"Created as {new_admin.role.value}"
+            + (f" in: {', '.join(departments)}" if departments else "")
+        ),
     )
 
-    return schemas.AdminSummary(
-        id=str(new_admin.id),
-        full_name=new_admin.full_name,
-        username=new_admin.username,
-        role=new_admin.role.value,
-        is_active=new_admin.is_active,
-        must_change_password=new_admin.must_change_password,
-        last_login_at=None,
-    )
+    return _summary(new_admin)
 
 
 @router.get("/admins", response_model=list[schemas.AdminSummary])
@@ -138,20 +165,101 @@ def list_admins(
     else:
         query = query.order_by(models.Admin.full_name.asc())
 
-    admins = query.all()
+    return [_summary(a) for a in query.all()]
 
-    return [
-        schemas.AdminSummary(
-            id=str(a.id),
-            full_name=a.full_name,
-            username=a.username,
-            role=a.role.value,
-            is_active=a.is_active,
-            must_change_password=a.must_change_password,
-            last_login_at=a.last_login_at.isoformat() if a.last_login_at else None,
+
+@router.patch("/admins/{admin_id}/departments", response_model=schemas.AdminActionResponse)
+def update_admin_departments(
+    admin_id: str,
+    payload: schemas.UpdateAdminDepartmentsRequest,
+    db: Session = Depends(get_db),
+    current_admin: models.Admin = Depends(require_role("system_owner", "super_admin")),
+):
+    target = _get_admin_or_404(db, admin_id)
+
+    if target.role != models.AdminRole.admin:
+        raise HTTPException(
+            status_code=400,
+            detail="Departments only apply to Admin accounts. Super Admins already have full access.",
         )
-        for a in admins
-    ]
+
+    new_departments = _clean_departments(payload.departments)
+    old_departments = list(target.departments or [])
+
+    target.departments = new_departments
+    db.commit()
+
+    log_action(
+        db, current_admin, "update_departments",
+        target_type="admin",
+        target_reference=target.username,
+        detail=(
+            f"Departments: {', '.join(old_departments) or 'none'}"
+            f" → {', '.join(new_departments) or 'none'}"
+        ),
+    )
+
+    return schemas.AdminActionResponse(
+        id=str(target.id),
+        status="departments_updated",
+        message=f"Departments updated for {target.full_name}. They'll see the change next time they sign in.",
+    )
+
+
+@router.patch("/admins/{admin_id}/role", response_model=schemas.AdminActionResponse)
+def change_admin_role(
+    admin_id: str,
+    payload: schemas.ChangeAdminRoleRequest,
+    db: Session = Depends(get_db),
+    current_admin: models.Admin = Depends(require_role("system_owner", "super_admin")),
+):
+    if payload.role not in ("super_admin", "admin"):
+        raise HTTPException(status_code=400, detail="Role must be 'super_admin' or 'admin'.")
+
+    target = _get_admin_or_404(db, admin_id)
+
+    if target.id == current_admin.id:
+        raise HTTPException(status_code=400, detail="You can't change your own role.")
+
+    if target.role == models.AdminRole.system_owner:
+        raise HTTPException(status_code=403, detail="The System Owner's role can't be changed.")
+
+    new_role = models.AdminRole(payload.role)
+
+    if target.role == new_role:
+        raise HTTPException(
+            status_code=400,
+            detail=f"{target.full_name} is already a {new_role.value.replace('_', ' ')}.",
+        )
+
+    is_downgrade = new_role == models.AdminRole.admin
+
+    # Super Admins can upgrade, but only the System Owner can downgrade.
+    if is_downgrade and current_admin.role != models.AdminRole.system_owner:
+        raise HTTPException(
+            status_code=403,
+            detail="Only the System Owner can downgrade a Super Admin.",
+        )
+
+    old_role = target.role.value
+    target.role = new_role
+    db.commit()
+
+    log_action(
+        db, current_admin, "downgrade_admin" if is_downgrade else "upgrade_admin",
+        target_type="admin",
+        target_reference=target.username,
+        detail=f"{old_role} → {new_role.value}",
+    )
+
+    return schemas.AdminActionResponse(
+        id=str(target.id),
+        status="role_changed",
+        message=(
+            f"{target.full_name} is now a {new_role.value.replace('_', ' ')}. "
+            "They'll see the change next time they sign in."
+        ),
+    )
 
 
 @router.patch("/admins/{admin_id}/deactivate", response_model=schemas.AdminActionResponse)
@@ -160,9 +268,7 @@ def deactivate_admin(
     db: Session = Depends(get_db),
     current_admin: models.Admin = Depends(require_role("system_owner", "super_admin")),
 ):
-    target = db.query(models.Admin).filter(models.Admin.id == admin_id).first()
-    if not target:
-        raise HTTPException(status_code=404, detail="Admin not found.")
+    target = _get_admin_or_404(db, admin_id)
 
     if target.id == current_admin.id:
         raise HTTPException(status_code=400, detail="You can't deactivate your own account.")
@@ -193,17 +299,20 @@ def deactivate_admin(
 def delete_admin(
     admin_id: str,
     db: Session = Depends(get_db),
-    current_admin: models.Admin = Depends(require_role("system_owner")),
+    # System Owner can delete anyone but themselves; Super Admins can
+    # delete regular Admins only (checked below).
+    current_admin: models.Admin = Depends(require_role("system_owner", "super_admin")),
 ):
-    target = db.query(models.Admin).filter(models.Admin.id == admin_id).first()
-    if not target:
-        raise HTTPException(status_code=404, detail="Admin not found.")
+    target = _get_admin_or_404(db, admin_id)
 
     if target.id == current_admin.id:
         raise HTTPException(status_code=400, detail="You can't delete your own account.")
 
     if target.role == models.AdminRole.system_owner:
         raise HTTPException(status_code=403, detail="The System Owner account can't be deleted.")
+
+    if current_admin.role == models.AdminRole.super_admin and target.role != models.AdminRole.admin:
+        raise HTTPException(status_code=403, detail="Super Admins can only delete Admin accounts.")
 
     deleted_name = target.full_name
     deleted_username = target.username
