@@ -67,12 +67,15 @@ function prettyDate(ymd: string): string {
 }
 
 type PresetKey = "today" | "yesterday" | "7d" | "30d";
+type DateMode = "any" | PresetKey | "custom";
 
-const PRESETS: { key: PresetKey; label: string }[] = [
-  { key: "today", label: "Today" },
-  { key: "yesterday", label: "Yesterday" },
-  { key: "7d", label: "Last 7 days" },
-  { key: "30d", label: "Last 30 days" },
+const DATE_MODES: { value: DateMode; label: string }[] = [
+  { value: "any", label: "Any time" },
+  { value: "today", label: "Today" },
+  { value: "yesterday", label: "Yesterday" },
+  { value: "7d", label: "Last 7 days" },
+  { value: "30d", label: "Last 30 days" },
+  { value: "custom", label: "Pick dates…" },
 ];
 
 function presetRange(key: PresetKey): [string, string] {
@@ -86,6 +89,11 @@ function presetRange(key: PresetKey): [string, string] {
   return [addDays(today, -29), today];
 }
 
+const controlClass =
+  "bg-ink border border-ink-raised rounded-sm px-3 py-2 font-body text-sm text-cream focus:outline-none focus:ring-2 focus:ring-gold";
+
+const labelClass = "block font-body text-xs text-muted mb-1";
+
 export default function RegistrantsPage() {
   const router = useRouter();
   const [registrants, setRegistrants] = useState<RegistrantSummary[]>([]);
@@ -93,9 +101,9 @@ export default function RegistrantsPage() {
   const [sort, setSort] = useState<SortOrder>("alpha");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const [dateMode, setDateMode] = useState<DateMode>("any");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedRef, setSelectedRef] = useState<string | null>(null);
@@ -128,9 +136,9 @@ export default function RegistrantsPage() {
     loadData();
   }, [loadData]);
 
-  // Search and date narrow the list first. The status counts in the side
-  // panel are taken from this list, so they always match what you'd get
-  // by ticking that status.
+  // Search and date narrow the list first. The status counts in the status
+  // dropdown are taken from this list, so they always match what you'd get
+  // by choosing that status.
   const baseFiltered = useMemo(() => {
     const q = search.trim().toLowerCase();
 
@@ -211,11 +219,29 @@ export default function RegistrantsPage() {
     sort === "alpha" ? "Sorted A–Z" : "Most recent first",
   ].filter(Boolean) as string[];
 
-  function clearAllFilters() {
-    setStatusFilter(null);
+  function clearDates() {
+    setDateMode("any");
     setDateFrom("");
     setDateTo("");
+  }
+
+  function clearAllFilters() {
+    setStatusFilter(null);
+    clearDates();
     setSearch("");
+  }
+
+  function changeDateMode(mode: DateMode) {
+    setDateMode(mode);
+    if (mode === "any") {
+      setDateFrom("");
+      setDateTo("");
+    } else if (mode !== "custom") {
+      const [from, to] = presetRange(mode);
+      setDateFrom(from);
+      setDateTo(to);
+    }
+    // "custom" keeps whatever dates are set; the two date boxes appear.
   }
 
   function changeFrom(value: string) {
@@ -229,65 +255,168 @@ export default function RegistrantsPage() {
     if (value && (!dateFrom || dateFrom > value)) setDateFrom(value);
   }
 
-  function presetActive(key: PresetKey) {
-    const [from, to] = presetRange(key);
-    return dateFrom === from && dateTo === to;
-  }
-
-  const inputClass =
-    "w-full bg-ink border border-ink-raised rounded-sm px-3 py-2 font-body text-sm text-cream focus:outline-none focus:ring-2 focus:ring-gold";
-
   return (
     <div className="px-8 py-8 max-w-6xl">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="font-display text-3xl text-cream">Registrants</h1>
+      <h1 className="font-display text-3xl text-cream mb-6">Registrants</h1>
 
-        <div className="flex rounded-sm border border-ink-raised overflow-hidden">
+      {/* All filters live in this one bar */}
+      <div className="border border-ink-raised rounded-sm mb-6">
+        {/* Category */}
+        <div className="flex flex-wrap gap-1 border-b border-ink-raised px-2">
+          {TABS.map((tab) => (
+            <button
+              key={tab.label}
+              onClick={() => setActiveTab(tab.value)}
+              className={`font-body text-sm px-4 py-2.5 border-b-2 transition-colors focus:outline-none ${
+                activeTab === tab.value
+                  ? "border-gold text-cream"
+                  : "border-transparent text-muted hover:text-cream"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Search, status, date, sort, download */}
+        <div className="p-4 flex flex-wrap items-end gap-3">
+          <div className="flex-1 min-w-[220px]">
+            <label htmlFor="reg-search" className={labelClass}>
+              Search
+            </label>
+            <input
+              id="reg-search"
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Name, email, or reference number"
+              className={`${controlClass} w-full placeholder:text-muted`}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="reg-status" className={labelClass}>
+              Status
+            </label>
+            <select
+              id="reg-status"
+              value={statusFilter ?? ""}
+              onChange={(e) => setStatusFilter(e.target.value || null)}
+              className={controlClass}
+            >
+              <option value="">All statuses ({baseFiltered.length})</option>
+              {STATUS_OPTIONS.map((s) => (
+                <option key={s.value} value={s.value}>
+                  {s.label} ({statusCounts[s.value] || 0})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="reg-date" className={labelClass}>
+              Registered
+            </label>
+            <select
+              id="reg-date"
+              value={dateMode}
+              onChange={(e) => changeDateMode(e.target.value as DateMode)}
+              className={controlClass}
+            >
+              {DATE_MODES.map((m) => (
+                <option key={m.value} value={m.value}>
+                  {m.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {dateMode === "custom" && (
+            <>
+              <div>
+                <label htmlFor="reg-from" className={labelClass}>
+                  From
+                </label>
+                <input
+                  id="reg-from"
+                  type="date"
+                  value={dateFrom}
+                  max={todayWat()}
+                  onChange={(e) => changeFrom(e.target.value)}
+                  className={controlClass}
+                />
+              </div>
+              <div>
+                <label htmlFor="reg-to" className={labelClass}>
+                  To
+                </label>
+                <input
+                  id="reg-to"
+                  type="date"
+                  value={dateTo}
+                  max={todayWat()}
+                  onChange={(e) => changeTo(e.target.value)}
+                  className={controlClass}
+                />
+              </div>
+            </>
+          )}
+
+          <div>
+            <span className={labelClass}>Sort</span>
+            <div className="flex rounded-sm border border-ink-raised overflow-hidden">
+              <button
+                onClick={() => setSort("alpha")}
+                className={`font-body text-sm px-3 py-2 transition-colors ${
+                  sort === "alpha"
+                    ? "bg-gold text-ink"
+                    : "text-muted hover:text-cream"
+                }`}
+              >
+                A–Z
+              </button>
+              <button
+                onClick={() => setSort("recent")}
+                className={`font-body text-sm px-3 py-2 transition-colors border-l border-ink-raised ${
+                  sort === "recent"
+                    ? "bg-gold text-ink"
+                    : "text-muted hover:text-cream"
+                }`}
+              >
+                Most recent
+              </button>
+            </div>
+          </div>
+
           <button
-            onClick={() => setSort("alpha")}
-            className={`font-body text-xs px-3 py-2 transition-colors ${
-              sort === "alpha"
-                ? "bg-gold text-ink"
-                : "text-muted hover:text-cream"
-            }`}
+            onClick={() =>
+              downloadCsv(
+                `registrants-${activeTab || "all"}-${todayForFilename()}`,
+                filtered,
+                [
+                  { header: "Full name", value: (r) => r.full_name },
+                  { header: "Email", value: (r) => r.email },
+                  { header: "Phone", value: (r) => r.phone },
+                  { header: "Category", value: (r) => r.category },
+                  { header: "Reference", value: (r) => r.reference_number },
+                  { header: "Status", value: (r) => r.status },
+                  {
+                    header: "Registered (WAT date)",
+                    value: (r) => (r.created_at ? watDate(r.created_at) : ""),
+                  },
+                ]
+              )
+            }
+            disabled={filtered.length === 0}
+            className="font-body text-sm rounded-sm px-3 py-2 border border-ink-raised text-muted hover:text-cream hover:border-teal/60 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            A–Z
-          </button>
-          <button
-            onClick={() => setSort("recent")}
-            className={`font-body text-xs px-3 py-2 transition-colors border-l border-ink-raised ${
-              sort === "recent"
-                ? "bg-gold text-ink"
-                : "text-muted hover:text-cream"
-            }`}
-          >
-            Most recent
+            ⭳ Download CSV
           </button>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex flex-wrap gap-1 mb-6 border-b border-ink-raised">
-        {TABS.map((tab) => (
-          <button
-            key={tab.label}
-            onClick={() => setActiveTab(tab.value)}
-            className={`font-body text-sm px-4 py-2.5 border-b-2 transition-colors focus:outline-none ${
-              activeTab === tab.value
-                ? "border-gold text-cream"
-                : "border-transparent text-muted hover:text-cream"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
       {/* Always-visible summary of what is on screen */}
-      <div className="mb-6 border border-ink-raised rounded-sm px-5 py-4">
-        <p className="font-body text-xs uppercase tracking-wide text-muted">
-          Viewing
-        </p>
+      <div className="mb-6">
         <h2 className="font-display text-2xl text-cream">
           {categoryLabel}{" "}
           <span className="text-gold">
@@ -318,10 +447,7 @@ export default function RegistrantsPage() {
             )}
             {dateLabel && (
               <button
-                onClick={() => {
-                  setDateFrom("");
-                  setDateTo("");
-                }}
+                onClick={clearDates}
                 className="font-body text-xs rounded-full border border-gold/50 text-gold px-3 py-1 hover:bg-gold/10"
               >
                 {dateLabel} ×
@@ -345,281 +471,107 @@ export default function RegistrantsPage() {
         )}
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-6">
-        {/* Main column */}
-        <div className="flex-1 min-w-0 lg:order-1">
-          {/* Search + download */}
-          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by name, email, or reference number"
-              className="w-full max-w-sm bg-ink-raised border border-ink-raised rounded-sm px-4 py-2 font-body text-sm text-cream placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-gold"
-            />
+      {error && (
+        <p className="font-body text-sm text-red mb-4 border border-red/30 bg-red/10 rounded-sm px-3 py-2">
+          {error}
+        </p>
+      )}
 
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowFilters((v) => !v)}
-                className="lg:hidden font-body text-xs rounded-sm px-3 py-1.5 border border-ink-raised text-muted hover:text-cream"
-              >
-                Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
-              </button>
-
-              <button
-                onClick={() =>
-                  downloadCsv(
-                    `registrants-${activeTab || "all"}-${todayForFilename()}`,
-                    filtered,
-                    [
-                      { header: "Full name", value: (r) => r.full_name },
-                      { header: "Email", value: (r) => r.email },
-                      { header: "Phone", value: (r) => r.phone },
-                      { header: "Category", value: (r) => r.category },
-                      { header: "Reference", value: (r) => r.reference_number },
-                      { header: "Status", value: (r) => r.status },
-                      {
-                        header: "Registered (WAT date)",
-                        value: (r) => (r.created_at ? watDate(r.created_at) : ""),
-                      },
-                    ]
-                  )
-                }
-                disabled={filtered.length === 0}
-                className="font-body text-xs rounded-sm px-3 py-1.5 border border-ink-raised text-muted hover:text-cream hover:border-teal/60 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                ⭳ Download CSV
-              </button>
-            </div>
-          </div>
-
-          {error && (
-            <p className="font-body text-sm text-red mb-4 border border-red/30 bg-red/10 rounded-sm px-3 py-2">
-              {error}
-            </p>
-          )}
-
-          {/* Table */}
-          <div className="border border-ink-raised rounded-sm overflow-hidden">
-            <table className="w-full font-body text-sm">
-              <thead>
-                <tr className="border-b border-ink-raised text-left">
-                  <th className="px-4 py-3 text-muted-on-paper font-medium">
-                    Name
-                  </th>
-                  <th className="px-4 py-3 text-muted-on-paper font-medium hidden md:table-cell">
-                    Email
-                  </th>
-                  <th className="px-4 py-3 text-muted-on-paper font-medium">
-                    Reference
-                  </th>
-                  <th className="px-4 py-3 text-muted-on-paper font-medium hidden xl:table-cell">
-                    Registered
-                  </th>
-                  <th className="px-4 py-3 text-muted-on-paper font-medium">
-                    Status
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-muted">
-                      Loading…
-                    </td>
-                  </tr>
-                ) : filtered.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-muted">
-                      No registrants match these filters.
-                    </td>
-                  </tr>
-                ) : (
-                  pageItems.map((r) => (
-                    <tr
-                      key={r.id}
-                      onClick={() => setSelectedRef(r.reference_number)}
-                      className="border-b border-ink-raised last:border-b-0 cursor-pointer hover:bg-ink-raised/40 transition-colors"
-                    >
-                      <td className="px-4 py-3 text-cream">{r.full_name}</td>
-                      <td className="px-4 py-3 text-muted hidden md:table-cell">
-                        {r.email}
-                      </td>
-                      <td className="px-4 py-3 text-muted">
-                        {r.reference_number}
-                      </td>
-                      <td className="px-4 py-3 text-muted hidden xl:table-cell whitespace-nowrap">
-                        {r.created_at ? prettyDate(watDate(r.created_at)) : "—"}
-                      </td>
-                      <td
-                        className={`px-4 py-3 ${
-                          STATUS_STYLES[r.status] || "text-cream"
-                        }`}
-                      >
-                        {r.status.replace("_", " ")}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {!loading && filtered.length > 0 && (
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-              <p className="font-body text-xs text-muted">
-                Showing {rangeStart}–{rangeEnd} of {filtered.length}
-              </p>
-
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={safePage <= 1}
-                  className="font-body text-xs rounded-sm px-3 py-1.5 border border-ink-raised text-muted hover:text-cream disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  ← Previous
-                </button>
-
-                <span className="font-body text-xs text-muted px-2">
-                  Page {safePage} of {totalPages}
-                </span>
-
-                <button
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={safePage >= totalPages}
-                  className="font-body text-xs rounded-sm px-3 py-1.5 border border-ink-raised text-muted hover:text-cream disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  Next →
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Filter panel (always visible on large screens) */}
-        <aside
-          className={`${
-            showFilters ? "block" : "hidden"
-          } lg:block lg:order-2 lg:w-64 shrink-0`}
-        >
-          <div className="border border-ink-raised rounded-sm p-5 space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="font-body text-sm text-muted-on-paper">Filters</h2>
-              {activeFilterCount > 0 && (
-                <button
-                  onClick={clearAllFilters}
-                  className="font-body text-xs text-gold hover:underline"
-                >
-                  Clear all
-                </button>
-              )}
-            </div>
-
-            {/* Status */}
-            <div>
-              <p className="font-body text-xs uppercase tracking-wide text-muted mb-2">
+      {/* Table */}
+      <div className="border border-ink-raised rounded-sm overflow-hidden">
+        <table className="w-full font-body text-sm">
+          <thead>
+            <tr className="border-b border-ink-raised text-left">
+              <th className="px-4 py-3 text-muted-on-paper font-medium">
+                Name
+              </th>
+              <th className="px-4 py-3 text-muted-on-paper font-medium hidden md:table-cell">
+                Email
+              </th>
+              <th className="px-4 py-3 text-muted-on-paper font-medium">
+                Reference
+              </th>
+              <th className="px-4 py-3 text-muted-on-paper font-medium hidden lg:table-cell">
+                Registered
+              </th>
+              <th className="px-4 py-3 text-muted-on-paper font-medium">
                 Status
-              </p>
-              <div className="space-y-1">
-                <button
-                  onClick={() => setStatusFilter(null)}
-                  className={`w-full flex justify-between font-body text-sm rounded-sm px-3 py-1.5 border transition-colors ${
-                    statusFilter === null
-                      ? "border-gold text-gold bg-gold/10"
-                      : "border-transparent text-muted hover:text-cream"
-                  }`}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr>
+                <td colSpan={5} className="px-4 py-8 text-center text-muted">
+                  Loading…
+                </td>
+              </tr>
+            ) : filtered.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="px-4 py-8 text-center text-muted">
+                  No registrants match these filters.
+                </td>
+              </tr>
+            ) : (
+              pageItems.map((r) => (
+                <tr
+                  key={r.id}
+                  onClick={() => setSelectedRef(r.reference_number)}
+                  className="border-b border-ink-raised last:border-b-0 cursor-pointer hover:bg-ink-raised/40 transition-colors"
                 >
-                  <span>All statuses</span>
-                  <span>{baseFiltered.length}</span>
-                </button>
-                {STATUS_OPTIONS.map((s) => (
-                  <button
-                    key={s.value}
-                    onClick={() =>
-                      setStatusFilter(statusFilter === s.value ? null : s.value)
-                    }
-                    className={`w-full flex justify-between font-body text-sm rounded-sm px-3 py-1.5 border transition-colors ${
-                      statusFilter === s.value
-                        ? "border-gold text-gold bg-gold/10"
-                        : "border-transparent text-muted hover:text-cream"
+                  <td className="px-4 py-3 text-cream">{r.full_name}</td>
+                  <td className="px-4 py-3 text-muted hidden md:table-cell">
+                    {r.email}
+                  </td>
+                  <td className="px-4 py-3 text-muted">
+                    {r.reference_number}
+                  </td>
+                  <td className="px-4 py-3 text-muted hidden lg:table-cell whitespace-nowrap">
+                    {r.created_at ? prettyDate(watDate(r.created_at)) : "—"}
+                  </td>
+                  <td
+                    className={`px-4 py-3 ${
+                      STATUS_STYLES[r.status] || "text-cream"
                     }`}
                   >
-                    <span>{s.label}</span>
-                    <span>{statusCounts[s.value] || 0}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Registration date */}
-            <div>
-              <p className="font-body text-xs uppercase tracking-wide text-muted mb-2">
-                Registered on
-              </p>
-
-              <div className="flex flex-wrap gap-1.5 mb-3">
-                {PRESETS.map((p) => (
-                  <button
-                    key={p.key}
-                    onClick={() => {
-                      const [from, to] = presetRange(p.key);
-                      setDateFrom(from);
-                      setDateTo(to);
-                    }}
-                    aria-pressed={presetActive(p.key)}
-                    className={`font-body text-xs rounded-sm px-2.5 py-1 border transition-colors ${
-                      presetActive(p.key)
-                        ? "border-gold text-gold bg-gold/10"
-                        : "border-ink-raised text-muted hover:text-cream"
-                    }`}
-                  >
-                    {p.label}
-                  </button>
-                ))}
-              </div>
-
-              <label className="block font-body text-xs text-muted mb-1">
-                From
-              </label>
-              <input
-                type="date"
-                value={dateFrom}
-                max={todayWat()}
-                onChange={(e) => changeFrom(e.target.value)}
-                className={`${inputClass} mb-3`}
-              />
-
-              <label className="block font-body text-xs text-muted mb-1">
-                To
-              </label>
-              <input
-                type="date"
-                value={dateTo}
-                max={todayWat()}
-                onChange={(e) => changeTo(e.target.value)}
-                className={inputClass}
-              />
-
-              <p className="font-body text-xs text-muted mt-2">
-                Pick one day by choosing the same date in both boxes, or just
-                choose a start date to see that single day.
-              </p>
-
-              {hasDate && (
-                <button
-                  onClick={() => {
-                    setDateFrom("");
-                    setDateTo("");
-                  }}
-                  className="mt-2 font-body text-xs text-gold hover:underline"
-                >
-                  Clear dates
-                </button>
-              )}
-            </div>
-          </div>
-        </aside>
+                    {r.status.replace("_", " ")}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
+
+      {!loading && filtered.length > 0 && (
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+          <p className="font-body text-xs text-muted">
+            Showing {rangeStart}–{rangeEnd} of {filtered.length}
+          </p>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={safePage <= 1}
+              className="font-body text-xs rounded-sm px-3 py-1.5 border border-ink-raised text-muted hover:text-cream disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              ← Previous
+            </button>
+
+            <span className="font-body text-xs text-muted px-2">
+              Page {safePage} of {totalPages}
+            </span>
+
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={safePage >= totalPages}
+              className="font-body text-xs rounded-sm px-3 py-1.5 border border-ink-raised text-muted hover:text-cream disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Next →
+            </button>
+          </div>
+        </div>
+      )}
 
       <RegistrantDetailPanel
         referenceNumber={selectedRef}
