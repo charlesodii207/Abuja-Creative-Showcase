@@ -19,6 +19,7 @@ from app.routes.payments import router as payments_router
 from app.routes.tickets import router as tickets_router
 from app.routes.attendee_status import router as attendee_status_router
 from app.routes.traffic import router as traffic_router
+from app.routes.bookings import router as bookings_router
 
 
 # Public API docs (/docs, /redoc, /openapi.json) list every route this
@@ -67,6 +68,7 @@ app.include_router(payments_router)
 app.include_router(tickets_router)
 app.include_router(attendee_status_router)
 app.include_router(traffic_router)
+app.include_router(bookings_router)
 
 
 @app.get("/")

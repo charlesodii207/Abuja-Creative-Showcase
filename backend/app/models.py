@@ -4,7 +4,7 @@ import uuid
 from sqlalchemy import (
     Column, String, Boolean, DateTime, Date, ForeignKey, Enum, Text, Integer, func
 )
-from sqlalchemy.dialects.postgresql import ARRAY, UUID
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import relationship
 
 from app.database import Base
@@ -457,3 +457,56 @@ class SiteVisit(Base):
     # True for the first page view of a browsing session: the actual click
     # from a social post, search result, etc.
     is_landing = Column(Boolean, nullable=False, default=False)
+
+
+# ---------------------------------------------------------------------------
+# Accommodation bookings
+# ---------------------------------------------------------------------------
+
+class Booking(Base):
+    """
+    A guest's accommodation request from the website form. It starts as
+    "new"; admins move it to "contacted", then "confirmed" (which requires
+    the hotel, dates and amount paid, and records the operator) or
+    "cancelled". The first block of columns is what the guest asked for;
+    the second block is what was actually arranged.
+    """
+
+    __tablename__ = "bookings"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    reference_number = Column(String, unique=True, nullable=False, index=True)
+
+    # What the guest asked for
+    full_name = Column(String, nullable=False)
+    email = Column(String, nullable=False, index=True)
+    phone = Column(String, nullable=True)
+    check_in = Column(Date, nullable=True)
+    check_out = Column(Date, nullable=True)
+    guests = Column(Integer, nullable=True)
+    hotel_preference = Column(String, nullable=True)
+    message = Column(Text, nullable=True)
+    # Any other form fields, stored as text.
+    extra = Column(JSONB, nullable=False, default=dict, server_default="{}")
+
+    # "new" | "contacted" | "confirmed" | "cancelled"
+    status = Column(String, nullable=False, default="new", index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)
+
+    # What was arranged (filled in when an admin confirms)
+    hotel_name = Column(String, nullable=True)
+    confirmed_check_in = Column(Date, nullable=True)
+    confirmed_check_out = Column(Date, nullable=True)
+    amount_paid_kobo = Column(Integer, nullable=True)
+    operator_admin_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("admins.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    # Snapshot of the operator's name; survives the admin account being deleted.
+    operator_name = Column(String, nullable=True)
+    confirmation_notes = Column(Text, nullable=True)
+    confirmed_at = Column(DateTime(timezone=True), nullable=True)
+
+    cancelled_by_name = Column(String, nullable=True)
+    cancelled_at = Column(DateTime(timezone=True), nullable=True)
