@@ -9,6 +9,7 @@ import {
   rejectRegistrant,
   markRegistrantPaid,
   resendRegistrantEmail,
+  getAdminProfile,
   ApiError,
   type RegistrantDetail,
 } from "../../../lib/admin/api";
@@ -113,6 +114,15 @@ export default function RegistrantDetailPanel({
 
   const [confirmAction, setConfirmAction] =
     useState<ConfirmAction>(null);
+
+  // Regular admins can view a registrant but not act on them. This only
+  // hides the buttons: the API refuses these actions for them as well.
+  const [canAct, setCanAct] = useState(false);
+
+  useEffect(() => {
+    const role = getAdminProfile()?.role;
+    setCanAct(role === "system_owner" || role === "super_admin");
+  }, []);
 
   const isOpen = referenceNumber !== null;
 
@@ -326,7 +336,7 @@ export default function RegistrantDetailPanel({
                   Contact
                 </h3>
 
-                {!editing && (
+                {canAct && !editing && (
                   <button
                     type="button"
                     onClick={() => setEditing(true)}
@@ -337,7 +347,7 @@ export default function RegistrantDetailPanel({
                 )}
               </div>
 
-              {editing ? (
+              {canAct && editing ? (
                 <div className="space-y-3">
                   <input
                     value={editName}
@@ -483,72 +493,78 @@ export default function RegistrantDetailPanel({
               </section>
             )}
 
-            <section className="space-y-2 border-t border-ink-raised pt-5">
-              <div className="flex gap-2">
-                {registrant.status !== "approved" && (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setConfirmAction("approve")
-                    }
-                    disabled={actionLoading !== null}
-                    className="flex-1 rounded-sm bg-teal py-2 font-body text-sm text-ink disabled:opacity-60"
-                  >
-                    {actionLoading === "approve"
-                      ? "Approving…"
-                      : "Approve"}
-                  </button>
-                )}
+            {canAct ? (
+              <section className="space-y-2 border-t border-ink-raised pt-5">
+                <div className="flex gap-2">
+                  {registrant.status !== "approved" && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setConfirmAction("approve")
+                      }
+                      disabled={actionLoading !== null}
+                      className="flex-1 rounded-sm bg-teal py-2 font-body text-sm text-ink disabled:opacity-60"
+                    >
+                      {actionLoading === "approve"
+                        ? "Approving…"
+                        : "Approve"}
+                    </button>
+                  )}
 
-                {registrant.status !== "rejected" && (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setConfirmAction("reject")
-                    }
-                    disabled={actionLoading !== null}
-                    className="flex-1 rounded-sm border border-red py-2 font-body text-sm text-red disabled:opacity-60"
-                  >
-                    {actionLoading === "reject"
-                      ? "Rejecting…"
-                      : "Reject"}
-                  </button>
-                )}
-              </div>
+                  {registrant.status !== "rejected" && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setConfirmAction("reject")
+                      }
+                      disabled={actionLoading !== null}
+                      className="flex-1 rounded-sm border border-red py-2 font-body text-sm text-red disabled:opacity-60"
+                    >
+                      {actionLoading === "reject"
+                        ? "Rejecting…"
+                        : "Reject"}
+                    </button>
+                  )}
+                </div>
 
-              {PAID_CATEGORIES.has(registrant.category) &&
-                registrant.details.is_paid !== true && (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setConfirmAction("mark-paid")
-                    }
-                    disabled={actionLoading !== null}
-                    className="w-full rounded-sm bg-gold py-2 font-body text-sm text-ink disabled:opacity-60"
-                  >
-                    {actionLoading === "mark-paid"
-                      ? "Marking as paid…"
-                      : "Mark as paid (manual override)"}
-                  </button>
-                )}
+                {PAID_CATEGORIES.has(registrant.category) &&
+                  registrant.details.is_paid !== true && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setConfirmAction("mark-paid")
+                      }
+                      disabled={actionLoading !== null}
+                      className="w-full rounded-sm bg-gold py-2 font-body text-sm text-ink disabled:opacity-60"
+                    >
+                      {actionLoading === "mark-paid"
+                        ? "Marking as paid…"
+                        : "Mark as paid (manual override)"}
+                    </button>
+                  )}
 
-              <button
-                type="button"
-                onClick={() =>
-                  runAction("resend-email", () =>
-                    resendRegistrantEmail(
-                      registrant.reference_number
+                <button
+                  type="button"
+                  onClick={() =>
+                    runAction("resend-email", () =>
+                      resendRegistrantEmail(
+                        registrant.reference_number
+                      )
                     )
-                  )
-                }
-                disabled={actionLoading !== null}
-                className="w-full rounded-sm border border-ink-raised py-2 font-body text-sm text-muted-on-paper hover:text-cream disabled:opacity-60"
-              >
-                {actionLoading === "resend-email"
-                  ? "Sending…"
-                  : "Resend status email"}
-              </button>
-            </section>
+                  }
+                  disabled={actionLoading !== null}
+                  className="w-full rounded-sm border border-ink-raised py-2 font-body text-sm text-muted-on-paper hover:text-cream disabled:opacity-60"
+                >
+                  {actionLoading === "resend-email"
+                    ? "Sending…"
+                    : "Resend status email"}
+                </button>
+              </section>
+            ) : (
+              <p className="border-t border-ink-raised pt-5 font-body text-xs text-muted">
+                View only. Super admins handle approvals and changes.
+              </p>
+            )}
           </div>
         )}
 

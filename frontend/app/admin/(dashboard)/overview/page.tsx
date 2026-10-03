@@ -2,10 +2,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getStats, ApiError, type StatsResponse } from "../../../../lib/admin/api";
+import { getStats, ApiError, type OverviewStats } from "../../../../lib/admin/api";
 
 export default function OverviewPage() {
-  const [stats, setStats] = useState<StatsResponse | null>(null);
+  const [stats, setStats] = useState<OverviewStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 

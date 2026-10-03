@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getStats, ApiError, type StatsResponse } from "../../../../lib/admin/api";
+import { getAnalytics, ApiError, type StatsResponse } from "../../../../lib/admin/api";
 
 function Bar({ label, value, max }: { label: string; value: number; max: number }) {
   const pct = max > 0 ? Math.round((value / max) * 100) : 0;
@@ -53,7 +53,7 @@ export default function AnalyticsPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    getStats()
+    getAnalytics()
       .then(setStats)
       .catch((err) =>
         setError(err instanceof ApiError ? err.message : "Couldn't load analytics.")

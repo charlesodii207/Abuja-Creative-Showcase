@@ -153,8 +153,26 @@ export type StatsResponse = {
   today_duplicate_scans: number;
 };
 
+// Overview: headline counts only, available to every admin.
+export type OverviewStats = Pick<
+  StatsResponse,
+  | "total_registrants"
+  | "by_category"
+  | "by_status"
+  | "attendees_paid"
+  | "attendees_unpaid"
+  | "exhibitors_paid"
+  | "exhibitors_unpaid"
+>;
+
 export async function getStats() {
-  return adminFetch<StatsResponse>("/admin/stats");
+  return adminFetch<OverviewStats>("/admin/stats");
+}
+
+// Analytics: the full set including revenue and check-ins.
+// Needs the Analytics permission (Insights & Reporting department).
+export async function getAnalytics() {
+  return adminFetch<StatsResponse>("/admin/analytics");
 }
 
 // --- Site traffic ---
@@ -210,6 +228,7 @@ export type RegistrantSummary = {
   category: RegistrantCategory;
   reference_number: string;
   status: RegistrantStatus;
+  created_at: string | null;
 };
 
 export type TicketInfo = {

@@ -103,9 +103,15 @@ export default function DashboardLayout({
     }
   }, [checking, profile, pathname, router]);
 
+  // Only admins who can open Messages need the unread badge; polling for
+  // everyone else would just produce "no access" errors every 30 seconds.
+  const canSeeMessages = NAV_ITEMS.some(
+    (item) => item.href === "/admin/messages" && canSee(item, profile)
+  );
+
   // Poll the unread message count so the sidebar badge stays current
   useEffect(() => {
-    if (checking) return;
+    if (checking || !canSeeMessages) return;
 
     let cancelled = false;
 
@@ -125,7 +131,7 @@ export default function DashboardLayout({
       cancelled = true;
       clearInterval(interval);
     };
-  }, [checking, pathname]);
+  }, [checking, canSeeMessages, pathname]);
 
   function handleLogout() {
     logout();
