@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session, selectinload
 from app import models, schemas
 from app.audit import log_action
 from app.database import get_db
-from app.dependencies import require_role
+from app.dependencies import require_permission
 from app.emailer import send_message_reply
 
 
@@ -19,11 +19,9 @@ router = APIRouter(
 )
 
 
-MESSAGE_ROLES = (
-    "system_owner",
-    "super_admin",
-    "admin",
-)
+# Super admins and the system owner always pass. Regular admins need the
+# "messages" section, which comes from the Messaging & Support department.
+MESSAGES_PERMISSION = "messages"
 
 
 def _get_thread(
@@ -149,7 +147,7 @@ def list_message_threads(
     limit: int = Query(default=100, ge=1, le=500),
     db: Session = Depends(get_db),
     current_admin: models.Admin = Depends(
-        require_role(*MESSAGE_ROLES)
+        require_permission(MESSAGES_PERMISSION)
     ),
 ):
     """
@@ -228,7 +226,7 @@ def list_message_threads(
 def get_unread_message_count(
     db: Session = Depends(get_db),
     current_admin: models.Admin = Depends(
-        require_role(*MESSAGE_ROLES)
+        require_permission(MESSAGES_PERMISSION)
     ),
 ):
     """
@@ -254,7 +252,7 @@ def get_message_thread(
     thread_id: str,
     db: Session = Depends(get_db),
     current_admin: models.Admin = Depends(
-        require_role(*MESSAGE_ROLES)
+        require_permission(MESSAGES_PERMISSION)
     ),
 ):
     """
@@ -295,7 +293,7 @@ def mark_message_thread_read(
     thread_id: str,
     db: Session = Depends(get_db),
     current_admin: models.Admin = Depends(
-        require_role(*MESSAGE_ROLES)
+        require_permission(MESSAGES_PERMISSION)
     ),
 ):
     """
@@ -349,7 +347,7 @@ def reply_to_message_thread(
     payload: schemas.ContactReplyRequest,
     db: Session = Depends(get_db),
     current_admin: models.Admin = Depends(
-        require_role(*MESSAGE_ROLES)
+        require_permission(MESSAGES_PERMISSION)
     ),
 ):
     """
@@ -462,7 +460,7 @@ def close_message_thread(
     thread_id: str,
     db: Session = Depends(get_db),
     current_admin: models.Admin = Depends(
-        require_role(*MESSAGE_ROLES)
+        require_permission(MESSAGES_PERMISSION)
     ),
 ):
     """
@@ -510,7 +508,7 @@ def reopen_message_thread(
     thread_id: str,
     db: Session = Depends(get_db),
     current_admin: models.Admin = Depends(
-        require_role(*MESSAGE_ROLES)
+        require_permission(MESSAGES_PERMISSION)
     ),
 ):
     """

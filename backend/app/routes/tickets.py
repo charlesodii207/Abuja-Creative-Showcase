@@ -5,11 +5,15 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app import models, schemas, utils
-from app.dependencies import require_role
+from app.dependencies import require_permission
 
 router = APIRouter(prefix="/tickets", tags=["tickets"])
 
-CHECKIN_ROLES = ("system_owner", "super_admin", "admin")
+# Super admins and the system owner always pass. Regular admins need the
+# "event_scan" section (door check-in) or "event_log" section (scan log),
+# which come from their departments.
+CHECKIN_PERMISSION = "event_scan"
+SCAN_LOG_PERMISSION = "event_log"
 
 # Nigeria (WAT) is UTC+1 year-round — no daylight saving to account for.
 WAT = timezone(timedelta(hours=1))
@@ -24,7 +28,7 @@ def _event_day_wat(moment: datetime) -> date:
 def checkin_ticket(
     payload: schemas.CheckinRequest,
     db: Session = Depends(get_db),
-    admin: models.Admin = Depends(require_role(*CHECKIN_ROLES)),
+    admin: models.Admin = Depends(require_permission(CHECKIN_PERMISSION)),
 ):
     ticket_number = payload.ticket_number.strip().upper()
 
@@ -137,7 +141,7 @@ def get_scan_log(
         description="Date in YYYY-MM-DD, Nigeria (WAT) calendar date.",
     ),
     db: Session = Depends(get_db),
-    _admin: models.Admin = Depends(require_role(*CHECKIN_ROLES)),
+    _admin: models.Admin = Depends(require_permission(SCAN_LOG_PERMISSION)),
 ):
     logs = (
         db.query(models.ScanLog)

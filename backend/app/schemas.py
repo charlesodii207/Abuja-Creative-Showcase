@@ -115,6 +115,7 @@ class RegistrantSummary(BaseModel):
     category: str
     reference_number: str
     status: str
+    created_at: datetime | None = None
 
     class Config:
         from_attributes = True
@@ -168,6 +169,19 @@ class StatsResponse(BaseModel):
     revenue_kobo_by_category: dict[str, int]
     today_checked_in: int
     today_duplicate_scans: int
+
+
+class OverviewStatsResponse(BaseModel):
+    """Headline counts for the Overview page, visible to every admin.
+    Revenue and check-in figures are deliberately not included; those
+    belong to Analytics."""
+    total_registrants: int
+    by_category: dict[str, int]
+    by_status: dict[str, int]
+    attendees_paid: int
+    attendees_unpaid: int
+    exhibitors_paid: int
+    exhibitors_unpaid: int
 
 
 class SponsorInquiryRequest(BaseModel):

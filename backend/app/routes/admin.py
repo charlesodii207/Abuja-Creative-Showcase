@@ -17,13 +17,16 @@ from app.emailer import (
     send_awaiting_payment_email,
 )
 from app.tickets import issue_ticket_and_email, resend_ticket_email, issue_badge_and_email
-from app.dependencies import require_role
+from app.dependencies import require_role, require_permission
 from app.audit import log_action
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
+# Everyone can look at registrants and the overview numbers...
 VIEW_ROLES = ("system_owner", "super_admin", "admin")
-ACTION_ROLES = ("system_owner", "super_admin", "admin")
+# ...but only super admins and the system owner can act on them
+# (approve, reject, edit, mark paid, resend email, export).
+ACTION_ROLES = ("system_owner", "super_admin")
 
 PAID_CATEGORIES = {
     models.RegistrantCategory.attendee,
@@ -116,6 +119,7 @@ def list_registrants(
             category=r.category.value,
             reference_number=r.reference_number,
             status=r.status.value,
+            created_at=r.created_at,
         )
         for r in registrants
     ]
@@ -529,7 +533,17 @@ def reject_registrant(
 # Stats
 # ---------------------------------------------------------------------------
 
-@router.get("/stats", response_model=schemas.StatsResponse)
+# One calculation, two doors:
+#   /admin/stats      every admin (Overview) — headline counts only; the
+#                     response model drops revenue and check-in figures.
+#   /admin/analytics  needs the Analytics permission (Insights & Reporting)
+#                     — the full set including revenue and check-ins.
+@router.get("/stats", response_model=schemas.OverviewStatsResponse)
+@router.get(
+    "/analytics",
+    response_model=schemas.StatsResponse,
+    dependencies=[Depends(require_permission("analytics"))],
+)
 def get_stats(
     db: Session = Depends(get_db),
     _admin: models.Admin = Depends(require_role(*VIEW_ROLES)),
@@ -724,7 +738,8 @@ def list_admin_logs(
     action: str | None = Query(default=None),
     admin_name: str | None = Query(default=None),
     db: Session = Depends(get_db),
-    _admin: models.Admin = Depends(require_role(*VIEW_ROLES)),
+    # The audit trail is for super admins and the system owner only.
+    _admin: models.Admin = Depends(require_role("system_owner", "super_admin")),
 ):
     """
     search matches across the registrant's name (via a join — a log only
