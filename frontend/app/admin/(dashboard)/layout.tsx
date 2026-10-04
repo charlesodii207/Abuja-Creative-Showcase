@@ -8,7 +8,10 @@ import {
   getToken,
   getAdminProfile,
   getUnreadMessageCount,
+  getMe,
+  updateProfile,
   logout,
+  ApiError,
   type AdminProfile,
 } from "../../../lib/admin/api";
 
@@ -66,6 +69,7 @@ function isActive(pathname: string | null, href: string): boolean {
 }
 
 const UNREAD_POLL_MS = 30000;
+const PROFILE_SYNC_MS = 30000;
 
 export default function DashboardLayout({
   children,
@@ -103,6 +107,51 @@ export default function DashboardLayout({
       router.replace("/admin/overview");
     }
   }, [checking, profile, pathname, router]);
+
+  // Keep the sidebar in step with the server: when a super admin adds a
+  // section or changes a role, it shows up here within about 30 seconds
+  // without the person signing out.
+  useEffect(() => {
+    if (checking) return;
+    let cancelled = false;
+
+    function sync() {
+      getMe()
+        .then((me) => {
+          if (cancelled) return;
+          const next: AdminProfile = {
+            full_name: me.full_name,
+            role: me.role,
+            permissions: me.permissions,
+          };
+          const stored = getAdminProfile();
+          const changed =
+            !stored ||
+            stored.role !== next.role ||
+            stored.full_name !== next.full_name ||
+            JSON.stringify(stored.permissions ?? null) !==
+              JSON.stringify(next.permissions);
+
+          if (changed) {
+            updateProfile(next);
+            setProfile(next);
+          }
+        })
+        .catch((err) => {
+          // An expired or revoked login sends them back to the sign-in page.
+          if (err instanceof ApiError && err.status === 401) {
+            router.replace("/admin/login");
+          }
+        });
+    }
+
+    sync();
+    const interval = setInterval(sync, PROFILE_SYNC_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [checking, router]);
 
   // Only admins who can open Messages need the unread badge; polling for
   // everyone else would just produce "no access" errors every 30 seconds.

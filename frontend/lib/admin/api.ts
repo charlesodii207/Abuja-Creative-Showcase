@@ -125,6 +125,20 @@ export function logout() {
   clearSession();
 }
 
+// Overwrites just the saved profile (used when role or sections change).
+export function updateProfile(profile: AdminProfile) {
+  localStorage.setItem(ADMIN_KEY, JSON.stringify(profile));
+}
+
+// The signed-in admin's current role and sections, read fresh from the server.
+export async function getMe() {
+  return adminFetch<{
+    full_name: string;
+    role: AdminProfile["role"];
+    permissions: string[];
+  }>("/admin/auth/me");
+}
+
 // --- Stats ---
 
 export type StatsResponse = {
@@ -329,6 +343,8 @@ export type AdminSummary = {
   last_login_at: string | null;
   // Department keys (see lib/admin/permissions.ts). Only used for regular admins.
   departments: string[];
+  // Individual sections granted on top of the departments.
+  extra_permissions: string[];
 };
 
 export async function listAdmins(filters?: { sort?: SortOrder }) {
@@ -349,6 +365,7 @@ export async function createAdmin(payload: {
   temp_password: string;
   role: "super_admin" | "admin";
   departments?: string[];
+  extra_permissions?: string[];
 }) {
   return adminFetch<AdminSummary>("/admin/auth/create-admin", {
     method: "POST",
@@ -372,13 +389,17 @@ export async function deleteAdmin(adminId: string) {
 
 export async function updateAdminDepartments(
   adminId: string,
-  departments: string[]
+  departments: string[],
+  extraPermissions?: string[]
 ) {
   return adminFetch<{ id: string; status: string; message: string }>(
     `/admin/auth/admins/${encodeURIComponent(adminId)}/departments`,
     {
       method: "PATCH",
-      body: JSON.stringify({ departments }),
+      body: JSON.stringify({
+        departments,
+        ...(extraPermissions ? { extra_permissions: extraPermissions } : {}),
+      }),
     }
   );
 }

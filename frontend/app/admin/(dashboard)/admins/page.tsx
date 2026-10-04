@@ -15,7 +15,12 @@ import {
   type SortOrder,
 } from "../../../../lib/admin/api";
 import { downloadCsv, todayForFilename } from "../../../../lib/admin/csv";
-import { DEPARTMENTS, departmentLabel } from "../../../../lib/admin/permissions";
+import {
+  DEPARTMENTS,
+  SECTIONS,
+  departmentLabel,
+  sectionLabel,
+} from "../../../../lib/admin/permissions";
 
 function DepartmentPicker({
   selected,
@@ -52,6 +57,47 @@ function DepartmentPicker({
   );
 }
 
+function SectionPicker({
+  selected,
+  onChange,
+}: {
+  selected: string[];
+  onChange: (next: string[]) => void;
+}) {
+  function toggle(key: string) {
+    onChange(
+      selected.includes(key)
+        ? selected.filter((k) => k !== key)
+        : [...selected, key]
+    );
+  }
+
+  return (
+    <div className="mt-6">
+      <p className="font-body text-sm text-muted-on-paper mb-1">Extra sections</p>
+      <p className="font-body text-xs text-muted mb-3">
+        Give this person a single section on its own, without adding a whole
+        department.
+      </p>
+      <div className="grid sm:grid-cols-2 gap-2">
+        {SECTIONS.map((x) => (
+          <label
+            key={x.key}
+            className="flex items-center gap-3 font-body text-sm text-cream cursor-pointer"
+          >
+            <input
+              type="checkbox"
+              checked={selected.includes(x.key)}
+              onChange={() => toggle(x.key)}
+            />
+            {x.label}
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function AdminsPage() {
   const [admins, setAdmins] = useState<AdminSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -64,11 +110,13 @@ export default function AdminsPage() {
   const [tempPassword, setTempPassword] = useState("");
   const [role, setRole] = useState<"super_admin" | "admin">("admin");
   const [newDepartments, setNewDepartments] = useState<string[]>([]);
+  const [newExtras, setNewExtras] = useState<string[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
   const [formLoading, setFormLoading] = useState(false);
 
   const [editing, setEditing] = useState<AdminSummary | null>(null);
   const [editDepartments, setEditDepartments] = useState<string[]>([]);
+  const [editExtras, setEditExtras] = useState<string[]>([]);
   const [editError, setEditError] = useState<string | null>(null);
   const [editLoading, setEditLoading] = useState(false);
 
@@ -121,12 +169,14 @@ export default function AdminsPage() {
         temp_password: tempPassword,
         role,
         departments: role === "admin" ? newDepartments : [],
+        extra_permissions: role === "admin" ? newExtras : [],
       });
       setFullName("");
       setUsername("");
       setTempPassword("");
       setRole("admin");
       setNewDepartments([]);
+      setNewExtras([]);
       setShowForm(false);
       loadAdmins();
     } catch (err) {
@@ -199,6 +249,7 @@ export default function AdminsPage() {
   function startEditing(admin: AdminSummary) {
     setEditing(admin);
     setEditDepartments(admin.departments ?? []);
+    setEditExtras(admin.extra_permissions ?? []);
     setEditError(null);
   }
 
@@ -207,7 +258,7 @@ export default function AdminsPage() {
     setEditError(null);
     setEditLoading(true);
     try {
-      await updateAdminDepartments(editing.id, editDepartments);
+      await updateAdminDepartments(editing.id, editDepartments, editExtras);
       setEditing(null);
       loadAdmins();
     } catch (err) {
@@ -225,7 +276,7 @@ export default function AdminsPage() {
             onClick={() => startEditing(a)}
             className="font-body text-xs text-teal hover:underline py-1"
           >
-            Departments
+            Access
           </button>
         )}
         {canUpgrade(a) && (
@@ -273,8 +324,11 @@ export default function AdminsPage() {
 
   function departmentText(a: AdminSummary) {
     if (a.role !== "admin") return "Full access";
-    const keys = a.departments ?? [];
-    return keys.length > 0 ? keys.map(departmentLabel).join(", ") : "None assigned";
+    const parts = [
+      ...(a.departments ?? []).map(departmentLabel),
+      ...(a.extra_permissions ?? []).map((k) => `+ ${sectionLabel(k)}`),
+    ];
+    return parts.length > 0 ? parts.join(", ") : "None assigned";
   }
 
   return (
@@ -367,6 +421,7 @@ export default function AdminsPage() {
                 Tick the departments this admin works in.
               </p>
               <DepartmentPicker selected={newDepartments} onChange={setNewDepartments} />
+              <SectionPicker selected={newExtras} onChange={setNewExtras} />
             </div>
           ) : (
             <p className="font-body text-xs text-muted">
@@ -391,12 +446,13 @@ export default function AdminsPage() {
       {editing && (
         <div className="border border-ink-raised rounded-sm p-6 mb-8">
           <h2 className="font-body text-sm text-muted-on-paper mb-1">
-            Departments for {editing.full_name}
+            Access for {editing.full_name}
           </h2>
           <p className="font-body text-xs text-muted mb-4">
             Overview, Registrants and Admins are visible to every admin.
           </p>
           <DepartmentPicker selected={editDepartments} onChange={setEditDepartments} />
+          <SectionPicker selected={editExtras} onChange={setEditExtras} />
 
           {editError && (
             <p className="font-body text-sm text-red mt-4">{editError}</p>
@@ -408,7 +464,7 @@ export default function AdminsPage() {
               disabled={editLoading}
               className="font-body text-sm bg-gold text-ink rounded-sm px-4 py-2 disabled:opacity-60"
             >
-              {editLoading ? "Saving…" : "Save departments"}
+              {editLoading ? "Saving…" : "Save access"}
             </button>
             <button
               onClick={() => setEditing(null)}
@@ -431,7 +487,10 @@ export default function AdminsPage() {
                 header: "Departments",
                 value: (a) =>
                   a.role === "admin"
-                    ? (a.departments ?? []).map(departmentLabel).join("; ")
+                    ? [
+                        ...(a.departments ?? []).map(departmentLabel),
+                        ...(a.extra_permissions ?? []).map((k) => `+ ${sectionLabel(k)}`),
+                      ].join("; ")
                     : "Full access",
               },
               {

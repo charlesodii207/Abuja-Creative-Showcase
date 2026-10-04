@@ -42,3 +42,18 @@ export const DEPARTMENTS: Department[] = [
 export function departmentLabel(key: string): string {
   return DEPARTMENTS.find((d) => d.key === key)?.label ?? key;
 }
+
+// Individual sections that can be granted on their own, on top of departments.
+export const SECTIONS: { key: string; label: string }[] = [
+  { key: "messages", label: "Messages" },
+  { key: "live_chat", label: "Live chat" },
+  { key: "analytics", label: "Analytics" },
+  { key: "traffic", label: "Traffic" },
+  { key: "event_scan", label: "Event scan" },
+  { key: "event_log", label: "Event log" },
+  { key: "hotels", label: "Bookings" },
+];
+
+export function sectionLabel(key: string): string {
+  return SECTIONS.find((x) => x.key === key)?.label ?? key;
+}
