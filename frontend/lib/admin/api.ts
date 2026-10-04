@@ -580,14 +580,23 @@ export type BookingSummary = {
   status: BookingStatus;
   check_in: string | null;
   check_out: string | null;
-  hotel_preference: string | null;
+  nights: number | null;
+  rooms: number | null;
+  budget_range: string | null;
   created_at: string | null;
 };
 
 export type BookingDetail = BookingSummary & {
+  adults: number | null;
+  children: number | null;
   guests: number | null;
+  extra_bed_requested: boolean;
+  preferred_area: string | null;
   message: string | null;
-  extra: Record<string, string>;
+  terms_accepted: boolean;
+  privacy_accepted: boolean;
+  hotel_sharing_consent: boolean;
+  legal_version: string | null;
   hotel_name: string | null;
   confirmed_check_in: string | null;
   confirmed_check_out: string | null;

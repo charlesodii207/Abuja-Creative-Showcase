@@ -126,7 +126,7 @@ export default function BookingDetailPanel({
   function openConfirmForm() {
     if (!booking) return;
     // Start from what the guest asked for; the admin finalizes it.
-    setHotelName(booking.hotel_preference ?? "");
+    setHotelName("");
     setCheckIn(booking.check_in ?? "");
     setCheckOut(booking.check_out ?? "");
     setAmountNaira("");
@@ -252,23 +252,38 @@ export default function BookingDetailPanel({
                   label="Check-out"
                   value={booking.check_out ? prettyDate(booking.check_out) : null}
                 />
+                <Row label="Nights" value={booking.nights ? String(booking.nights) : null} />
+                <Row label="Adults" value={booking.adults ? String(booking.adults) : null} />
+                <Row label="Children" value={booking.children ? String(booking.children) : null} />
+                <Row label="Rooms" value={booking.rooms ? String(booking.rooms) : null} />
                 <Row
-                  label="Guests"
-                  value={booking.guests ? String(booking.guests) : null}
+                  label="Extra bed"
+                  value={booking.extra_bed_requested ? "A third adult may share a room" : "No"}
                 />
-                <Row label="Hotel preference" value={booking.hotel_preference} />
-                {Object.entries(booking.extra || {}).map(([key, value]) => (
-                  <Row
-                    key={key}
-                    label={key.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase())}
-                    value={value}
-                  />
-                ))}
-                <Row label="Message" value={booking.message} />
+                <Row label="Budget per night" value={booking.budget_range} />
+                <Row label="Preferred area" value={booking.preferred_area} />
+                <Row label="Special requests" value={booking.message} />
                 <Row
                   label="Received"
                   value={booking.created_at ? prettyDate(watDate(booking.created_at)) : null}
                 />
+              </dl>
+            </section>
+
+            <section className="mb-6">
+              <h3 className="mb-3 font-body text-sm text-muted-on-paper">
+                Consent given on the form
+              </h3>
+              <dl className="space-y-1.5 font-body text-sm">
+                <Row
+                  label="Terms and Privacy Policy"
+                  value={booking.terms_accepted && booking.privacy_accepted ? "Accepted" : "Not recorded"}
+                />
+                <Row
+                  label="Share details with partner hotels"
+                  value={booking.hotel_sharing_consent ? "Agreed" : "Not recorded"}
+                />
+                <Row label="Legal version" value={booking.legal_version} />
               </dl>
             </section>
 

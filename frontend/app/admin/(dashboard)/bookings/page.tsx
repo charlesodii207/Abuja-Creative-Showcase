@@ -115,7 +115,7 @@ export default function BookingsPage() {
           b.full_name.toLowerCase().includes(q) ||
           b.email.toLowerCase().includes(q) ||
           b.reference_number.toLowerCase().includes(q) ||
-          (b.hotel_preference || "").toLowerCase().includes(q)
+          (b.phone || "").toLowerCase().includes(q)
         )
       ) {
         return false;
@@ -231,7 +231,7 @@ export default function BookingsPage() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Name, email, reference or hotel"
+              placeholder="Name, email, phone or reference"
               className={`${controlClass} w-full placeholder:text-muted`}
             />
           </div>
@@ -340,7 +340,9 @@ export default function BookingsPage() {
                 { header: "Status", value: (b) => b.status },
                 { header: "Requested check-in", value: (b) => b.check_in || "" },
                 { header: "Requested check-out", value: (b) => b.check_out || "" },
-                { header: "Hotel preference", value: (b) => b.hotel_preference || "" },
+                { header: "Nights", value: (b) => (b.nights ?? "").toString() },
+                { header: "Rooms", value: (b) => (b.rooms ?? "").toString() },
+                { header: "Budget per night", value: (b) => b.budget_range || "" },
                 {
                   header: "Received (WAT date)",
                   value: (b) => (b.created_at ? watDate(b.created_at) : ""),
@@ -467,8 +469,11 @@ export default function BookingsPage() {
                   </td>
                   <td className="px-4 py-3 text-muted hidden md:table-cell">
                     {stayLabel(b)}
-                    {b.hotel_preference && (
-                      <span className="block text-xs">{b.hotel_preference}</span>
+                    {b.nights && (
+                      <span className="block text-xs">
+                        {b.nights} {b.nights === 1 ? "night" : "nights"}
+                        {b.rooms ? ` · ${b.rooms} ${b.rooms === 1 ? "room" : "rooms"}` : ""}
+                      </span>
                     )}
                   </td>
                   <td className="px-4 py-3 text-muted hidden lg:table-cell whitespace-nowrap">
