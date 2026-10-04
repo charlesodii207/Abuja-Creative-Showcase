@@ -20,12 +20,15 @@ SENIOR_ROLES = ("system_owner", "super_admin")
 
 def permissions_for(admin) -> list[str]:
     """Sections this admin can use. Seniors get everything; regular admins
-    get the union of the sections of every department they belong to."""
+    get the sections of every department they belong to, plus any
+    individual sections granted to them on top."""
     if admin.role.value in SENIOR_ROLES:
         return sorted(ALL_PERMISSIONS)
 
     granted: set[str] = set()
     for department in admin.departments or []:
         granted |= DEPARTMENT_SECTIONS.get(department, set())
+
+    granted |= {p for p in (admin.extra_permissions or []) if p in ALL_PERMISSIONS}
 
     return sorted(granted)

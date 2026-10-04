@@ -64,6 +64,8 @@ class Admin(Base):
     is_active = Column(Boolean, default=True, nullable=False)
     # Department keys (see app/permissions.py). Only used for regular admins.
     departments = Column(ARRAY(String), nullable=False, default=list, server_default="{}")
+    # Individual sections granted on top of the departments (see app/permissions.py).
+    extra_permissions = Column(ARRAY(String), nullable=False, default=list, server_default="{}")
     created_by = Column(
         UUID(as_uuid=True),
         ForeignKey("admins.id", ondelete="SET NULL"),

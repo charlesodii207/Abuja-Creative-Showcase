@@ -314,6 +314,19 @@ def _confirmation_rows(b: models.Booking, for_team: bool) -> list[tuple[str, str
     return rows
 
 
+def _steps(items: list[str]) -> str:
+    """A short numbered list that renders in any email client."""
+    rows = "".join(f'<li style="margin-bottom:8px;">{item}</li>' for item in items)
+    return f'<ol style="margin:12px 0 18px;padding-left:22px;">{rows}</ol>'
+
+
+def _contact_phrase(b: models.Booking) -> str:
+    """How the hotel will reach the guest, using what they gave us."""
+    if b.phone:
+        return f"{_safe(b.phone)} or {_safe(b.email)}"
+    return _safe(b.email)
+
+
 def _send_received_emails(b: models.Booking) -> tuple[bool, bool]:
     team_ok = send_email(
         to=[TEAM_INBOX],
@@ -331,8 +344,8 @@ def _send_received_emails(b: models.Booking) -> tuple[bool, bool]:
         <p>Hi {_safe(b.full_name)},</p>
 
         <p>
-            Thank you for your accommodation request. Our team will review it
-            and reply with available options.
+            Thank you for your accommodation request for the Afriqa Creative
+            Showcase. We've received it and our team is already on it.
         </p>
 
         {_reference_card(b.reference_number)}
@@ -340,6 +353,14 @@ def _send_received_emails(b: models.Booking) -> tuple[bool, bool]:
         <p>Here is what you sent us:</p>
 
         {_details_table(_request_rows(b, for_team=False))}
+
+        <p><strong>What happens next</strong></p>
+
+        {_steps([
+            "Our team reviews your request and arranges options with our partner hotels.",
+            "We email you as soon as your accommodation is confirmed.",
+            "The partner hotel then contacts you to confirm your reservation.",
+        ])}
 
         <p>
             If anything needs correcting, contact us at
@@ -363,24 +384,35 @@ def _send_confirmation_emails(b: models.Booking) -> tuple[bool, bool]:
 
     guest_ok = send_email(
         to=[b.email],
-        subject=f"Your accommodation booking is confirmed — {b.reference_number}",
+        subject=f"Your accommodation is arranged — {b.reference_number}",
         html=f"""
         <p>Hi {_safe(b.full_name)},</p>
 
         <p>
-            Good news — your accommodation booking for the Afriqa Creative
-            Showcase is <strong>confirmed</strong>.
+            Good news — your accommodation request for the Afriqa Creative
+            Showcase has been confirmed with <strong>{_safe(b.hotel_name)}</strong>.
+            The hotel will be in touch shortly to finalise your reservation.
         </p>
 
         {_reference_card(b.reference_number)}
 
         {_details_table(_confirmation_rows(b, for_team=False))}
 
+        <p><strong>What happens next</strong></p>
+
+        {_steps([
+            f"The hotel will contact you shortly on {_contact_phrase(b)} to confirm your reservation. Please keep your phone nearby and check your inbox and spam folder.",
+            "Have your reference number and a valid ID ready when they get in touch.",
+            "Follow the hotel's instructions for check-in and anything else they need from you.",
+        ])}
+
         <p>
-            Please keep this email for your records. If you need to change
-            anything, contact us at {_safe(TEAM_INBOX)} and quote your
-            reference number.
+            If you haven't heard from the hotel within two days, or anything
+            above needs correcting, contact us at {_safe(TEAM_INBOX)} and
+            quote your reference number.
         </p>
+
+        <p>We look forward to welcoming you to the showcase in Abuja.</p>
         """,
     )
 

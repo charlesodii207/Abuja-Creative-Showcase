@@ -6,9 +6,9 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app import models, schemas
 from app.auth import hash_password, verify_password, create_access_token
-from app.dependencies import get_current_admin_allow_password_change, require_role
+from app.dependencies import get_current_admin, get_current_admin_allow_password_change, require_role
 from app.audit import log_action
-from app.permissions import ALL_DEPARTMENTS, permissions_for
+from app.permissions import ALL_DEPARTMENTS, ALL_PERMISSIONS, permissions_for
 
 router = APIRouter(prefix="/admin/auth", tags=["admin-auth"])
 
@@ -23,6 +23,7 @@ def _summary(a: models.Admin) -> schemas.AdminSummary:
         must_change_password=a.must_change_password,
         last_login_at=a.last_login_at.isoformat() if a.last_login_at else None,
         departments=list(a.departments or []),
+        extra_permissions=list(a.extra_permissions or []),
     )
 
 
@@ -38,6 +39,13 @@ def _clean_departments(raw: list[str]) -> list[str]:
     if unknown:
         raise HTTPException(status_code=400, detail=f"Unknown department: {unknown[0]}.")
     # de-duplicate, keep the order they were ticked in
+    return list(dict.fromkeys(raw))
+
+
+def _clean_permissions(raw: list[str]) -> list[str]:
+    unknown = [p for p in raw if p not in ALL_PERMISSIONS]
+    if unknown:
+        raise HTTPException(status_code=400, detail=f"Unknown section: {unknown[0]}.")
     return list(dict.fromkeys(raw))
 
 
@@ -65,6 +73,16 @@ def login(payload: schemas.LoginRequest, db: Session = Depends(get_db)):
     return schemas.LoginResponse(
         token=token,
         must_change_password=admin.must_change_password,
+        full_name=admin.full_name,
+        role=admin.role.value,
+        permissions=permissions_for(admin),
+    )
+
+
+@router.get("/me", response_model=schemas.MeResponse)
+def me(admin: models.Admin = Depends(get_current_admin)):
+    """Current role and sections, straight from the database."""
+    return schemas.MeResponse(
         full_name=admin.full_name,
         role=admin.role.value,
         permissions=permissions_for(admin),
@@ -116,6 +134,7 @@ def create_admin(
 
     # Departments only apply to regular admins; super admins see everything.
     departments = _clean_departments(payload.departments) if payload.role == "admin" else []
+    extra_permissions = _clean_permissions(payload.extra_permissions) if payload.role == "admin" else []
 
     new_admin = models.Admin(
         full_name=payload.full_name,
@@ -125,6 +144,7 @@ def create_admin(
         must_change_password=True,
         created_by=current_admin.id,
         departments=departments,
+        extra_permissions=extra_permissions,
     )
     db.add(new_admin)
     db.commit()
@@ -137,6 +157,7 @@ def create_admin(
         detail=(
             f"Created as {new_admin.role.value}"
             + (f" in: {', '.join(departments)}" if departments else "")
+            + (f" + sections: {', '.join(extra_permissions)}" if extra_permissions else "")
         ),
     )
 
@@ -186,7 +207,15 @@ def update_admin_departments(
     new_departments = _clean_departments(payload.departments)
     old_departments = list(target.departments or [])
 
+    old_extras = list(target.extra_permissions or [])
+    new_extras = (
+        _clean_permissions(payload.extra_permissions)
+        if payload.extra_permissions is not None
+        else old_extras
+    )
+
     target.departments = new_departments
+    target.extra_permissions = new_extras
     db.commit()
 
     log_action(
@@ -196,13 +225,15 @@ def update_admin_departments(
         detail=(
             f"Departments: {', '.join(old_departments) or 'none'}"
             f" → {', '.join(new_departments) or 'none'}"
+            f" | Extra sections: {', '.join(old_extras) or 'none'}"
+            f" → {', '.join(new_extras) or 'none'}"
         ),
     )
 
     return schemas.AdminActionResponse(
         id=str(target.id),
-        status="departments_updated",
-        message=f"Departments updated for {target.full_name}. They'll see the change next time they sign in.",
+        status="access_updated",
+        message=f"Access updated for {target.full_name}. It shows on their screen within about 30 seconds.",
     )
 
 

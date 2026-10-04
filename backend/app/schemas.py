@@ -347,6 +347,14 @@ class LoginResponse(BaseModel):
     permissions: list[str] = []
 
 
+class MeResponse(BaseModel):
+    """The signed-in admin's current role and sections, read fresh from the
+    database so the sidebar can follow changes made by a super admin."""
+    full_name: str
+    role: str
+    permissions: list[str] = []
+
+
 class ChangePasswordRequest(BaseModel):
     current_password: str
     new_password: str
@@ -358,10 +366,13 @@ class CreateAdminRequest(BaseModel):
     temp_password: str
     role: str
     departments: list[str] = []
+    extra_permissions: list[str] = []
 
 
 class UpdateAdminDepartmentsRequest(BaseModel):
     departments: list[str]
+    # None means "leave the individual sections as they are".
+    extra_permissions: list[str] | None = None
 
 
 class ChangeAdminRoleRequest(BaseModel):
@@ -377,6 +388,7 @@ class AdminSummary(BaseModel):
     must_change_password: bool
     last_login_at: str | None
     departments: list[str] = []
+    extra_permissions: list[str] = []
 
 
 class AdminLogSummary(BaseModel):
