@@ -4,7 +4,7 @@ import uuid
 from sqlalchemy import (
     Column, String, Boolean, DateTime, Date, ForeignKey, Enum, Text, Integer, func
 )
-from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
+from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import relationship
 
 from app.database import Base
@@ -468,8 +468,8 @@ class Booking(Base):
     A guest's accommodation request from the website form. It starts as
     "new"; admins move it to "contacted", then "confirmed" (which requires
     the hotel, dates and amount paid, and records the operator) or
-    "cancelled". The first block of columns is what the guest asked for;
-    the second block is what was actually arranged.
+    "cancelled". The first block of columns is what the guest asked for and
+    agreed to; the second block is what was actually arranged.
     """
 
     __tablename__ = "bookings"
@@ -483,11 +483,22 @@ class Booking(Base):
     phone = Column(String, nullable=True)
     check_in = Column(Date, nullable=True)
     check_out = Column(Date, nullable=True)
+    nights = Column(Integer, nullable=True)
+    adults = Column(Integer, nullable=True)
+    children = Column(Integer, nullable=True)
     guests = Column(Integer, nullable=True)
-    hotel_preference = Column(String, nullable=True)
+    rooms = Column(Integer, nullable=True)
+    extra_bed_requested = Column(Boolean, nullable=False, default=False)
+    budget_range = Column(String, nullable=True)
+    preferred_area = Column(String, nullable=True)
+    # Special requests typed by the guest
     message = Column(Text, nullable=True)
-    # Any other form fields, stored as text.
-    extra = Column(JSONB, nullable=False, default=dict, server_default="{}")
+
+    # What the guest agreed to, and under which version of the legal pages
+    terms_accepted = Column(Boolean, nullable=False, default=False)
+    privacy_accepted = Column(Boolean, nullable=False, default=False)
+    hotel_sharing_consent = Column(Boolean, nullable=False, default=False)
+    legal_version = Column(String, nullable=True)
 
     # "new" | "contacted" | "confirmed" | "cancelled"
     status = Column(String, nullable=False, default="new", index=True)

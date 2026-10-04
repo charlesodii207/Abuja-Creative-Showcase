@@ -1,9 +1,9 @@
 # app/routes/bookings.py
 #
 # Accommodation bookings:
-#   POST /bookings                      public  - the booking form on the website
-#   GET  /admin/bookings                admin   - list
-#   GET  /admin/bookings/{reference}    admin   - detail
+#   POST  /hotel-bookings                public  - the booking form on the website
+#   GET   /admin/bookings                admin   - list
+#   GET   /admin/bookings/{reference}    admin   - detail
 #   PATCH /admin/bookings/{reference}/contacted
 #   POST  /admin/bookings/{reference}/confirm              (needs the hotel details)
 #   PATCH /admin/bookings/{reference}/cancel
@@ -12,9 +12,10 @@
 # Admin routes need the "hotels" section (Hospitality & Logistics department).
 
 import secrets
+import time
 from datetime import date, datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 
@@ -37,6 +38,17 @@ router = APIRouter(tags=["bookings"])
 BOOKINGS_PERMISSION = "hotels"
 TEAM_INBOX = "info@africacreativeshowcase.com"
 
+# Same limits as the booking form
+MAX_NIGHTS = 30
+MAX_ADULTS = 20
+MAX_CHILDREN = 10
+MAX_ROOMS = 10
+
+# Per-IP limit on the public form so nobody can flood the info@ inbox.
+RATE_LIMIT = 5
+RATE_WINDOW_SECONDS = 600
+_recent_submissions: dict[str, list[float]] = {}
+
 _REF_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # no 0/O/1/I to avoid mix-ups
 
 
@@ -45,22 +57,30 @@ _REF_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # no 0/O/1/I to avoid mix-up
 # ---------------------------------------------------------------------------
 
 class BookingRequest(BaseModel):
+    """Exactly what the website booking form sends."""
     full_name: str
     email: EmailStr
-    phone: str | None = None
-    check_in: date | None = None
-    check_out: date | None = None
+    phone: str
+    check_in: date
+    check_out: date
+    nights: int
+    adults: int
+    children: int = 0
     guests: int | None = None
-    hotel_preference: str | None = None
-    message: str | None = None
-    # Any other fields the form collects (room type, budget, ...).
-    extra: dict[str, str] = {}
-    # Honeypot: real visitors never see or fill this field.
-    website: str | None = None
+    rooms: int
+    extra_bed_requested: bool = False
+    budget_range: str
+    preferred_area: str | None = None
+    notes: str | None = None
+    terms_accepted: bool = False
+    privacy_accepted: bool = False
+    hotel_sharing_consent: bool = False
+    legal_version: str | int | None = None
 
 
 class BookingResponse(BaseModel):
-    reference_number: str
+    # The form reads this key to show "Ref: ..." on the thank-you screen.
+    reference: str
     message: str
 
 
@@ -73,14 +93,23 @@ class BookingSummary(BaseModel):
     status: str
     check_in: date | None
     check_out: date | None
-    hotel_preference: str | None
+    nights: int | None
+    rooms: int | None
+    budget_range: str | None
     created_at: datetime | None
 
 
 class BookingDetail(BookingSummary):
+    adults: int | None
+    children: int | None
     guests: int | None
+    extra_bed_requested: bool
+    preferred_area: str | None
     message: str | None
-    extra: dict[str, str]
+    terms_accepted: bool
+    privacy_accepted: bool
+    hotel_sharing_consent: bool
+    legal_version: str | None
     hotel_name: str | None
     confirmed_check_in: date | None
     confirmed_check_out: date | None
@@ -117,6 +146,31 @@ def _clip(value: str | None, limit: int) -> str | None:
     return value[:limit] or None
 
 
+def _client_ip(request: Request) -> str:
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        return forwarded.split(",")[0].strip()[:45]
+    return (request.client.host if request.client else "unknown")[:45]
+
+
+def _check_rate_limit(ip: str) -> None:
+    now = time.monotonic()
+    hits = [t for t in _recent_submissions.get(ip, []) if now - t < RATE_WINDOW_SECONDS]
+
+    if len(hits) >= RATE_LIMIT:
+        raise HTTPException(
+            status_code=429,
+            detail="Too many requests. Please wait a few minutes and try again.",
+        )
+
+    hits.append(now)
+    _recent_submissions[ip] = hits
+
+    if len(_recent_submissions) > 5000:  # keep memory bounded
+        for key in [k for k, v in _recent_submissions.items() if not v or now - v[-1] >= RATE_WINDOW_SECONDS]:
+            _recent_submissions.pop(key, None)
+
+
 def _new_reference(db: Session) -> str:
     for _ in range(10):
         ref = "BKG-" + "".join(secrets.choice(_REF_ALPHABET) for _ in range(6))
@@ -147,7 +201,9 @@ def _summary(b: models.Booking) -> BookingSummary:
         status=b.status,
         check_in=b.check_in,
         check_out=b.check_out,
-        hotel_preference=b.hotel_preference,
+        nights=b.nights,
+        rooms=b.rooms,
+        budget_range=b.budget_range,
         created_at=b.created_at,
     )
 
@@ -155,9 +211,16 @@ def _summary(b: models.Booking) -> BookingSummary:
 def _detail(b: models.Booking) -> BookingDetail:
     return BookingDetail(
         **_summary(b).model_dump(),
+        adults=b.adults,
+        children=b.children,
         guests=b.guests,
+        extra_bed_requested=bool(b.extra_bed_requested),
+        preferred_area=b.preferred_area,
         message=b.message,
-        extra=dict(b.extra or {}),
+        terms_accepted=bool(b.terms_accepted),
+        privacy_accepted=bool(b.privacy_accepted),
+        hotel_sharing_consent=bool(b.hotel_sharing_consent),
+        legal_version=b.legal_version,
         hotel_name=b.hotel_name,
         confirmed_check_in=b.confirmed_check_in,
         confirmed_check_out=b.confirmed_check_out,
@@ -218,11 +281,15 @@ def _request_rows(b: models.Booking, for_team: bool) -> list[tuple[str, str | No
         ("Phone", b.phone),
         ("Check-in", _fmt_date(b.check_in)),
         ("Check-out", _fmt_date(b.check_out)),
-        ("Guests", str(b.guests) if b.guests else None),
-        ("Hotel preference", b.hotel_preference),
-        ("Message", b.message),
+        ("Nights", str(b.nights) if b.nights else None),
+        ("Adults", str(b.adults) if b.adults else None),
+        ("Children", str(b.children) if b.children else None),
+        ("Rooms", str(b.rooms) if b.rooms else None),
+        ("Extra bed", "A third adult may share a room" if b.extra_bed_requested else None),
+        ("Budget per night", b.budget_range),
+        ("Preferred area", b.preferred_area),
+        ("Special requests", b.message),
     ]
-    rows += [(k.replace("_", " ").capitalize(), v) for k, v in (b.extra or {}).items()]
     return rows
 
 
@@ -264,8 +331,8 @@ def _send_received_emails(b: models.Booking) -> tuple[bool, bool]:
         <p>Hi {_safe(b.full_name)},</p>
 
         <p>
-            Thank you for your accommodation request. Our team will contact
-            you shortly.
+            Thank you for your accommodation request. Our team will review it
+            and reply with available options.
         </p>
 
         {_reference_card(b.reference_number)}
@@ -324,39 +391,71 @@ def _send_confirmation_emails(b: models.Booking) -> tuple[bool, bool]:
 # Public: submit the booking form
 # ---------------------------------------------------------------------------
 
-@router.post("/bookings", response_model=BookingResponse, status_code=201)
-def submit_booking(payload: BookingRequest, db: Session = Depends(get_db)):
-    # Bots fill hidden fields; pretend it worked and save nothing.
-    if payload.website:
-        return BookingResponse(reference_number="", message="Thank you. We'll be in touch shortly.")
+@router.post("/hotel-bookings", response_model=BookingResponse, status_code=201)
+def submit_booking(
+    payload: BookingRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    _check_rate_limit(_client_ip(request))
+
+    # The consent boxes are required on the form; the server enforces them too.
+    if not (payload.terms_accepted and payload.privacy_accepted):
+        raise HTTPException(
+            status_code=400,
+            detail="Please accept the Terms and Conditions and the Privacy Policy.",
+        )
+    if not payload.hotel_sharing_consent:
+        raise HTTPException(
+            status_code=400,
+            detail="We need your permission to share your details with partner hotels.",
+        )
 
     full_name = _clip(payload.full_name, 120)
-    if not full_name:
-        raise HTTPException(status_code=400, detail="Please enter your name.")
+    if not full_name or len(full_name) < 2:
+        raise HTTPException(status_code=400, detail="Please enter your full name.")
 
-    if payload.check_in and payload.check_out and payload.check_out <= payload.check_in:
+    phone = _clip(payload.phone, 40)
+    if not phone or sum(c.isdigit() for c in phone) < 7:
+        raise HTTPException(status_code=400, detail="Please enter a valid phone number.")
+
+    budget_range = _clip(payload.budget_range, 100)
+    if not budget_range:
+        raise HTTPException(status_code=400, detail="Please choose a budget range.")
+
+    if payload.check_out <= payload.check_in:
         raise HTTPException(status_code=400, detail="Check-out must be after check-in.")
 
-    if payload.guests is not None and not (1 <= payload.guests <= 100):
-        raise HTTPException(status_code=400, detail="Number of guests must be between 1 and 100.")
-
-    extra = {
-        _clip(k, 60): _clip(v, 500)
-        for k, v in list(payload.extra.items())[:20]
-        if _clip(k, 60) and _clip(v, 500)
-    }
+    if not (
+        1 <= payload.nights <= MAX_NIGHTS
+        and 1 <= payload.adults <= MAX_ADULTS
+        and 0 <= payload.children <= MAX_CHILDREN
+        and 1 <= payload.rooms <= MAX_ROOMS
+    ):
+        raise HTTPException(status_code=400, detail="Please check the number of nights, guests and rooms.")
 
     booking = models.Booking(
         reference_number=_new_reference(db),
         full_name=full_name,
         email=str(payload.email),
-        phone=_clip(payload.phone, 40),
+        phone=phone,
         check_in=payload.check_in,
         check_out=payload.check_out,
-        guests=payload.guests,
-        hotel_preference=_clip(payload.hotel_preference, 200),
-        message=_clip(payload.message, 2000),
-        extra=extra,
+        nights=payload.nights,
+        adults=payload.adults,
+        children=payload.children,
+        guests=payload.guests or (payload.adults + payload.children),
+        rooms=payload.rooms,
+        extra_bed_requested=payload.extra_bed_requested,
+        budget_range=budget_range,
+        preferred_area=_clip(payload.preferred_area, 100),
+        message=_clip(payload.notes, 2000),
+        # Record exactly what the guest agreed to, and which version of the
+        # legal pages they agreed to it under.
+        terms_accepted=True,
+        privacy_accepted=True,
+        hotel_sharing_consent=True,
+        legal_version=_clip(str(payload.legal_version), 40) if payload.legal_version is not None else None,
         status="new",
     )
     db.add(booking)
@@ -367,7 +466,7 @@ def submit_booking(payload: BookingRequest, db: Session = Depends(get_db)):
     _send_received_emails(booking)
 
     return BookingResponse(
-        reference_number=booking.reference_number,
+        reference=booking.reference_number,
         message="Thank you. We've received your booking request and will contact you shortly.",
     )
 
