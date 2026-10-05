@@ -22,6 +22,7 @@ import {
 } from "../../../../lib/admin/permissions";
 import AccessPicker from "../../../components/admin/AccessPicker";
 import RowMenu, { type MenuItem } from "../../../components/admin/RowMenu";
+import ConfirmDialog from "../../../components/admin/ConfirmDialog";
 
 const inputClass =
   "w-full bg-ink border border-ink-raised rounded-sm px-3 py-2 font-body text-sm text-cream focus:outline-none focus:ring-2 focus:ring-gold";
@@ -81,6 +82,44 @@ function AccessChips({ admin }: { admin: AdminSummary }) {
   );
 }
 
+type PendingAction = {
+  kind: "upgrade" | "downgrade" | "deactivate" | "delete";
+  admin: AdminSummary;
+};
+
+function dialogFor({ kind, admin }: PendingAction) {
+  switch (kind) {
+    case "upgrade":
+      return {
+        title: "Upgrade to Super Admin?",
+        message: `${admin.full_name} will get full access to everything. Only the system owner can undo this.`,
+        confirmText: "Upgrade",
+        variant: "warning" as const,
+      };
+    case "downgrade":
+      return {
+        title: "Downgrade to Admin?",
+        message: `${admin.full_name} will lose full access and only see the pages you give them afterwards.`,
+        confirmText: "Downgrade",
+        variant: "warning" as const,
+      };
+    case "deactivate":
+      return {
+        title: "Deactivate this admin?",
+        message: `${admin.full_name} won't be able to sign in anymore.`,
+        confirmText: "Deactivate",
+        variant: "danger" as const,
+      };
+    case "delete":
+      return {
+        title: "Delete this admin permanently?",
+        message: `This can't be undone. The username "${admin.username}" becomes available for reuse, and ${admin.full_name}'s name will still appear in past admin logs.`,
+        confirmText: "Delete",
+        variant: "danger" as const,
+      };
+  }
+}
+
 export default function AdminsPage() {
   const [admins, setAdmins] = useState<AdminSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -102,6 +141,9 @@ export default function AdminsPage() {
   const [editExtras, setEditExtras] = useState<string[]>([]);
   const [editError, setEditError] = useState<string | null>(null);
   const [editLoading, setEditLoading] = useState(false);
+
+  const [pending, setPending] = useState<PendingAction | null>(null);
+  const [pendingLoading, setPendingLoading] = useState(false);
 
   const myProfile = getAdminProfile();
   const isOwner = myProfile?.role === "system_owner";
@@ -169,63 +211,30 @@ export default function AdminsPage() {
     }
   }
 
-  async function handleDeactivate(admin: AdminSummary) {
-    if (!confirm(`Deactivate ${admin.full_name}? They won't be able to log in anymore.`)) {
-      return;
-    }
-    try {
-      await deactivateAdmin(admin.id);
-      loadAdmins();
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Couldn't deactivate admin.");
-    }
-  }
+  // The menu only picks the action; the dialog confirms it, then it runs.
+  const handleUpgrade = (admin: AdminSummary) => setPending({ kind: "upgrade", admin });
+  const handleDowngrade = (admin: AdminSummary) => setPending({ kind: "downgrade", admin });
+  const handleDeactivate = (admin: AdminSummary) => setPending({ kind: "deactivate", admin });
+  const handleDelete = (admin: AdminSummary) => setPending({ kind: "delete", admin });
 
-  async function handleDelete(admin: AdminSummary) {
-    if (
-      !confirm(
-        `Permanently delete ${admin.full_name}? This can't be undone. Their username ("${admin.username}") will become available for reuse. Their name will still appear in past admin logs.`
-      )
-    ) {
-      return;
-    }
-    try {
-      await deleteAdmin(admin.id);
-      loadAdmins();
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Couldn't delete admin.");
-    }
-  }
+  async function runPending() {
+    if (!pending) return;
+    const { kind, admin } = pending;
 
-  async function handleUpgrade(admin: AdminSummary) {
-    if (
-      !confirm(
-        `Upgrade ${admin.full_name} to Super Admin? They'll get full access to everything, and only the system owner can undo this.`
-      )
-    ) {
-      return;
-    }
+    setPendingLoading(true);
     try {
-      await changeAdminRole(admin.id, "super_admin");
-      loadAdmins();
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Couldn't upgrade admin.");
-    }
-  }
+      if (kind === "upgrade") await changeAdminRole(admin.id, "super_admin");
+      if (kind === "downgrade") await changeAdminRole(admin.id, "admin");
+      if (kind === "deactivate") await deactivateAdmin(admin.id);
+      if (kind === "delete") await deleteAdmin(admin.id);
 
-  async function handleDowngrade(admin: AdminSummary) {
-    if (
-      !confirm(
-        `Downgrade ${admin.full_name} to Admin? They'll lose full access and only see the departments you assign to them afterwards.`
-      )
-    ) {
-      return;
-    }
-    try {
-      await changeAdminRole(admin.id, "admin");
+      setPending(null);
       loadAdmins();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Couldn't downgrade admin.");
+      setPending(null);
+      setError(err instanceof ApiError ? err.message : "Something went wrong.");
+    } finally {
+      setPendingLoading(false);
     }
   }
 
@@ -649,6 +658,22 @@ export default function AdminsPage() {
           </>
         )}
       </div>
+
+      {pending && (
+        <ConfirmDialog
+          open
+          title={dialogFor(pending).title}
+          message={dialogFor(pending).message}
+          confirmText={dialogFor(pending).confirmText}
+          cancelText="Cancel"
+          loading={pendingLoading}
+          variant={dialogFor(pending).variant}
+          onConfirm={runPending}
+          onCancel={() => {
+            if (!pendingLoading) setPending(null);
+          }}
+        />
+      )}
     </div>
   );
 }
