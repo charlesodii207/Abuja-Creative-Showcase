@@ -186,7 +186,16 @@ def list_admins(
     else:
         query = query.order_by(models.Admin.full_name.asc())
 
-    return [_summary(a) for a in query.all()]
+    summaries = [_summary(a) for a in query.all()]
+
+    # A plain admin can see who their fellow admins are, but not which pages
+    # they have been given.
+    if current_admin.role == models.AdminRole.admin:
+        for summary in summaries:
+            summary.departments = []
+            summary.extra_permissions = []
+
+    return summaries
 
 
 @router.patch("/admins/{admin_id}/departments", response_model=schemas.AdminActionResponse)
