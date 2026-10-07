@@ -19,6 +19,7 @@ import {
   coveredByDepartments,
   departmentLabel,
   sectionLabel,
+  visibleSectionKeys,
 } from "../../../../lib/admin/permissions";
 import AccessPicker from "../../../components/admin/AccessPicker";
 import RowMenu, { type MenuItem } from "../../../components/admin/RowMenu";
@@ -43,41 +44,31 @@ function accessText(a: AdminSummary): string {
   return parts.length > 0 ? parts.join("; ") : "None assigned";
 }
 
-// Departments as quiet chips, single pages as gold "+" chips.
-function AccessChips({ admin }: { admin: AdminSummary }) {
+// One quiet line: the pages this person can open, first three then "+N more".
+// The full list is in the tooltip and in the Edit access panel.
+function AccessSummary({ admin }: { admin: AdminSummary }) {
   if (admin.role !== "admin") {
-    return (
-      <span className="rounded-full border border-teal/40 bg-teal/10 px-2.5 py-0.5 font-body text-[11px] text-teal">
-        Full access
-      </span>
-    );
+    return <span className="font-body text-xs text-teal">Full access</span>;
   }
 
-  const departments = admin.departments ?? [];
-  const extras = admin.extra_permissions ?? [];
+  const labels = visibleSectionKeys(
+    admin.departments ?? [],
+    admin.extra_permissions ?? []
+  ).map(sectionLabel);
 
-  if (departments.length === 0 && extras.length === 0) {
+  if (labels.length === 0) {
     return <span className="font-body text-xs text-muted">None assigned</span>;
   }
 
+  const more = labels.length - 3;
+
   return (
-    <span className="flex flex-wrap gap-1.5">
-      {departments.map((k) => (
-        <span
-          key={k}
-          className="rounded-full bg-ink-raised px-2.5 py-0.5 font-body text-[11px] text-cream"
-        >
-          {departmentLabel(k)}
-        </span>
-      ))}
-      {extras.map((k) => (
-        <span
-          key={k}
-          className="rounded-full border border-gold/50 px-2.5 py-0.5 font-body text-[11px] text-gold"
-        >
-          + {sectionLabel(k)}
-        </span>
-      ))}
+    <span
+      title={labels.join(", ")}
+      className="block max-w-[18rem] truncate font-body text-xs text-muted"
+    >
+      {labels.slice(0, 3).join(" · ")}
+      {more > 0 ? ` · +${more} more` : ""}
     </span>
   );
 }
@@ -346,7 +337,7 @@ export default function AdminsPage() {
 
       {isViewOnly ? (
         <p className="font-body text-xs text-muted mb-6">
-          You're viewing fellow Admin accounts only. This page is view-only for your role.
+          You can see who your fellow admins are, but not the pages they've been given. This page is view-only for your role.
         </p>
       ) : (
         <div className="mb-6" />
@@ -445,7 +436,9 @@ export default function AdminsPage() {
               { header: "Full name", value: (a) => a.full_name },
               { header: "Username", value: (a) => a.username },
               { header: "Role", value: (a) => a.role },
-              { header: "Access", value: (a) => accessText(a) },
+              ...(isViewOnly
+                ? []
+                : [{ header: "Access", value: (a: AdminSummary) => accessText(a) }]),
               {
                 header: "Status",
                 value: (a) =>
@@ -512,9 +505,11 @@ export default function AdminsPage() {
                   <p className="mt-2 text-xs text-muted capitalize">
                     {a.role.replace("_", " ")}
                   </p>
-                  <div className="mt-2">
-                    <AccessChips admin={a} />
-                  </div>
+                  {!isViewOnly && (
+                    <p className="mt-1">
+                      <AccessSummary admin={a} />
+                    </p>
+                  )}
 
                   {!isViewOnly && menuItems(a).length > 0 && (
                     <div className="mt-3 flex justify-end">
@@ -532,8 +527,9 @@ export default function AdminsPage() {
               <thead>
                 <tr className="border-b border-ink-raised text-left">
                   <th className="px-4 py-3 text-muted-on-paper font-medium">Name</th>
-                  <th className="px-4 py-3 text-muted-on-paper font-medium">Role</th>
-                  <th className="px-4 py-3 text-muted-on-paper font-medium">Access</th>
+                  {!isViewOnly && (
+                    <th className="px-4 py-3 text-muted-on-paper font-medium">Access</th>
+                  )}
                   <th className="px-4 py-3 text-muted-on-paper font-medium">Status</th>
                   {!isViewOnly && <th className="px-4 py-3"></th>}
                 </tr>
@@ -541,7 +537,7 @@ export default function AdminsPage() {
               <tbody>
                 {admins.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-muted">
+                    <td colSpan={isViewOnly ? 2 : 4} className="px-4 py-8 text-center text-muted">
                       No admins found.
                     </td>
                   </tr>
@@ -553,14 +549,16 @@ export default function AdminsPage() {
                     >
                       <td className="px-4 py-3">
                         <span className="text-cream">{a.full_name}</span>
-                        <span className="block text-xs text-muted">{a.username}</span>
+                        <span className="block text-xs text-muted">
+                          {a.username} ·{" "}
+                          <span className="capitalize">{a.role.replace("_", " ")}</span>
+                        </span>
                       </td>
-                      <td className="px-4 py-3 text-muted capitalize">
-                        {a.role.replace("_", " ")}
-                      </td>
-                      <td className="px-4 py-3">
-                        <AccessChips admin={a} />
-                      </td>
+                      {!isViewOnly && (
+                        <td className="px-4 py-3">
+                          <AccessSummary admin={a} />
+                        </td>
+                      )}
                       <td className="px-4 py-3">{statusText(a)}</td>
                       {!isViewOnly && (
                         <td className="px-4 py-3 text-right">
