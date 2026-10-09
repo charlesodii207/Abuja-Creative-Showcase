@@ -17,6 +17,10 @@ export type AdminProfile = {
   // Sections a regular admin may use, set by their departments.
   // Undefined until login returns it; super admins ignore it.
   permissions?: string[];
+  // Shared mailboxes this person can read / send from. Set by the system
+  // owner. The backend is the real gatekeeper; these only drive the UI.
+  mailboxes_read?: string[];
+  mailboxes_send?: string[];
 };
 
 export function saveSession(token: string, profile: AdminProfile) {
@@ -102,6 +106,8 @@ export async function login(username: string, password: string) {
     full_name: string;
     role: AdminProfile["role"];
     permissions?: string[];
+    mailboxes_read?: string[];
+    mailboxes_send?: string[];
   }>("/admin/auth/login", {
     method: "POST",
     body: JSON.stringify({ username, password }),
@@ -136,6 +142,8 @@ export async function getMe() {
     full_name: string;
     role: AdminProfile["role"];
     permissions: string[];
+    mailboxes_read: string[];
+    mailboxes_send: string[];
   }>("/admin/auth/me");
 }
 
@@ -345,6 +353,10 @@ export type AdminSummary = {
   departments: string[];
   // Individual sections granted on top of the departments.
   extra_permissions: string[];
+  // Shared mailboxes (set by the system owner only). Blank for plain admins
+  // looking at the list.
+  mailboxes_read: string[];
+  mailboxes_send: string[];
 };
 
 export async function listAdmins(filters?: { sort?: SortOrder }) {
@@ -399,6 +411,25 @@ export async function updateAdminDepartments(
       body: JSON.stringify({
         departments,
         ...(extraPermissions ? { extra_permissions: extraPermissions } : {}),
+      }),
+    }
+  );
+}
+
+// System owner only. Sending implies reading, so anything in `send` is also
+// saved as readable by the backend.
+export async function updateAdminMailboxes(
+  adminId: string,
+  mailboxesRead: string[],
+  mailboxesSend: string[]
+) {
+  return adminFetch<{ id: string; status: string; message: string }>(
+    `/admin/auth/admins/${encodeURIComponent(adminId)}/mailboxes`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({
+        mailboxes_read: mailboxesRead,
+        mailboxes_send: mailboxesSend,
       }),
     }
   );
@@ -505,6 +536,20 @@ export type Message = {
   sender: MessageSenderType;
   body: string;
   created_at: string;
+  // Added with shared mailboxes. All optional so older code keeps compiling.
+  // NOTE: the backend actually sends `sender_type`, `sender_name` and
+  // `sender_email` (not `sender`); they're declared here so you can read them.
+  sender_type?: MessageSenderType;
+  sender_name?: string;
+  sender_email?: string;
+  subject?: string;
+  direction?: "inbound" | "outbound" | null;
+  mailbox?: string | null;
+  to_addresses?: string | null;
+  cc_addresses?: string | null;
+  // True when the original HTML of an inbound email exists. Fetch it with
+  // getMessageHtml() and show it ONLY inside <iframe sandbox="" srcDoc=...>.
+  has_html?: boolean;
 };
 
 export type MessageThreadSummary = {
@@ -515,6 +560,10 @@ export type MessageThreadSummary = {
   is_replied: boolean;
   unread_count: number;
   latest_message: Message;
+  subject?: string;
+  mailbox?: string | null;
+  channel?: "form" | "email";
+  updated_at?: string | null;
 };
 
 export type MessageThreadDetail = {
@@ -524,14 +573,19 @@ export type MessageThreadDetail = {
   status: MessageThreadStatus;
   is_replied: boolean;
   messages: Message[];
+  subject?: string;
+  mailbox?: string | null;
+  channel?: "form" | "email";
 };
 
 export async function listMessageThreads(filters?: {
   status?: MessageThreadStatus;
+  mailbox?: string;
 }) {
   const params = new URLSearchParams();
 
   if (filters?.status) params.set("status", filters.status);
+  if (filters?.mailbox) params.set("mailbox", filters.mailbox);
 
   const qs = params.toString();
 
@@ -578,13 +632,69 @@ export async function reopenThread(threadId: string) {
 }
 
 /**
- * There's no dedicated unread-count endpoint yet, so this derives the
- * sidebar badge total from the open-thread list itself.
+ * Sidebar badge total. Derived from the open-thread list, which the backend
+ * already limits to the mailboxes this person can read.
  */
 export async function getUnreadMessageCount() {
   const threads = await listMessageThreads({ status: "open" });
 
   return threads.reduce((sum, t) => sum + t.unread_count, 0);
+}
+
+// --- Shared mailboxes (compose, sender toggle, per-mailbox badges) ---
+
+export type MailboxOption = {
+  key: string;
+  label: string;
+  address: string;
+  // false = can read this mailbox but not send from it.
+  can_send: boolean;
+};
+
+// Mailboxes this person can see. For the sender toggle, use only the ones
+// with can_send === true.
+export async function listMyMailboxes() {
+  return adminFetch<MailboxOption[]>("/admin/messages/mailboxes");
+}
+
+export async function composeMessage(payload: {
+  mailbox: string; // a key like "info", never a raw address
+  to: string[];
+  cc?: string[];
+  subject: string;
+  body: string; // plain text; the server wraps it in the branded template
+}) {
+  return adminFetch<{ id: string; status: string; message: string }>(
+    "/admin/messages/compose",
+    {
+      method: "POST",
+      body: JSON.stringify({ cc: [], ...payload }),
+    }
+  );
+}
+
+// Original HTML of an inbound email. UNTRUSTED: render only inside
+// <iframe sandbox="" srcDoc={html} />, never with dangerouslySetInnerHTML.
+export async function getMessageHtml(messageId: string) {
+  return adminFetch<{ html: string | null }>(
+    `/admin/messages/html/${encodeURIComponent(messageId)}`
+  );
+}
+
+// Unread totals, overall and per mailbox (for badges on the mailbox tabs).
+export async function getMailboxUnreadCounts() {
+  return adminFetch<{
+    unread_count: number;
+    by_mailbox: Record<string, number>;
+  }>("/admin/messages/unread-count");
+}
+
+// System owner only: when each mailbox last synced and the last error
+// (e.g. a wrong Zoho password).
+export async function getMailSyncStatus() {
+  return adminFetch<
+    { mailbox: string; last_synced_at: string | null; last_error: string | null }[]
+  >("/admin/messages/sync-status");
 }
 
 

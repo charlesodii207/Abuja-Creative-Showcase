@@ -25,6 +25,10 @@ export default function AdminLoginPage() {
         // Sections this admin may use. Undefined until the backend sends it,
         // in which case the sidebar falls back to the old behaviour.
         permissions: result.permissions,
+        // Shared mailboxes this admin can read / send from (set by the
+        // system owner). The backend enforces these; they only drive the UI.
+        mailboxes_read: result.mailboxes_read,
+        mailboxes_send: result.mailboxes_send,
       });
 
       if (result.must_change_password) {

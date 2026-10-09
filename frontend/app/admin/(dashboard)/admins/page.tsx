@@ -8,6 +8,7 @@ import {
   deactivateAdmin,
   deleteAdmin,
   updateAdminDepartments,
+  updateAdminMailboxes,
   changeAdminRole,
   getAdminProfile,
   ApiError,
@@ -16,8 +17,10 @@ import {
 } from "../../../../lib/admin/api";
 import { downloadCsv, todayForFilename } from "../../../../lib/admin/csv";
 import {
+  MAILBOXES,
   coveredByDepartments,
   departmentLabel,
+  mailboxLabel,
   sectionLabel,
   visibleSectionKeys,
 } from "../../../../lib/admin/permissions";
@@ -40,6 +43,18 @@ function accessText(a: AdminSummary): string {
   const parts = [
     ...(a.departments ?? []).map(departmentLabel),
     ...(a.extra_permissions ?? []).map((k) => `+ ${sectionLabel(k)}`),
+  ];
+  return parts.length > 0 ? parts.join("; ") : "None assigned";
+}
+
+// Plain-text mailbox access, used for the CSV download.
+function mailboxText(a: AdminSummary): string {
+  if (a.role === "system_owner") return "All mailboxes";
+  const send = a.mailboxes_send ?? [];
+  const readOnly = (a.mailboxes_read ?? []).filter((k) => !send.includes(k));
+  const parts = [
+    ...send.map((k) => `${mailboxLabel(k)} (read + send)`),
+    ...readOnly.map((k) => `${mailboxLabel(k)} (read)`),
   ];
   return parts.length > 0 ? parts.join("; ") : "None assigned";
 }
@@ -69,6 +84,34 @@ function AccessSummary({ admin }: { admin: AdminSummary }) {
     >
       {labels.slice(0, 3).join(" · ")}
       {more > 0 ? ` · +${more} more` : ""}
+    </span>
+  );
+}
+
+// Which shared mailboxes this person has. Seniors only (plain admins never
+// get this data from the API).
+function MailboxSummary({ admin }: { admin: AdminSummary }) {
+  if (admin.role === "system_owner") {
+    return <span className="font-body text-xs text-teal">Mailboxes: all</span>;
+  }
+
+  const send = admin.mailboxes_send ?? [];
+  const read = admin.mailboxes_read ?? [];
+
+  if (read.length === 0 && send.length === 0) {
+    return <span className="font-body text-xs text-muted">Mailboxes: none</span>;
+  }
+
+  const labels = read.map((k) =>
+    send.includes(k) ? mailboxLabel(k) : `${mailboxLabel(k)} (read)`
+  );
+
+  return (
+    <span
+      title={labels.join(", ")}
+      className="block max-w-[18rem] truncate font-body text-xs text-muted"
+    >
+      Mailboxes: {labels.join(" · ")}
     </span>
   );
 }
@@ -115,6 +158,7 @@ export default function AdminsPage() {
   const [admins, setAdmins] = useState<AdminSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [sort, setSort] = useState<SortOrder>("alpha");
 
   const [showForm, setShowForm] = useState(false);
@@ -132,6 +176,13 @@ export default function AdminsPage() {
   const [editExtras, setEditExtras] = useState<string[]>([]);
   const [editError, setEditError] = useState<string | null>(null);
   const [editLoading, setEditLoading] = useState(false);
+
+  // Mailbox access panel (system owner only)
+  const [mbEditing, setMbEditing] = useState<AdminSummary | null>(null);
+  const [mbRead, setMbRead] = useState<string[]>([]);
+  const [mbSend, setMbSend] = useState<string[]>([]);
+  const [mbError, setMbError] = useState<string | null>(null);
+  const [mbLoading, setMbLoading] = useState(false);
 
   const [pending, setPending] = useState<PendingAction | null>(null);
   const [pendingLoading, setPendingLoading] = useState(false);
@@ -151,6 +202,8 @@ export default function AdminsPage() {
   const canUpgrade = (a: AdminSummary) => isSenior && a.role === "admin";
   const canDowngrade = (a: AdminSummary) => isOwner && a.role === "super_admin";
   const canEditAccess = (a: AdminSummary) => isSenior && a.role === "admin";
+  // Only the system owner assigns mailboxes, to anyone except themselves.
+  const canEditMailboxes = (a: AdminSummary) => isOwner && a.role !== "system_owner";
 
   function loadAdmins(currentSort: SortOrder = sort) {
     setLoading(true);
@@ -242,16 +295,55 @@ export default function AdminsPage() {
     setEditError(null);
   }
 
-  // Escape closes the access panel.
+  // --- Mailbox access panel ---
+
+  function startEditingMailboxes(admin: AdminSummary) {
+    const send = admin.mailboxes_send ?? [];
+    // Sending implies reading, so the read list always includes send.
+    const read = Array.from(new Set([...(admin.mailboxes_read ?? []), ...send]));
+    setMbEditing(admin);
+    setMbRead(read);
+    setMbSend(send);
+    setMbError(null);
+  }
+
+  function closeMailboxes() {
+    if (mbLoading) return;
+    setMbEditing(null);
+    setMbError(null);
+  }
+
+  function toggleMbRead(key: string) {
+    if (mbRead.includes(key)) {
+      // No read access means no send access either.
+      setMbRead(mbRead.filter((k) => k !== key));
+      setMbSend(mbSend.filter((k) => k !== key));
+    } else {
+      setMbRead([...mbRead, key]);
+    }
+  }
+
+  function toggleMbSend(key: string) {
+    if (mbSend.includes(key)) {
+      setMbSend(mbSend.filter((k) => k !== key));
+    } else {
+      setMbSend([...mbSend, key]);
+      if (!mbRead.includes(key)) setMbRead([...mbRead, key]);
+    }
+  }
+
+  // Escape closes whichever panel is open.
   useEffect(() => {
-    if (!editing) return;
+    if (!editing && !mbEditing) return;
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") closeAccess();
+      if (e.key !== "Escape") return;
+      if (mbEditing) closeMailboxes();
+      else closeAccess();
     }
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editing, editLoading]);
+  }, [editing, editLoading, mbEditing, mbLoading]);
 
   // Pages a department already opens don't need to be saved on their own.
   const editCovered = coveredByDepartments(editDepartments);
@@ -262,6 +354,25 @@ export default function AdminsPage() {
         sameSet(editExtrasClean, editing.extra_permissions ?? [])
       )
     : false;
+
+  const mbDirty = mbEditing
+    ? !(
+        sameSet(
+          mbRead,
+          Array.from(
+            new Set([...(mbEditing.mailboxes_read ?? []), ...(mbEditing.mailboxes_send ?? [])])
+          )
+        ) && sameSet(mbSend, mbEditing.mailboxes_send ?? [])
+      )
+    : false;
+
+  // Mailbox grants do nothing without the Messages section.
+  const mbMissingMessages =
+    mbEditing?.role === "admin" &&
+    !visibleSectionKeys(
+      mbEditing.departments ?? [],
+      mbEditing.extra_permissions ?? []
+    ).includes("messages");
 
   async function handleSaveAccess() {
     if (!editing) return;
@@ -278,10 +389,32 @@ export default function AdminsPage() {
     }
   }
 
+  async function handleSaveMailboxes() {
+    if (!mbEditing) return;
+    setMbError(null);
+    setMbLoading(true);
+    try {
+      const res = await updateAdminMailboxes(mbEditing.id, mbRead, mbSend);
+      setNotice(res.message);
+      setMbEditing(null);
+      loadAdmins();
+    } catch (err) {
+      setMbError(err instanceof ApiError ? err.message : "Couldn't save mailbox access.");
+    } finally {
+      setMbLoading(false);
+    }
+  }
+
   function menuItems(a: AdminSummary): MenuItem[] {
     const items: MenuItem[] = [];
     if (canEditAccess(a)) {
       items.push({ label: "Edit access…", onClick: () => startEditing(a) });
+    }
+    if (canEditMailboxes(a)) {
+      items.push({
+        label: "Mailbox access…",
+        onClick: () => startEditingMailboxes(a),
+      });
     }
     if (canUpgrade(a)) {
       items.push({
@@ -343,6 +476,10 @@ export default function AdminsPage() {
         <div className="mb-6" />
       )}
 
+      {notice && (
+        <p className="font-body text-sm text-teal mb-4">{notice}</p>
+      )}
+
       {showForm && isSenior && (
         <form
           onSubmit={handleCreate}
@@ -353,6 +490,7 @@ export default function AdminsPage() {
             <p className="font-body text-xs text-muted mt-1">
               Tell them the temporary password directly. They'll be asked to
               choose their own on first sign-in.
+              {isOwner && " Mailboxes can be assigned from the menu once they're created."}
             </p>
           </div>
 
@@ -438,7 +576,10 @@ export default function AdminsPage() {
               { header: "Role", value: (a) => a.role },
               ...(isViewOnly
                 ? []
-                : [{ header: "Access", value: (a: AdminSummary) => accessText(a) }]),
+                : [
+                    { header: "Access", value: (a: AdminSummary) => accessText(a) },
+                    { header: "Mailboxes", value: (a: AdminSummary) => mailboxText(a) },
+                  ]),
               {
                 header: "Status",
                 value: (a) =>
@@ -506,9 +647,14 @@ export default function AdminsPage() {
                     {a.role.replace("_", " ")}
                   </p>
                   {!isViewOnly && (
-                    <p className="mt-1">
-                      <AccessSummary admin={a} />
-                    </p>
+                    <>
+                      <p className="mt-1">
+                        <AccessSummary admin={a} />
+                      </p>
+                      <p className="mt-1">
+                        <MailboxSummary admin={a} />
+                      </p>
+                    </>
                   )}
 
                   {!isViewOnly && menuItems(a).length > 0 && (
@@ -555,8 +701,9 @@ export default function AdminsPage() {
                         </span>
                       </td>
                       {!isViewOnly && (
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-3 space-y-1">
                           <AccessSummary admin={a} />
+                          <MailboxSummary admin={a} />
                         </td>
                       )}
                       <td className="px-4 py-3">{statusText(a)}</td>
@@ -647,6 +794,138 @@ export default function AdminsPage() {
                   type="button"
                   onClick={closeAccess}
                   disabled={editLoading}
+                  className="rounded-sm border border-ink-raised px-5 py-2.5 font-body text-sm text-muted hover:text-cream disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Mailbox access panel (system owner only) */}
+      <div
+        className={`fixed inset-0 z-40 bg-ink/70 transition-opacity duration-300 ${
+          mbEditing ? "opacity-100" : "pointer-events-none opacity-0"
+        }`}
+        onClick={closeMailboxes}
+        aria-hidden="true"
+      />
+
+      <div
+        className={`fixed right-0 top-0 z-50 flex h-full w-full max-w-lg transform flex-col border-l border-ink-raised bg-ink transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+          mbEditing ? "translate-x-0" : "translate-x-full"
+        }`}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Mailbox access"
+      >
+        {mbEditing && (
+          <>
+            <div className="flex items-start justify-between gap-4 border-b border-ink-raised px-6 py-5">
+              <div className="min-w-0">
+                <p className="mb-1 font-body text-xs uppercase tracking-wide text-muted">
+                  Mailbox access
+                </p>
+                <h2 className="font-display text-2xl text-cream break-words">
+                  {mbEditing.full_name}
+                </h2>
+                <p className="font-body text-sm text-muted break-all">
+                  {mbEditing.username}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={closeMailboxes}
+                aria-label="Close"
+                className="rounded-sm px-2 text-xl leading-none text-muted hover:text-cream focus:outline-none focus:ring-2 focus:ring-gold"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-6 py-6">
+              <p className="mb-4 font-body text-xs text-muted">
+                <strong className="text-cream">Read</strong> lets them see and open mail
+                in that mailbox. <strong className="text-cream">Send</strong> also lets
+                them reply, close conversations and write new emails from it.
+              </p>
+
+              {mbMissingMessages && (
+                <p className="mb-4 rounded-sm border border-gold/50 bg-gold/10 px-3 py-2 font-body text-xs text-gold">
+                  {mbEditing.full_name} doesn't have the Messages section yet, so these
+                  mailboxes won't show up for them. Give them Messaging &amp; Support (or
+                  the Messages section) in Edit access.
+                </p>
+              )}
+
+              <div className="border border-ink-raised rounded-sm">
+                <div className="grid grid-cols-[1fr_4rem_4rem] gap-2 border-b border-ink-raised px-4 py-2 font-body text-xs text-muted">
+                  <span>Mailbox</span>
+                  <span className="text-center">Read</span>
+                  <span className="text-center">Send</span>
+                </div>
+
+                {MAILBOXES.map((m) => (
+                  <div
+                    key={m.key}
+                    className="grid grid-cols-[1fr_4rem_4rem] items-center gap-2 border-b border-ink-raised px-4 py-3 last:border-b-0"
+                  >
+                    <div className="min-w-0">
+                      <p className="font-body text-sm text-cream">{m.label}</p>
+                      <p className="font-body text-xs text-muted truncate">{m.address}</p>
+                    </div>
+                    <div className="flex justify-center">
+                      <input
+                        type="checkbox"
+                        aria-label={`Read ${m.label}`}
+                        checked={mbRead.includes(m.key)}
+                        onChange={() => toggleMbRead(m.key)}
+                        className="h-4 w-4 accent-gold"
+                      />
+                    </div>
+                    <div className="flex justify-center">
+                      <input
+                        type="checkbox"
+                        aria-label={`Send from ${m.label}`}
+                        checked={mbSend.includes(m.key)}
+                        onChange={() => toggleMbSend(m.key)}
+                        className="h-4 w-4 accent-gold"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {mbError && (
+                <p className="mt-5 font-body text-sm text-red">{mbError}</p>
+              )}
+            </div>
+
+            <div className="border-t border-ink-raised px-6 py-4">
+              <p className="mb-3 font-body text-xs text-muted">
+                Changes take effect on their very next action. Only the System Owner can
+                change mailbox access.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={handleSaveMailboxes}
+                  disabled={mbLoading || !mbDirty}
+                  className="flex-1 rounded-sm bg-gold py-2.5 font-body text-sm text-ink disabled:opacity-50"
+                >
+                  {mbLoading
+                    ? "Saving…"
+                    : mbDirty
+                    ? "Save mailbox access"
+                    : "No changes yet"}
+                </button>
+                <button
+                  type="button"
+                  onClick={closeMailboxes}
+                  disabled={mbLoading}
                   className="rounded-sm border border-ink-raised px-5 py-2.5 font-body text-sm text-muted hover:text-cream disabled:opacity-50"
                 >
                   Cancel

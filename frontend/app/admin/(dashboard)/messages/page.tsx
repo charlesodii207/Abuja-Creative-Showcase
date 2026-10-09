@@ -1,7 +1,7 @@
 // app/admin/(dashboard)/messages/page.tsx
 "use client";
 
-import { useEffect, useState, useRef, type FormEvent } from "react";
+import { useEffect, useMemo, useState, useRef, type FormEvent } from "react";
 import {
   listMessageThreads,
   getMessageThread,
@@ -9,13 +9,20 @@ import {
   replyToThread,
   closeThread,
   reopenThread,
+  listMyMailboxes,
+  composeMessage,
+  getMessageHtml,
+  getMailboxUnreadCounts,
   ApiError,
+  type Message,
+  type MailboxOption,
   type MessageThreadSummary,
   type MessageThreadDetail,
   type MessageThreadStatus,
 } from "../../../../lib/admin/api";
 
-function timeAgo(iso: string) {
+function timeAgo(iso: string | null | undefined) {
+  if (!iso) return "";
   const diffMs = Date.now() - new Date(iso).getTime();
   const mins = Math.round(diffMs / 60000);
   if (mins < 1) return "just now";
@@ -26,7 +33,27 @@ function timeAgo(iso: string) {
   return `${days}d ago`;
 }
 
+// The backend sends sender_type; older code used `sender`.
+function isAdminMessage(m: Message) {
+  return (m.sender_type ?? m.sender) === "admin";
+}
+
+// "a@x.com, b@y.com; c@z.com" -> ["a@x.com", "b@y.com", "c@z.com"]
+function parseAddresses(raw: string): string[] {
+  return raw
+    .split(/[,;\s]+/)
+    .map((a) => a.trim())
+    .filter(Boolean);
+}
+
+const DEFAULT_MAILBOX = "info"; // website-form messages
+
 export default function MessagesPage() {
+  const [mailboxes, setMailboxes] = useState<MailboxOption[]>([]);
+  const [mailboxesLoaded, setMailboxesLoaded] = useState(false);
+  const [mailboxFilter, setMailboxFilter] = useState<string>("all");
+  const [unreadByMailbox, setUnreadByMailbox] = useState<Record<string, number>>({});
+
   const [threads, setThreads] = useState<MessageThreadSummary[]>([]);
   const [statusFilter, setStatusFilter] = useState<MessageThreadStatus>("open");
   const [loadingList, setLoadingList] = useState(true);
@@ -41,17 +68,61 @@ export default function MessagesPage() {
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
 
+  // Original-HTML viewer (one message at a time)
+  const [htmlOpenId, setHtmlOpenId] = useState<string | null>(null);
+  const [htmlContent, setHtmlContent] = useState<string | null>(null);
+  const [htmlLoading, setHtmlLoading] = useState(false);
+  const [htmlError, setHtmlError] = useState<string | null>(null);
+
+  // Compose
+  const [composeOpen, setComposeOpen] = useState(false);
+  const [composeFrom, setComposeFrom] = useState("");
+  const [composeTo, setComposeTo] = useState("");
+  const [composeCc, setComposeCc] = useState("");
+  const [composeSubject, setComposeSubject] = useState("");
+  const [composeBody, setComposeBody] = useState("");
+  const [composeSending, setComposeSending] = useState(false);
+  const [composeError, setComposeError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const sendable = useMemo(() => mailboxes.filter((m) => m.can_send), [mailboxes]);
+  const sendableKeys = useMemo(() => new Set(sendable.map((m) => m.key)), [sendable]);
+  const mailboxLabelFor = (key?: string | null) =>
+    mailboxes.find((m) => m.key === key)?.label ?? key ?? "";
+
+  // Which mailboxes does this person have? (Backend decides; this drives the UI.)
+  useEffect(() => {
+    listMyMailboxes()
+      .then((list) => {
+        setMailboxes(list);
+        const firstSendable = list.find((m) => m.can_send);
+        if (firstSendable) setComposeFrom(firstSendable.key);
+      })
+      .catch(() => setMailboxes([]))
+      .finally(() => setMailboxesLoaded(true));
+  }, []);
+
+  function loadUnreadCounts() {
+    getMailboxUnreadCounts()
+      .then((r) => setUnreadByMailbox(r.by_mailbox))
+      .catch(() => {});
+  }
 
   function loadThreads() {
     setLoadingList(true);
     setListError(null);
-    listMessageThreads({ status: statusFilter })
+    listMessageThreads({
+      status: statusFilter,
+      mailbox: mailboxFilter === "all" ? undefined : mailboxFilter,
+    })
       .then(setThreads)
       .catch((err) =>
         setListError(err instanceof ApiError ? err.message : "Couldn't load messages.")
       )
       .finally(() => setLoadingList(false));
+    loadUnreadCounts();
   }
 
   useEffect(() => {
@@ -59,7 +130,14 @@ export default function MessagesPage() {
     setSelectedId(null);
     setSelectedThread(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusFilter]);
+  }, [statusFilter, mailboxFilter]);
+
+  function resetHtmlViewer() {
+    setHtmlOpenId(null);
+    setHtmlContent(null);
+    setHtmlError(null);
+    setHtmlLoading(false);
+  }
 
   function openThread(id: string) {
     setSelectedId(id);
@@ -67,6 +145,7 @@ export default function MessagesPage() {
     setThreadError(null);
     setSendError(null);
     setReplyBody("");
+    resetHtmlViewer();
 
     getMessageThread(id)
       .then((detail) => {
@@ -86,11 +165,15 @@ export default function MessagesPage() {
     setSelectedId(null);
     setSelectedThread(null);
     setThreadError(null);
+    resetHtmlViewer();
   }
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [selectedThread]);
+
+  const threadMailbox = selectedThread?.mailbox ?? DEFAULT_MAILBOX;
+  const canSendThread = sendableKeys.has(threadMailbox);
 
   async function handleReply(e: FormEvent) {
     e.preventDefault();
@@ -127,29 +210,156 @@ export default function MessagesPage() {
     }
   }
 
+  async function toggleOriginal(messageId: string) {
+    if (htmlOpenId === messageId) {
+      resetHtmlViewer();
+      return;
+    }
+    setHtmlOpenId(messageId);
+    setHtmlContent(null);
+    setHtmlError(null);
+    setHtmlLoading(true);
+    try {
+      const res = await getMessageHtml(messageId);
+      setHtmlContent(res.html);
+      if (!res.html) setHtmlError("No original formatting available for this message.");
+    } catch (err) {
+      setHtmlError(err instanceof ApiError ? err.message : "Couldn't load the original email.");
+    } finally {
+      setHtmlLoading(false);
+    }
+  }
+
+  function openCompose() {
+    setComposeError(null);
+    setNotice(null);
+    if (!composeFrom && sendable[0]) setComposeFrom(sendable[0].key);
+    setComposeOpen(true);
+  }
+
+  async function handleCompose(e: FormEvent) {
+    e.preventDefault();
+    setComposeError(null);
+
+    const to = parseAddresses(composeTo);
+    const cc = parseAddresses(composeCc);
+
+    if (!composeFrom) return setComposeError("Choose a sender.");
+    if (to.length === 0) return setComposeError("Add at least one recipient.");
+    if (!composeSubject.trim()) return setComposeError("Add a subject.");
+    if (!composeBody.trim()) return setComposeError("Write a message.");
+
+    setComposeSending(true);
+    try {
+      await composeMessage({
+        mailbox: composeFrom,
+        to,
+        cc,
+        subject: composeSubject.trim(),
+        body: composeBody.trim(),
+      });
+      setComposeOpen(false);
+      setComposeTo("");
+      setComposeCc("");
+      setComposeSubject("");
+      setComposeBody("");
+      setNotice("Email sent.");
+      loadThreads();
+    } catch (err) {
+      // 422 from the server = a recipient isn't a valid email address.
+      setComposeError(
+        err instanceof ApiError
+          ? err.status === 422
+            ? "Check the email addresses. One of them isn't valid."
+            : err.message
+          : "Couldn't send that email."
+      );
+    } finally {
+      setComposeSending(false);
+    }
+  }
+
+  // Nothing assigned yet
+  if (mailboxesLoaded && mailboxes.length === 0) {
+    return (
+      <div className="px-4 pt-4 sm:px-8 sm:pt-8">
+        <h1 className="font-display text-2xl sm:text-3xl text-cream mb-4">Messages</h1>
+        <div className="border border-ink-raised rounded-sm px-4 py-6">
+          <p className="font-body text-sm text-cream mb-1">No mailboxes assigned yet.</p>
+          <p className="font-body text-sm text-muted">
+            Ask the System Owner to give you access to a mailbox (for example Info) so
+            you can read and reply to messages.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     // On phones the page sits under the 3.5rem top bar, so it is sized to
     // the space that is left (dvh follows the phone's moving browser bars).
     <div className="h-[calc(100dvh-3.5rem)] md:h-screen flex flex-col">
       <div className="px-4 pt-4 sm:px-8 sm:pt-8 pb-4 shrink-0">
-        <div className="flex items-center justify-between mb-2 sm:mb-4">
+        <div className="flex items-center justify-between gap-3 mb-3">
           <h1 className="font-display text-2xl sm:text-3xl text-cream">Messages</h1>
-          <div className="flex border border-ink-raised rounded-sm overflow-hidden">
-            {(["open", "closed"] as MessageThreadStatus[]).map((s) => (
+          <div className="flex items-center gap-2">
+            {sendable.length > 0 && (
               <button
-                key={s}
-                onClick={() => setStatusFilter(s)}
-                className={`font-body text-sm px-4 py-1.5 capitalize transition-colors ${
-                  statusFilter === s
-                    ? "bg-ink-raised text-cream"
-                    : "text-muted hover:text-cream"
-                }`}
+                onClick={openCompose}
+                className="font-body text-sm bg-gold text-ink rounded-sm px-4 py-1.5"
               >
-                {s}
+                Compose
               </button>
-            ))}
+            )}
+            <div className="flex border border-ink-raised rounded-sm overflow-hidden">
+              {(["open", "closed"] as MessageThreadStatus[]).map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setStatusFilter(s)}
+                  className={`font-body text-sm px-4 py-1.5 capitalize transition-colors ${
+                    statusFilter === s
+                      ? "bg-ink-raised text-cream"
+                      : "text-muted hover:text-cream"
+                  }`}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
+
+        {/* Mailbox tabs: only the mailboxes this person can read */}
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          {[{ key: "all", label: "All" }, ...mailboxes].map((m) => {
+            const unread =
+              m.key === "all"
+                ? Object.values(unreadByMailbox).reduce((a, b) => a + b, 0)
+                : unreadByMailbox[m.key] ?? 0;
+            return (
+              <button
+                key={m.key}
+                onClick={() => setMailboxFilter(m.key)}
+                className={`shrink-0 font-body text-sm px-3 py-1 rounded-sm border transition-colors flex items-center gap-2 ${
+                  mailboxFilter === m.key
+                    ? "bg-ink-raised text-cream border-ink-raised"
+                    : "text-muted border-ink-raised hover:text-cream"
+                }`}
+              >
+                {m.label}
+                {unread > 0 && (
+                  <span className="text-xs bg-gold text-ink rounded-full min-w-[1.1rem] h-[1.1rem] px-1 flex items-center justify-center">
+                    {unread}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {notice && (
+          <p className="font-body text-sm text-teal mt-2">{notice}</p>
+        )}
       </div>
 
       <div className="flex-1 min-h-0 px-4 pb-4 sm:px-8 sm:pb-8 flex gap-6">
@@ -188,12 +398,24 @@ export default function MessagesPage() {
                   </span>
                 )}
               </div>
+              {t.subject && (
+                <p className="font-body text-xs text-cream/80 truncate mb-0.5">
+                  {t.subject}
+                </p>
+              )}
               <p className="font-body text-xs text-muted truncate mb-1">
-                {t.latest_message.body}
+                {t.latest_message?.body ?? ""}
               </p>
-              <p className="font-body text-xs text-muted-on-paper">
-                {timeAgo(t.latest_message.created_at)}
-              </p>
+              <div className="flex items-center justify-between gap-2">
+                <p className="font-body text-xs text-muted-on-paper">
+                  {timeAgo(t.latest_message?.created_at ?? t.updated_at)}
+                </p>
+                {mailboxFilter === "all" && t.mailbox && (
+                  <span className="font-body text-[10px] uppercase tracking-wide text-teal border border-ink-raised rounded-sm px-1.5 py-0.5">
+                    {mailboxLabelFor(t.mailbox)}
+                  </span>
+                )}
+              </div>
             </button>
           ))}
         </div>
@@ -248,73 +470,229 @@ export default function MessagesPage() {
                     <p className="font-body text-xs text-muted truncate">
                       {selectedThread.sender_email}
                     </p>
+                    {selectedThread.subject && (
+                      <p className="font-body text-xs text-cream/70 truncate">
+                        {selectedThread.subject}
+                      </p>
+                    )}
+                    <p className="font-body text-[11px] text-teal truncate">
+                      Mailbox: {mailboxLabelFor(threadMailbox)}
+                    </p>
                   </div>
                 </div>
-                <button
-                  onClick={handleToggleStatus}
-                  className="shrink-0 font-body text-xs text-muted-on-paper hover:text-cream border border-ink-raised rounded-sm px-3 py-1.5"
-                >
-                  {selectedThread.status === "open" ? "Close" : "Reopen"}
-                </button>
+                {canSendThread && (
+                  <button
+                    onClick={handleToggleStatus}
+                    className="shrink-0 font-body text-xs text-muted-on-paper hover:text-cream border border-ink-raised rounded-sm px-3 py-1.5"
+                  >
+                    {selectedThread.status === "open" ? "Close" : "Reopen"}
+                  </button>
+                )}
               </div>
 
               <div className="flex-1 overflow-y-auto px-4 sm:px-5 py-4 space-y-3">
-                {selectedThread.messages.map((m) => (
-                  <div
-                    key={m.id}
-                    className={`max-w-[88%] sm:max-w-[75%] ${
-                      m.sender === "admin" ? "ml-auto" : ""
-                    }`}
-                  >
+                {selectedThread.messages.map((m) => {
+                  const admin = isAdminMessage(m);
+                  return (
                     <div
-                      className={`rounded-sm px-3 py-2 font-body text-sm whitespace-pre-wrap break-words ${
-                        m.sender === "admin"
-                          ? "bg-gold text-ink"
-                          : "bg-ink-raised text-cream"
-                      }`}
+                      key={m.id}
+                      className={`max-w-[88%] sm:max-w-[75%] ${admin ? "ml-auto" : ""}`}
                     >
-                      {m.body}
+                      <div
+                        className={`rounded-sm px-3 py-2 font-body text-sm whitespace-pre-wrap break-words ${
+                          admin ? "bg-gold text-ink" : "bg-ink-raised text-cream"
+                        }`}
+                      >
+                        {m.body}
+                      </div>
+
+                      {!admin && m.has_html && (
+                        <button
+                          onClick={() => toggleOriginal(m.id)}
+                          className="font-body text-xs text-teal hover:underline mt-1"
+                        >
+                          {htmlOpenId === m.id ? "Hide original email" : "View original email"}
+                        </button>
+                      )}
+
+                      {htmlOpenId === m.id && (
+                        <div className="mt-2">
+                          {htmlLoading && (
+                            <p className="font-body text-xs text-muted">Loading…</p>
+                          )}
+                          {htmlError && (
+                            <p className="font-body text-xs text-red">{htmlError}</p>
+                          )}
+                          {htmlContent && (
+                            // sandbox="" = no scripts, no forms, no navigation.
+                            // Incoming email is written by strangers: never
+                            // render it with dangerouslySetInnerHTML.
+                            <iframe
+                              title="Original email"
+                              sandbox=""
+                              srcDoc={htmlContent}
+                              className="w-full h-96 bg-white rounded-sm border border-ink-raised"
+                            />
+                          )}
+                        </div>
+                      )}
+
+                      <p
+                        className={`font-body text-xs text-muted-on-paper mt-1 ${
+                          admin ? "text-right" : ""
+                        }`}
+                      >
+                        {admin && m.sender_name ? `${m.sender_name} · ` : ""}
+                        {timeAgo(m.created_at)}
+                      </p>
                     </div>
-                    <p
-                      className={`font-body text-xs text-muted-on-paper mt-1 ${
-                        m.sender === "admin" ? "text-right" : ""
-                      }`}
-                    >
-                      {timeAgo(m.created_at)}
-                    </p>
-                  </div>
-                ))}
+                  );
+                })}
                 <div ref={messagesEndRef} />
               </div>
 
-              <form
-                onSubmit={handleReply}
-                className="px-4 sm:px-5 py-3 sm:py-4 border-t border-ink-raised shrink-0"
-              >
-                {sendError && (
-                  <p className="font-body text-sm text-red mb-2">{sendError}</p>
-                )}
-                <div className="flex gap-2">
-                  <textarea
-                    value={replyBody}
-                    onChange={(e) => setReplyBody(e.target.value)}
-                    placeholder="Write a reply…"
-                    rows={2}
-                    className="flex-1 min-w-0 bg-ink border border-ink-raised rounded-sm px-3 py-2 font-body text-sm text-cream focus:outline-none focus:ring-2 focus:ring-gold resize-none"
-                  />
-                  <button
-                    type="submit"
-                    disabled={sending || !replyBody.trim()}
-                    className="font-body text-sm bg-gold text-ink rounded-sm px-4 py-2 disabled:opacity-60 self-end"
-                  >
-                    {sending ? "Sending…" : "Send"}
-                  </button>
+              {canSendThread ? (
+                <form
+                  onSubmit={handleReply}
+                  className="px-4 sm:px-5 py-3 sm:py-4 border-t border-ink-raised shrink-0"
+                >
+                  {sendError && (
+                    <p className="font-body text-sm text-red mb-2">{sendError}</p>
+                  )}
+                  <p className="font-body text-[11px] text-muted mb-1">
+                    Replying from {mailboxes.find((m) => m.key === threadMailbox)?.address}
+                  </p>
+                  <div className="flex gap-2">
+                    <textarea
+                      value={replyBody}
+                      onChange={(e) => setReplyBody(e.target.value)}
+                      placeholder="Write a reply…"
+                      rows={2}
+                      className="flex-1 min-w-0 bg-ink border border-ink-raised rounded-sm px-3 py-2 font-body text-sm text-cream focus:outline-none focus:ring-2 focus:ring-gold resize-none"
+                    />
+                    <button
+                      type="submit"
+                      disabled={sending || !replyBody.trim()}
+                      className="font-body text-sm bg-gold text-ink rounded-sm px-4 py-2 disabled:opacity-60 self-end"
+                    >
+                      {sending ? "Sending…" : "Send"}
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <div className="px-4 sm:px-5 py-3 sm:py-4 border-t border-ink-raised shrink-0">
+                  <p className="font-body text-sm text-muted">
+                    You can read this mailbox but not reply from it. Ask the System Owner
+                    for send access.
+                  </p>
                 </div>
-              </form>
+              )}
             </>
           )}
         </div>
       </div>
+
+      {/* Compose */}
+      {composeOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center p-0 sm:p-4"
+          onClick={() => !composeSending && setComposeOpen(false)}
+        >
+          <form
+            onSubmit={handleCompose}
+            onClick={(e) => e.stopPropagation()}
+            className="bg-ink border border-ink-raised rounded-t-sm sm:rounded-sm w-full sm:max-w-xl max-h-[92dvh] overflow-y-auto p-4 sm:p-6 space-y-3"
+          >
+            <div className="flex items-center justify-between">
+              <h2 className="font-display text-xl text-cream">New email</h2>
+              <button
+                type="button"
+                onClick={() => setComposeOpen(false)}
+                disabled={composeSending}
+                className="font-body text-sm text-muted hover:text-cream"
+              >
+                Cancel
+              </button>
+            </div>
+
+            <label className="block">
+              <span className="font-body text-xs text-muted">From</span>
+              <select
+                value={composeFrom}
+                onChange={(e) => setComposeFrom(e.target.value)}
+                className="mt-1 w-full bg-ink border border-ink-raised rounded-sm px-3 py-2 font-body text-sm text-cream focus:outline-none focus:ring-2 focus:ring-gold"
+              >
+                {sendable.map((m) => (
+                  <option key={m.key} value={m.key}>
+                    {m.label} — {m.address}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="block">
+              <span className="font-body text-xs text-muted">To (separate with commas)</span>
+              <input
+                type="text"
+                value={composeTo}
+                onChange={(e) => setComposeTo(e.target.value)}
+                placeholder="name@example.com"
+                className="mt-1 w-full bg-ink border border-ink-raised rounded-sm px-3 py-2 font-body text-sm text-cream focus:outline-none focus:ring-2 focus:ring-gold"
+              />
+            </label>
+
+            <label className="block">
+              <span className="font-body text-xs text-muted">Cc (optional)</span>
+              <input
+                type="text"
+                value={composeCc}
+                onChange={(e) => setComposeCc(e.target.value)}
+                className="mt-1 w-full bg-ink border border-ink-raised rounded-sm px-3 py-2 font-body text-sm text-cream focus:outline-none focus:ring-2 focus:ring-gold"
+              />
+            </label>
+
+            <label className="block">
+              <span className="font-body text-xs text-muted">Subject</span>
+              <input
+                type="text"
+                value={composeSubject}
+                onChange={(e) => setComposeSubject(e.target.value)}
+                maxLength={200}
+                className="mt-1 w-full bg-ink border border-ink-raised rounded-sm px-3 py-2 font-body text-sm text-cream focus:outline-none focus:ring-2 focus:ring-gold"
+              />
+            </label>
+
+            <label className="block">
+              <span className="font-body text-xs text-muted">Message</span>
+              <textarea
+                value={composeBody}
+                onChange={(e) => setComposeBody(e.target.value)}
+                rows={8}
+                className="mt-1 w-full bg-ink border border-ink-raised rounded-sm px-3 py-2 font-body text-sm text-cream focus:outline-none focus:ring-2 focus:ring-gold resize-y"
+              />
+            </label>
+
+            <p className="font-body text-[11px] text-muted">
+              Sent with the Afriqa Creative Showcase header and footer. Replies come back
+              to the sending mailbox.
+            </p>
+
+            {composeError && (
+              <p className="font-body text-sm text-red">{composeError}</p>
+            )}
+
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                disabled={composeSending}
+                className="font-body text-sm bg-gold text-ink rounded-sm px-5 py-2 disabled:opacity-60"
+              >
+                {composeSending ? "Sending…" : "Send email"}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }

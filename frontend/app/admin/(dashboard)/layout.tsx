@@ -7,7 +7,7 @@ import Link from "next/link";
 import {
   getToken,
   getAdminProfile,
-  getUnreadMessageCount,
+  getMailboxUnreadCounts,
   getMe,
   updateProfile,
   logout,
@@ -110,7 +110,8 @@ export default function DashboardLayout({
 
   // Keep the sidebar in step with the server: when a super admin adds a
   // section or changes a role, it shows up here within about 30 seconds
-  // without the person signing out.
+  // without the person signing out. Mailbox grants from the system owner
+  // are kept in the saved profile the same way.
   useEffect(() => {
     if (checking) return;
     let cancelled = false;
@@ -123,6 +124,8 @@ export default function DashboardLayout({
             full_name: me.full_name,
             role: me.role,
             permissions: me.permissions,
+            mailboxes_read: me.mailboxes_read,
+            mailboxes_send: me.mailboxes_send,
           };
           const stored = getAdminProfile();
           const changed =
@@ -130,7 +133,11 @@ export default function DashboardLayout({
             stored.role !== next.role ||
             stored.full_name !== next.full_name ||
             JSON.stringify(stored.permissions ?? null) !==
-              JSON.stringify(next.permissions);
+              JSON.stringify(next.permissions) ||
+            JSON.stringify(stored.mailboxes_read ?? null) !==
+              JSON.stringify(next.mailboxes_read) ||
+            JSON.stringify(stored.mailboxes_send ?? null) !==
+              JSON.stringify(next.mailboxes_send);
 
           if (changed) {
             updateProfile(next);
@@ -159,16 +166,17 @@ export default function DashboardLayout({
     (item) => item.href === "/admin/messages" && canSee(item, profile)
   );
 
-  // Poll the unread message count so the sidebar badge stays current
+  // Poll the unread message count so the sidebar badge stays current.
+  // The server only counts mailboxes this person has been assigned.
   useEffect(() => {
     if (checking || !canSeeMessages) return;
 
     let cancelled = false;
 
     function refresh() {
-      getUnreadMessageCount()
-        .then((count) => {
-          if (!cancelled) setUnreadCount(count);
+      getMailboxUnreadCounts()
+        .then((res) => {
+          if (!cancelled) setUnreadCount(res.unread_count);
         })
         .catch(() => {
           // silent — badge just won't update this cycle

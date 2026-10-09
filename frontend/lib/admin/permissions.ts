@@ -75,3 +75,34 @@ export function visibleSectionKeys(departments: string[], extras: string[]): str
     (k) => covered.has(k) || extras.includes(k)
   );
 }
+
+// ---------------------------------------------------------------------------
+// Shared mailboxes
+// ---------------------------------------------------------------------------
+// Only the system owner assigns these (Admin access page). A person needs the
+// "messages" section AND a grant for each mailbox they use. Sending implies
+// reading. Keep this list in sync with ALL_MAILBOXES in app/permissions.py
+// and MAILBOXES in app/emailer.py.
+
+export type Mailbox = {
+  key: string;
+  label: string;
+  address: string;
+};
+
+export const MAILBOXES: Mailbox[] = [
+  { key: "admin", label: "Admin", address: "admin@africacreativeshowcase.com" },
+  { key: "info", label: "Info", address: "info@africacreativeshowcase.com" },
+  { key: "director", label: "Director", address: "director@africacreativeshowcase.com" },
+  { key: "convener", label: "Convener", address: "convener@africacreativeshowcase.com" },
+  { key: "bookings", label: "Bookings", address: "bookings@africacreativeshowcase.com" },
+  { key: "marketing", label: "Marketing", address: "marketing@africacreativeshowcase.com" },
+];
+
+export function mailboxLabel(key: string): string {
+  return MAILBOXES.find((m) => m.key === key)?.label ?? key;
+}
+
+export function mailboxAddress(key: string): string {
+  return MAILBOXES.find((m) => m.key === key)?.address ?? key;
+}
