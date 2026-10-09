@@ -1,3 +1,5 @@
+from html import escape
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
@@ -22,7 +24,7 @@ def submit_contact_inquiry(
     db: Session = Depends(get_db),
 ):
     # ------------------------------------------------------------------
-    # Create the conversation thread
+    # Create the conversation thread (website form -> the info mailbox)
     # ------------------------------------------------------------------
 
     thread = models.ContactThread(
@@ -32,6 +34,8 @@ def submit_contact_inquiry(
         subject=f"Contact Form Question — {payload.full_name}",
         status="open",
         is_replied=False,
+        mailbox="info",
+        channel="form",
     )
 
     db.add(thread)
@@ -49,13 +53,18 @@ def submit_contact_inquiry(
         subject=thread.subject,
         body=payload.question,
         is_read=False,
+        mailbox="info",
+        direction="inbound",
     )
 
     db.add(message)
     db.commit()
 
     # ------------------------------------------------------------------
-    # Send notification to both Afriqa Creative Showcase inboxes
+    # Send notification to both Afriqa Creative Showcase inboxes.
+    # Visitor input is escaped: it ends up in staff inboxes as HTML.
+    # (This email comes from the noreply address, which the Zoho sync
+    # skips, so it won't create a duplicate thread in the dashboard.)
     # ------------------------------------------------------------------
 
     send_email(
@@ -66,10 +75,10 @@ def submit_contact_inquiry(
         subject=f"New Contact Form Question — {payload.full_name}",
         html=f"""
         <p>New question received via the contact form:</p>
-        <p><strong>Name:</strong> {payload.full_name}</p>
-        <p><strong>Email:</strong> {payload.email}</p>
-        <p><strong>Phone:</strong> {payload.phone}</p>
-        <p><strong>Question:</strong> {payload.question}</p>
+        <p><strong>Name:</strong> {escape(payload.full_name)}</p>
+        <p><strong>Email:</strong> {escape(str(payload.email))}</p>
+        <p><strong>Phone:</strong> {escape(payload.phone)}</p>
+        <p><strong>Question:</strong> {escape(payload.question).replace(chr(10), "<br>")}</p>
         """,
     )
 

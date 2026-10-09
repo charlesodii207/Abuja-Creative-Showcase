@@ -1,3 +1,5 @@
+import uuid
+
 import resend
 from html import escape
 from urllib.parse import quote
@@ -960,3 +962,80 @@ def send_registration_continue_email(
         subject="Continue Your Afriqa Creative Showcase Registration",
         html=html,
     )
+
+
+# ---------------------------------------------------------------------------
+# Shared mailboxes (sending from the admin dashboard)
+# ---------------------------------------------------------------------------
+
+# The only addresses the dashboard can send from. The frontend sends a KEY
+# ("info"), never a raw address, so nobody can spoof another sender.
+# Change "from_name" if you want e.g. the director's mail to show a personal name.
+MAILBOXES: dict[str, dict[str, str]] = {
+    "admin":     {"label": "Admin",     "from_name": "Afriqa Creative Showcase", "address": "admin@africacreativeshowcase.com"},
+    "info":      {"label": "Info",      "from_name": "Afriqa Creative Showcase", "address": "info@africacreativeshowcase.com"},
+    "director":  {"label": "Director",  "from_name": "Afriqa Creative Showcase", "address": "director@africacreativeshowcase.com"},
+    "convener":  {"label": "Convener",  "from_name": "Afriqa Creative Showcase", "address": "convener@africacreativeshowcase.com"},
+    "bookings":  {"label": "Bookings",  "from_name": "Afriqa Creative Showcase", "address": "bookings@africacreativeshowcase.com"},
+    "marketing": {"label": "Marketing", "from_name": "Afriqa Creative Showcase", "address": "marketing@africacreativeshowcase.com"},
+}
+
+
+def mailbox_address(key: str) -> str:
+    return MAILBOXES[key]["address"]
+
+
+def mailbox_label(key: str) -> str:
+    return MAILBOXES[key]["label"]
+
+
+def new_message_id() -> str:
+    """A fresh RFC Message-ID we control, so replies can be matched to a thread."""
+    return f"<{uuid.uuid4().hex}@africacreativeshowcase.com>"
+
+
+def send_from_mailbox(
+    mailbox_key: str,
+    to: list[str],
+    subject: str,
+    html: str,
+    cc: list[str] | None = None,
+    in_reply_to: str | None = None,
+    references: str | None = None,
+    message_id: str | None = None,
+) -> str | None:
+    """
+    Send a branded email (same header/footer as every other ACS email) from
+    one of the whitelisted mailboxes. Reply-To is the same mailbox, so the
+    recipient's answer lands in Zoho and is picked up by the sync.
+
+    Returns the Resend id on success, None on failure.
+    """
+    try:
+        box = MAILBOXES[mailbox_key]
+
+        payload: dict = {
+            "from": f"{box['from_name']} <{box['address']}>",
+            "to": list(to),
+            "subject": subject,
+            "html": _branded_html(html),
+            "reply_to": box["address"],
+        }
+        if cc:
+            payload["cc"] = list(cc)
+
+        headers: dict[str, str] = {}
+        if message_id:
+            headers["Message-ID"] = message_id
+        if in_reply_to:
+            headers["In-Reply-To"] = in_reply_to
+            headers["References"] = references or in_reply_to
+        if headers:
+            payload["headers"] = headers
+
+        result = resend.Emails.send(payload)
+        return (result or {}).get("id") or "sent"
+
+    except Exception as e:
+        print(f"Failed to send from {mailbox_key} to {to}: {e}")
+        return None

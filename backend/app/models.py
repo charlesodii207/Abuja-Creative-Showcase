@@ -2,7 +2,8 @@ import enum
 import uuid
 
 from sqlalchemy import (
-    Column, String, Boolean, DateTime, Date, ForeignKey, Enum, Text, Integer, func
+    Column, String, Boolean, DateTime, Date, ForeignKey, Enum, Text, Integer,
+    BigInteger, UniqueConstraint, func
 )
 from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import relationship
@@ -66,6 +67,10 @@ class Admin(Base):
     departments = Column(ARRAY(String), nullable=False, default=list, server_default="{}")
     # Individual sections granted on top of the departments (see app/permissions.py).
     extra_permissions = Column(ARRAY(String), nullable=False, default=list, server_default="{}")
+    # Shared mailboxes this admin may read / send from (see app/permissions.py).
+    # Only the system owner edits these.
+    mailboxes_read = Column(ARRAY(String), nullable=False, default=list, server_default="{}")
+    mailboxes_send = Column(ARRAY(String), nullable=False, default=list, server_default="{}")
     created_by = Column(
         UUID(as_uuid=True),
         ForeignKey("admins.id", ondelete="SET NULL"),
@@ -131,6 +136,11 @@ class ContactThread(Base):
     # Automatically becomes True once ACS sends a reply.
     is_replied = Column(Boolean, nullable=False, default=False)
 
+    # Which shared mailbox this conversation belongs to ("info", "bookings", ...).
+    mailbox = Column(String, nullable=True, index=True)
+    # "form" = website contact form, "email" = arrived by / started as email.
+    channel = Column(String, nullable=False, default="form", server_default="form")
+
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(
         DateTime(timezone=True),
@@ -148,6 +158,9 @@ class ContactThread(Base):
 
 class ContactMessage(Base):
     __tablename__ = "contact_messages"
+    __table_args__ = (
+        UniqueConstraint("mailbox", "message_id", name="uq_contact_messages_mailbox_message_id"),
+    )
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
@@ -178,6 +191,18 @@ class ContactMessage(Base):
     # Read/unread belongs to individual messages.
     is_read = Column(Boolean, nullable=False, default=False)
 
+    # --- Email fields (shared mailboxes) ---
+    mailbox = Column(String, nullable=True, index=True)
+    direction = Column(String, nullable=True)          # "inbound" | "outbound"
+    message_id = Column(String, nullable=True)         # RFC Message-ID, for dedupe + threading
+    in_reply_to = Column(String, nullable=True)
+    references_header = Column(Text, nullable=True)
+    to_addresses = Column(Text, nullable=True)
+    cc_addresses = Column(Text, nullable=True)
+    # Raw HTML from inbound mail. UNTRUSTED: only ever shown in a sandboxed iframe.
+    body_html = Column(Text, nullable=True)
+    imap_uid = Column(BigInteger, nullable=True)
+
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     thread = relationship(
@@ -190,6 +215,18 @@ class ContactMessage(Base):
         foreign_keys=[admin_id],
         back_populates="contact_messages",
     )
+
+
+class MailSyncState(Base):
+    """Where the Zoho IMAP sync got to, per mailbox."""
+
+    __tablename__ = "mail_sync_state"
+
+    mailbox = Column(String, primary_key=True)
+    uidvalidity = Column(BigInteger, nullable=True)
+    last_uid = Column(BigInteger, nullable=False, default=0, server_default="0")
+    last_synced_at = Column(DateTime(timezone=True), nullable=True)
+    last_error = Column(Text, nullable=True)
 
 
 # ---------------------------------------------------------------------------

@@ -8,7 +8,9 @@ from app import models, schemas
 from app.auth import hash_password, verify_password, create_access_token
 from app.dependencies import get_current_admin, get_current_admin_allow_password_change, require_role
 from app.audit import log_action
-from app.permissions import ALL_DEPARTMENTS, ALL_PERMISSIONS, permissions_for
+from app.permissions import (
+    ALL_DEPARTMENTS, ALL_PERMISSIONS, ALL_MAILBOXES, permissions_for, mailboxes_for,
+)
 
 router = APIRouter(prefix="/admin/auth", tags=["admin-auth"])
 
@@ -24,6 +26,8 @@ def _summary(a: models.Admin) -> schemas.AdminSummary:
         last_login_at=a.last_login_at.isoformat() if a.last_login_at else None,
         departments=list(a.departments or []),
         extra_permissions=list(a.extra_permissions or []),
+        mailboxes_read=list(a.mailboxes_read or []),
+        mailboxes_send=list(a.mailboxes_send or []),
     )
 
 
@@ -76,6 +80,8 @@ def login(payload: schemas.LoginRequest, db: Session = Depends(get_db)):
         full_name=admin.full_name,
         role=admin.role.value,
         permissions=permissions_for(admin),
+        mailboxes_read=mailboxes_for(admin, "read"),
+        mailboxes_send=mailboxes_for(admin, "send"),
     )
 
 
@@ -86,6 +92,8 @@ def me(admin: models.Admin = Depends(get_current_admin)):
         full_name=admin.full_name,
         role=admin.role.value,
         permissions=permissions_for(admin),
+        mailboxes_read=mailboxes_for(admin, "read"),
+        mailboxes_send=mailboxes_for(admin, "send"),
     )
 
 
@@ -189,11 +197,13 @@ def list_admins(
     summaries = [_summary(a) for a in query.all()]
 
     # A plain admin can see who their fellow admins are, but not which pages
-    # they have been given.
+    # or mailboxes they have been given.
     if current_admin.role == models.AdminRole.admin:
         for summary in summaries:
             summary.departments = []
             summary.extra_permissions = []
+            summary.mailboxes_read = []
+            summary.mailboxes_send = []
 
     return summaries
 
@@ -243,6 +253,58 @@ def update_admin_departments(
         id=str(target.id),
         status="access_updated",
         message=f"Access updated for {target.full_name}. It shows on their screen within about 30 seconds.",
+    )
+
+
+@router.patch("/admins/{admin_id}/mailboxes", response_model=schemas.AdminActionResponse)
+def update_admin_mailboxes(
+    admin_id: str,
+    payload: schemas.UpdateAdminMailboxesRequest,
+    db: Session = Depends(get_db),
+    # Only the System Owner decides who can use which shared mailbox.
+    current_admin: models.Admin = Depends(require_role("system_owner")),
+):
+    target = _get_admin_or_404(db, admin_id)
+
+    if target.role == models.AdminRole.system_owner:
+        raise HTTPException(
+            status_code=400,
+            detail="The System Owner already has every mailbox.",
+        )
+
+    unknown = [m for m in payload.mailboxes_read + payload.mailboxes_send if m not in ALL_MAILBOXES]
+    if unknown:
+        raise HTTPException(status_code=400, detail=f"Unknown mailbox: {unknown[0]}.")
+
+    new_send = list(dict.fromkeys(payload.mailboxes_send))
+    # Sending implies reading.
+    new_read = list(dict.fromkeys(payload.mailboxes_read + new_send))
+
+    old_read = list(target.mailboxes_read or [])
+    old_send = list(target.mailboxes_send or [])
+
+    target.mailboxes_read = new_read
+    target.mailboxes_send = new_send
+    db.commit()
+
+    log_action(
+        db, current_admin, "update_mailboxes",
+        target_type="admin",
+        target_reference=target.username,
+        detail=(
+            f"Read: {', '.join(old_read) or 'none'} → {', '.join(new_read) or 'none'}"
+            f" | Send: {', '.join(old_send) or 'none'} → {', '.join(new_send) or 'none'}"
+        ),
+    )
+
+    note = ""
+    if "messages" not in permissions_for(target):
+        note = " They also need the Messages section before they can see any mail."
+
+    return schemas.AdminActionResponse(
+        id=str(target.id),
+        status="mailboxes_updated",
+        message=f"Mailbox access updated for {target.full_name}.{note}",
     )
 
 

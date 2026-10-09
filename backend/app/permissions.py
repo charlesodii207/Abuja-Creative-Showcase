@@ -17,6 +17,9 @@ ALL_PERMISSIONS: set[str] = set().union(*DEPARTMENT_SECTIONS.values())
 
 SENIOR_ROLES = ("system_owner", "super_admin")
 
+# Shared mailboxes. Keys must match MAILBOXES in app/emailer.py.
+ALL_MAILBOXES = {"admin", "info", "director", "convener", "bookings", "marketing"}
+
 
 def permissions_for(admin) -> list[str]:
     """Sections this admin can use. Seniors get everything; regular admins
@@ -32,3 +35,21 @@ def permissions_for(admin) -> list[str]:
     granted |= {p for p in (admin.extra_permissions or []) if p in ALL_PERMISSIONS}
 
     return sorted(granted)
+
+
+def mailboxes_for(admin, need: str = "read") -> list[str]:
+    """Mailboxes this admin may read or send from.
+
+    Only the system owner gets every mailbox automatically. Everyone else,
+    super admins included, needs the 'messages' section AND an explicit
+    grant from the owner. Sending implies reading."""
+    if admin.role.value == "system_owner":
+        return sorted(ALL_MAILBOXES)
+
+    if "messages" not in permissions_for(admin):
+        return []
+
+    sendable = set(admin.mailboxes_send or [])
+    readable = set(admin.mailboxes_read or []) | sendable
+    chosen = sendable if need == "send" else readable
+    return sorted(chosen & ALL_MAILBOXES)

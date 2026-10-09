@@ -223,6 +223,11 @@ class ContactMessageSummary(BaseModel):
     admin_id: str | None = None
     is_read: bool
     created_at: datetime | None
+    direction: str | None = None          # "inbound" | "outbound"
+    mailbox: str | None = None
+    to_addresses: str | None = None
+    cc_addresses: str | None = None
+    has_html: bool = False                # original HTML exists: fetch /admin/messages/html/{id}
 
     class Config:
         from_attributes = True
@@ -240,6 +245,8 @@ class ContactThreadSummary(BaseModel):
     created_at: datetime | None
     updated_at: datetime | None
     latest_message: ContactMessageSummary | None = None
+    mailbox: str | None = None
+    channel: str = "form"                 # "form" | "email"
 
     class Config:
         from_attributes = True
@@ -257,6 +264,8 @@ class ContactThreadDetail(BaseModel):
     created_at: datetime | None
     updated_at: datetime | None
     messages: list[ContactMessageSummary]
+    mailbox: str | None = None
+    channel: str = "form"
 
     class Config:
         from_attributes = True
@@ -272,6 +281,28 @@ class ContactReplyResponse(BaseModel):
 
 class ContactUnreadCountResponse(BaseModel):
     unread_count: int
+    by_mailbox: dict[str, int] = {}
+
+
+class MailboxOption(BaseModel):
+    key: str
+    label: str
+    address: str
+    can_send: bool
+
+
+class SendMailRequest(BaseModel):
+    mailbox: str                  # a key like "info", never a raw address
+    to: list[EmailStr]
+    cc: list[EmailStr] = []
+    subject: str
+    body: str                     # plain text; escaped + wrapped in the branded template
+
+
+class MailSyncStatus(BaseModel):
+    mailbox: str
+    last_synced_at: datetime | None = None
+    last_error: str | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -345,6 +376,9 @@ class LoginResponse(BaseModel):
     # Sections this admin can use (from their departments; everything for
     # super admins and the system owner).
     permissions: list[str] = []
+    # Shared mailboxes this admin can read / send from.
+    mailboxes_read: list[str] = []
+    mailboxes_send: list[str] = []
 
 
 class MeResponse(BaseModel):
@@ -353,6 +387,8 @@ class MeResponse(BaseModel):
     full_name: str
     role: str
     permissions: list[str] = []
+    mailboxes_read: list[str] = []
+    mailboxes_send: list[str] = []
 
 
 class ChangePasswordRequest(BaseModel):
@@ -375,6 +411,11 @@ class UpdateAdminDepartmentsRequest(BaseModel):
     extra_permissions: list[str] | None = None
 
 
+class UpdateAdminMailboxesRequest(BaseModel):
+    mailboxes_read: list[str] = []
+    mailboxes_send: list[str] = []
+
+
 class ChangeAdminRoleRequest(BaseModel):
     role: str
 
@@ -389,6 +430,8 @@ class AdminSummary(BaseModel):
     last_login_at: str | None
     departments: list[str] = []
     extra_permissions: list[str] = []
+    mailboxes_read: list[str] = []
+    mailboxes_send: list[str] = []
 
 
 class AdminLogSummary(BaseModel):

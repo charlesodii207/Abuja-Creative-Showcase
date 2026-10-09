@@ -5,7 +5,7 @@ import jwt
 from app.database import get_db
 from app import models
 from app.auth import decode_access_token
-from app.permissions import SENIOR_ROLES, permissions_for
+from app.permissions import SENIOR_ROLES, permissions_for, mailboxes_for
 
 
 def _get_admin_from_token(authorization: str, db: Session) -> tuple[models.Admin, dict]:
@@ -74,3 +74,10 @@ def require_permission(*needed: str):
 
         return admin
     return checker
+
+
+def require_mailbox(admin: models.Admin, mailbox: str | None, need: str = "read") -> None:
+    """Raise 403 unless this admin may read ('read') or send from ('send')
+    the given shared mailbox. Call from routes, after loading the thread."""
+    if not mailbox or mailbox not in mailboxes_for(admin, need):
+        raise HTTPException(status_code=403, detail="You don't have access to this mailbox.")

@@ -1,3 +1,6 @@
+import asyncio
+from contextlib import asynccontextmanager, suppress
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -22,6 +25,22 @@ from app.routes.traffic import router as traffic_router
 from app.routes.bookings import router as bookings_router
 
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Start the Zoho mail sync in the background when MAIL_SYNC_ENABLED=true."""
+    task = None
+    if settings.mail_sync_enabled:
+        from app.mail_sync import sync_loop
+        task = asyncio.create_task(sync_loop())
+
+    yield
+
+    if task:
+        task.cancel()
+        with suppress(asyncio.CancelledError):
+            await task
+
+
 # Public API docs (/docs, /redoc, /openapi.json) list every route this
 # API has, which is fine while building locally but shouldn't be handed
 # to the public once this is a live event site. They're only left on
@@ -36,6 +55,7 @@ app = FastAPI(
     docs_url="/docs" if _is_dev else None,
     redoc_url="/redoc" if _is_dev else None,
     openapi_url="/openapi.json" if _is_dev else None,
+    lifespan=lifespan,
 )
 
 
