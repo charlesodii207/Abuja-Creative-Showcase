@@ -46,24 +46,37 @@ _SUBJECT_PREFIX = re.compile(r"^\s*((re|fwd?|aw)\s*:\s*)+", re.I)
 # ---------------------------------------------------------------------------
 
 class _TextExtractor(HTMLParser):
+    """HTML -> readable text. Skips <head>/<style>/<script> and quoted replies
+    (<blockquote>), and squeezes the whitespace that table-based emails create."""
+
     def __init__(self):
         super().__init__()
         self.parts: list[str] = []
         self._skip = 0
+        self._quote = 0
 
     def handle_starttag(self, tag, attrs):
-        if tag in ("script", "style"):
+        if tag in ("script", "style", "head", "title"):
             self._skip += 1
+        elif tag == "blockquote":
+            self._quote += 1
         elif tag in ("br", "p", "div", "tr", "li"):
             self.parts.append("\n")
 
     def handle_endtag(self, tag):
-        if tag in ("script", "style") and self._skip:
+        if tag in ("script", "style", "head", "title") and self._skip:
             self._skip -= 1
+        elif tag == "blockquote" and self._quote:
+            self._quote -= 1
 
     def handle_data(self, data):
-        if not self._skip:
-            self.parts.append(data)
+        if self._skip or self._quote:
+            return
+        text_ = re.sub(r"\s+", " ", data)
+        if text_.strip():
+            self.parts.append(text_)
+        elif self.parts and not self.parts[-1].endswith(("\n", " ")):
+            self.parts.append(" ")
 
 
 def _html_to_text(html: str) -> str:
@@ -72,7 +85,12 @@ def _html_to_text(html: str) -> str:
         parser.feed(html)
     except Exception:
         return ""
-    return re.sub(r"\n{3,}", "\n\n", "".join(parser.parts)).strip()
+    out = "".join(parser.parts)
+    out = re.sub(r"[ \t]*\n[ \t]*", "\n", out)
+    out = re.sub(r"\n{3,}", "\n\n", out).strip()
+    # Drop a dangling "On <date>, <name> wrote:" line left behind by the quote.
+    out = re.sub(r"(?m)^On [^\n]{5,200}(?:\n[^\n]{0,80})?wrote:\s*$", "", out).strip()
+    return out
 
 
 def norm_subject(subject: str | None) -> str:
@@ -224,6 +242,20 @@ def _is_automated(from_address: str) -> bool:
     return bool(noreply) and from_address == noreply
 
 
+def _is_ignored(from_address: str) -> bool:
+    """Senders listed in MAIL_SYNC_IGNORE_SENDERS (Zoho's own notifications etc.)."""
+    for rule in settings.mail_sync_ignore_senders.split(","):
+        rule = rule.strip().lower()
+        if not rule:
+            continue
+        if "@" in rule:
+            if from_address == rule:
+                return True
+        elif from_address.endswith("@" + rule) or from_address.endswith("." + rule):
+            return True
+    return False
+
+
 def _find_thread(db, mailbox: str, item: dict):
     refs: set[str] = set()
     for header in (item["in_reply_to"], item["references"]):
@@ -261,7 +293,11 @@ def _find_thread(db, mailbox: str, item: dict):
 
 
 def _store(db, polled_key: str, item: dict) -> bool:
-    if not item["from_address"] or _is_automated(item["from_address"]):
+    if (
+        not item["from_address"]
+        or _is_automated(item["from_address"])
+        or _is_ignored(item["from_address"])
+    ):
         return False
 
     mailbox = _route(polled_key, item["recipients"])

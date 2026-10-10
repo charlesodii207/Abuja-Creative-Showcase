@@ -19,10 +19,53 @@ BORDER = "#2A3158"
 
 BRAND_NAME = "Afriqa Creative Showcase"
 WEBSITE_URL = "https://africacreativeshowcase.com"
+CONTACT_EMAIL = "info@africacreativeshowcase.com"
+
+# Fill in the real links. Any entry with an empty URL is simply left out.
+SOCIAL_LINKS = [
+    ("Instagram", ""),
+    ("X", ""),
+    ("Facebook", ""),
+    ("LinkedIn", ""),
+    ("YouTube", ""),
+    ("TikTok", ""),
+]
 
 
 def _safe(value: object) -> str:
     return escape(str(value))
+
+
+def _footer_links() -> str:
+    """Social links, contact email and website for the email footer.
+    Plain text links, because they display reliably in every email app."""
+    sep = f'<span style="color:{BORDER};">&nbsp;&nbsp;|&nbsp;&nbsp;</span>'
+
+    def link(label: str, url: str) -> str:
+        return (
+            f'<a href="{_safe(url)}" style="color:{TEAL};text-decoration:none;'
+            f'font-weight:600;">{_safe(label)}</a>'
+        )
+
+    rows = []
+
+    socials = [link(label, url) for label, url in SOCIAL_LINKS if url]
+    if socials:
+        rows.append(
+            f'<div style="font-size:13px;line-height:1.8;margin-top:14px;">'
+            f'{sep.join(socials)}</div>'
+        )
+
+    contact = [
+        link(CONTACT_EMAIL, f"mailto:{CONTACT_EMAIL}"),
+        link("africacreativeshowcase.com", WEBSITE_URL),
+    ]
+    rows.append(
+        f'<div style="font-size:12px;line-height:1.8;margin-top:10px;">'
+        f'{sep.join(contact)}</div>'
+    )
+
+    return "".join(rows)
 
 
 def _branded_html(html: str) -> str:
@@ -251,7 +294,7 @@ def _branded_html(html: str) -> str:
                             class="email-bg"
                             style="
                                 border-top:1px solid {BORDER};
-                                padding:22px 25px;
+                                padding:26px 25px 30px;
                                 background-color:{NAVY};
                                 font-family:Arial,Helvetica,sans-serif;
                             "
@@ -259,10 +302,11 @@ def _branded_html(html: str) -> str:
                         >
 
                             <div
-                                class="email-muted"
+                                class="email-text"
                                 style="
-                                    color:{MUTED};
-                                    font-size:12px;
+                                    color:{CREAM};
+                                    font-size:14px;
+                                    font-weight:600;
                                     line-height:1.5;
                                 "
                             >
@@ -273,24 +317,27 @@ def _branded_html(html: str) -> str:
                                 class="email-muted"
                                 style="
                                     color:{MUTED};
-                                    font-size:11px;
+                                    font-size:12px;
                                     line-height:1.5;
-                                    margin-top:5px;
+                                    margin-top:3px;
                                 "
                             >
                                 Abuja · Nigeria
                             </div>
+
+                            {_footer_links()}
 
                             <div
                                 class="email-muted"
                                 style="
                                     color:{MUTED};
                                     font-size:11px;
-                                    line-height:1.5;
-                                    margin-top:4px;
+                                    line-height:1.6;
+                                    margin-top:16px;
                                 "
                             >
-                                africacreativeshowcase.com
+                                You are receiving this email because you registered
+                                with, or contacted, Afriqa Creative Showcase.
                             </div>
 
                         </td>

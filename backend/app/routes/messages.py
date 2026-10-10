@@ -102,21 +102,14 @@ def _reply_subject(subject: str) -> str:
     return f"Re: {subject}"
 
 
-def _wrap_body(greeting: str | None, body: str) -> str:
-    """The inner HTML used for every dashboard email. _branded_html adds the
-    ACS header and footer around it."""
+def _wrap_body(body: str) -> str:
+    """Exactly what the person typed, escaped, with line breaks kept.
+    No greeting or sign-off is added: the sender writes those. _branded_html
+    adds only the logo header and the footer around it."""
     safe_body = escape(body).replace("\n", "<br>")
-    hello = f"<p>Hello {escape(greeting)},</p>" if greeting else ""
     return f"""
     <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-        {hello}
-
-        <p>{safe_body}</p>
-
-        <p>
-            Best regards,<br>
-            Afriqa Creative Showcase
-        </p>
+        {safe_body}
     </div>
     """
 
@@ -150,7 +143,7 @@ def sync_status(
     db: Session = Depends(get_db),
     current_admin: models.Admin = Depends(require_role("system_owner")),
 ):
-    """Owner only: when each mailbox last synced, and the last error (e.g. a wrong Zoho password)."""
+    """Owner only: when each mailbox last synced, and the last error (e.g. a wrong Zoho token)."""
     rows = {r.mailbox: r for r in db.query(models.MailSyncState).all()}
     out = []
     for key in MAILBOXES:
@@ -318,7 +311,7 @@ def compose_message(
         payload.mailbox,
         to,
         subject,
-        _wrap_body(None, body),
+        _wrap_body(body),
         cc=cc or None,
         message_id=message_id,
     )
@@ -478,7 +471,7 @@ def reply_to_message_thread(
         mailbox,
         [thread.sender_email],
         reply_subject,
-        _wrap_body(thread.sender_name, body),
+        _wrap_body(body),
         in_reply_to=in_reply_to,
         references=references,
         message_id=message_id,

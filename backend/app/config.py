@@ -38,6 +38,8 @@ class Settings(BaseSettings):
     # 0 = on first run, start from "now" and don't import old mail.
     # N > 0 = on first run, also import the last N days.
     mail_sync_backfill_days: int = 0
+    # Senders the sync should never import (exact address, or a whole domain).
+    mail_sync_ignore_senders: str = "noreply@zohoaccounts.com,zohocorp.com,zohomail.com,zoho.com"
 
     # One Zoho "Self Client" is shared by every mailbox.
     zoho_client_id: str = ""
