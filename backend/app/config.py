@@ -31,26 +31,39 @@ class Settings(BaseSettings):
     jwt_secret: str
 
     # ------------------------------------------------------------------
-    # Zoho mailbox sync (IMAP). Off unless MAIL_SYNC_ENABLED=true.
+    # Zoho mailbox sync (Zoho Mail API). Off unless MAIL_SYNC_ENABLED=true.
     # ------------------------------------------------------------------
     mail_sync_enabled: bool = False
     mail_sync_interval_seconds: int = 60
     # 0 = on first run, start from "now" and don't import old mail.
     # N > 0 = on first run, also import the last N days.
     mail_sync_backfill_days: int = 0
-    zoho_imap_host: str = "imap.zoho.com"   # imap.zoho.eu / imap.zoho.in on other data centers
-    zoho_imap_port: int = 993
 
-    # One app password per mailbox. Blank = that mailbox isn't synced.
-    zoho_password_admin: str = ""
-    zoho_password_info: str = ""
-    zoho_password_director: str = ""
-    zoho_password_convener: str = ""
-    zoho_password_bookings: str = ""
-    zoho_password_marketing: str = ""
+    # One Zoho "Self Client" is shared by every mailbox.
+    zoho_client_id: str = ""
+    zoho_client_secret: str = ""
+    zoho_accounts_host: str = "https://accounts.zoho.com"   # .eu / .in / .com.au elsewhere
+    zoho_mail_host: str = "https://mail.zoho.com"
 
-    def zoho_password(self, mailbox: str) -> str:
-        return getattr(self, f"zoho_password_{mailbox}", "")
+    # Per mailbox: refresh token + Zoho account id. Blank = not synced.
+    zoho_refresh_token_admin: str = ""
+    zoho_account_id_admin: str = ""
+    zoho_refresh_token_info: str = ""
+    zoho_account_id_info: str = ""
+    zoho_refresh_token_director: str = ""
+    zoho_account_id_director: str = ""
+    zoho_refresh_token_convener: str = ""
+    zoho_account_id_convener: str = ""
+    zoho_refresh_token_bookings: str = ""
+    zoho_account_id_bookings: str = ""
+    zoho_refresh_token_marketing: str = ""
+    zoho_account_id_marketing: str = ""
+
+    def zoho_refresh_token(self, mailbox: str) -> str:
+        return getattr(self, f"zoho_refresh_token_{mailbox}", "")
+
+    def zoho_account_id(self, mailbox: str) -> str:
+        return getattr(self, f"zoho_account_id_{mailbox}", "")
 
     class Config:
         env_file = ".env"

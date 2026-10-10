@@ -1,23 +1,26 @@
 """
-Zoho -> dashboard sync.
+Zoho -> dashboard sync, using the Zoho Mail API (no IMAP needed).
 
-Polls each configured mailbox over IMAP, stores new messages as
-ContactThread / ContactMessage rows, and never changes anything in Zoho
-(read-only select, BODY.PEEK).
+Every cycle, for each configured mailbox: list the newest inbox messages,
+fetch the new ones (body + headers), store them as ContactThread /
+ContactMessage rows. It only READS from Zoho; nothing is changed or marked
+as read there.
 
 Safe with several uvicorn/gunicorn workers: each mailbox is processed under a
 Postgres advisory lock, so only one process syncs it at a time.
 """
 
 import asyncio
-import imaplib
 import logging
 import re
+import time
 from datetime import datetime, timedelta, timezone
-from email import message_from_bytes, policy
-from email.utils import getaddresses, parseaddr, parsedate_to_datetime
+from email import message_from_string
+from email.utils import getaddresses, parseaddr
+from html import unescape
 from html.parser import HTMLParser
 
+import requests
 from sqlalchemy import func, text
 
 from app import models
@@ -28,7 +31,10 @@ from app.emailer import MAILBOXES, mailbox_address
 log = logging.getLogger("acs.mail_sync")
 
 LOCK_BASE = 727_000          # arbitrary app-wide number for pg advisory locks
-MAX_PER_CYCLE = 40           # messages per mailbox per cycle (keeps each run short)
+LIST_LIMIT = 50              # newest messages looked at per cycle
+MAX_PER_CYCLE = 40           # messages imported per mailbox per cycle
+BACKFILL_PAGE = 100
+BACKFILL_MAX_PAGES = 5
 MAX_BODY_CHARS = 200_000
 THREAD_MATCH_DAYS = 45
 
@@ -36,7 +42,7 @@ _SUBJECT_PREFIX = re.compile(r"^\s*((re|fwd?|aw)\s*:\s*)+", re.I)
 
 
 # ---------------------------------------------------------------------------
-# Parsing
+# Text helpers
 # ---------------------------------------------------------------------------
 
 class _TextExtractor(HTMLParser):
@@ -73,63 +79,136 @@ def norm_subject(subject: str | None) -> str:
     return _SUBJECT_PREFIX.sub("", subject or "").strip().lower()
 
 
-def _content(part) -> str | None:
-    if part is None:
-        return None
+def _addresses(raw: str | None) -> list[str]:
+    """Zoho returns address fields HTML-escaped, e.g. '&lt;a@b.com&gt;'."""
+    return [a.lower() for _, a in getaddresses([unescape(raw or "")]) if a]
+
+
+# ---------------------------------------------------------------------------
+# Zoho Mail API
+# ---------------------------------------------------------------------------
+
+_token_cache: dict[str, tuple[str, float]] = {}
+
+
+def _access_token(key: str, force: bool = False) -> str:
+    cached = _token_cache.get(key)
+    if cached and not force and cached[1] > time.time() + 60:
+        return cached[0]
+
+    resp = requests.post(
+        f"{settings.zoho_accounts_host}/oauth/v2/token",
+        data={
+            "grant_type": "refresh_token",
+            "client_id": settings.zoho_client_id,
+            "client_secret": settings.zoho_client_secret,
+            "refresh_token": settings.zoho_refresh_token(key),
+        },
+        timeout=30,
+    )
+    resp.raise_for_status()
+    body = resp.json()
+    if "access_token" not in body:
+        raise RuntimeError(f"Zoho token refresh failed: {body.get('error', 'unknown error')}")
+
+    token = body["access_token"]
+    _token_cache[key] = (token, time.time() + int(body.get("expires_in", 3600)))
+    return token
+
+
+def _api_get(key: str, path: str, params: dict | None = None):
+    url = f"{settings.zoho_mail_host}/api/accounts/{settings.zoho_account_id(key)}{path}"
+
+    for attempt in (1, 2):
+        resp = requests.get(
+            url,
+            headers={"Authorization": f"Zoho-oauthtoken {_access_token(key, force=attempt == 2)}"},
+            params=params,
+            timeout=30,
+        )
+        if resp.status_code == 401 and attempt == 1:
+            continue   # token expired: refresh once and retry
+        resp.raise_for_status()
+        return resp.json().get("data")
+
+
+def _list_messages(key: str, start: int, limit: int) -> list[dict]:
+    data = _api_get(key, "/messages/view", {
+        "start": start,
+        "limit": limit,
+        "sortBy": "date",
+        "sortorder": "false",    # newest first
+    })
+    return data if isinstance(data, list) else []
+
+
+def _ms_to_dt(value) -> datetime | None:
     try:
-        return part.get_content()
+        return datetime.fromtimestamp(int(value) / 1000, tz=timezone.utc)
     except Exception:
         return None
 
 
-def _addrs(msg, *headers: str) -> list[str]:
-    values: list[str] = []
-    for h in headers:
-        values.extend(str(v) for v in msg.get_all(h, []))
-    return [a.lower() for _, a in getaddresses(values) if a]
+def _load_message(key: str, summary: dict) -> dict:
+    """Turn one Zoho list entry into the dict _store() expects."""
+    message_id = str(summary["messageId"])
+    folder_id = str(summary.get("folderId") or "")
 
+    html = None
+    try:
+        data = _api_get(key, f"/folders/{folder_id}/messages/{message_id}/content")
+        if isinstance(data, dict):
+            html = data.get("content")
+    except Exception:
+        log.warning("Could not load body of message %s in %s", message_id, key)
 
-def _parse(raw: bytes) -> dict:
-    msg = message_from_bytes(raw, policy=policy.default)
+    # Real email headers (Message-ID / In-Reply-To / References) for threading.
+    # If this fails the message is still imported, matched by sender + subject.
+    hdr_message_id = hdr_in_reply_to = hdr_references = None
+    try:
+        data = _api_get(key, f"/folders/{folder_id}/messages/{message_id}/header")
+        raw = data.get("headerContent") if isinstance(data, dict) else None
+        if raw:
+            headers = message_from_string(raw)
+            hdr_message_id = (headers.get("Message-ID") or "").strip() or None
+            hdr_in_reply_to = (headers.get("In-Reply-To") or "").strip() or None
+            hdr_references = (headers.get("References") or "").strip() or None
+    except Exception:
+        log.warning("Could not load headers of message %s in %s", message_id, key)
 
-    html = _content(msg.get_body(preferencelist=("html",)))
-    plain = _content(msg.get_body(preferencelist=("plain",)))
-    body = (plain or "").strip() or _html_to_text(html or "")
+    from_name, from_addr = parseaddr(unescape(str(summary.get("fromAddress") or "")))
+    sender_name = unescape(str(summary.get("sender") or "")).strip()
+    to = _addresses(summary.get("toAddress"))
+    cc = _addresses(summary.get("ccAddress"))
 
-    attachments = [p.get_filename() for p in msg.iter_attachments() if p.get_filename()]
-    if attachments:
-        body += "\n\n[Attachments not imported — open in Zoho: " + ", ".join(attachments) + "]"
-
-    from_name, from_addr = parseaddr(str(msg.get("From", "")))
-
-    received_at = None
-    if msg.get("Date"):
-        try:
-            received_at = parsedate_to_datetime(str(msg["Date"]))
-            if received_at.tzinfo is None:
-                received_at = received_at.replace(tzinfo=timezone.utc)
-        except Exception:
-            received_at = None
+    plain = _html_to_text(html or "") or unescape(str(summary.get("summary") or "")).strip()
+    if str(summary.get("hasAttachment")) in ("1", "true", "True"):
+        plain += "\n\n[This email has attachments, which are not imported. Open it in Zoho to see them.]"
 
     return {
-        "message_id": str(msg.get("Message-ID") or "").strip() or None,
-        "in_reply_to": str(msg.get("In-Reply-To") or "").strip() or None,
-        "references": str(msg.get("References") or "").strip() or None,
-        "from_name": (from_name or "").strip(),
+        "uid": int(message_id),
+        "message_id": hdr_message_id,
+        "in_reply_to": hdr_in_reply_to,
+        "references": hdr_references,
+        "from_name": (sender_name or from_name or "").strip(),
         "from_address": (from_addr or "").strip().lower(),
-        "to": _addrs(msg, "To"),
-        "cc": _addrs(msg, "Cc"),
-        "recipients": _addrs(msg, "To", "Cc", "Delivered-To", "X-Original-To", "X-Forwarded-To"),
-        "subject": (str(msg.get("Subject") or "").strip() or "(no subject)")[:300],
-        "body": (body or "(empty message)")[:MAX_BODY_CHARS],
+        "to": to,
+        "cc": cc,
+        "recipients": to + cc,
+        "subject": (unescape(str(summary.get("subject") or "")).strip() or "(no subject)")[:300],
+        "body": (plain or "(empty message)")[:MAX_BODY_CHARS],
         "html": (html or None) and html[:MAX_BODY_CHARS * 2],
-        "received_at": received_at,
+        "received_at": _ms_to_dt(summary.get("receivedTime")),
     }
 
 
+# ---------------------------------------------------------------------------
+# Routing / storing
+# ---------------------------------------------------------------------------
+
 def _route(polled_key: str, recipients: list[str]) -> str:
     """Which mailbox a message belongs to. Normally the one we polled; if it was
-    delivered through an alias of another ACS mailbox, use that one."""
+    sent to an alias that is another ACS mailbox, use that one."""
     if mailbox_address(polled_key).lower() in recipients:
         return polled_key
     for key in MAILBOXES:
@@ -137,69 +216,6 @@ def _route(polled_key: str, recipients: list[str]) -> str:
             return key
     return polled_key
 
-
-# ---------------------------------------------------------------------------
-# IMAP
-# ---------------------------------------------------------------------------
-
-def _untagged_int(M: imaplib.IMAP4_SSL, name: str) -> int | None:
-    try:
-        _, data = M.response(name)
-        return int(data[0])
-    except Exception:
-        return None
-
-
-def _fetch(key: str, last_uid: int, saved_validity: int | None):
-    """Returns (uidvalidity, start_uid, items). start_uid is the UID we are
-    effectively starting after (the baseline on a first run)."""
-    first_run = saved_validity is None
-    M = imaplib.IMAP4_SSL(settings.zoho_imap_host, settings.zoho_imap_port, timeout=30)
-    try:
-        M.login(mailbox_address(key), settings.zoho_password(key))
-        M.select("INBOX", readonly=True)   # read-only: never marks mail as read in Zoho
-
-        validity = _untagged_int(M, "UIDVALIDITY")
-        uidnext = _untagged_int(M, "UIDNEXT")
-
-        if saved_validity is not None and validity != saved_validity:
-            # Zoho rebuilt the mailbox numbering; old UIDs are meaningless.
-            first_run, last_uid = True, 0
-
-        if first_run and settings.mail_sync_backfill_days <= 0:
-            return validity, max((uidnext or 1) - 1, 0), []
-
-        if first_run:
-            since = (datetime.now(timezone.utc)
-                     - timedelta(days=settings.mail_sync_backfill_days)).strftime("%d-%b-%Y")
-            _, data = M.uid("SEARCH", None, "SINCE", since)
-            last_uid = 0
-        else:
-            _, data = M.uid("SEARCH", None, f"UID {last_uid + 1}:*")
-
-        uids = sorted(int(u) for u in (data[0] or b"").split())
-        uids = [u for u in uids if u > last_uid][:MAX_PER_CYCLE]
-
-        items = []
-        for uid in uids:
-            typ, md = M.uid("FETCH", str(uid), "(BODY.PEEK[])")
-            if typ != "OK" or not md or not isinstance(md[0], tuple):
-                continue
-            item = _parse(md[0][1])
-            item["uid"] = uid
-            items.append(item)
-
-        return validity, last_uid, items
-    finally:
-        try:
-            M.logout()
-        except Exception:
-            pass
-
-
-# ---------------------------------------------------------------------------
-# Storing
-# ---------------------------------------------------------------------------
 
 def _is_automated(from_address: str) -> bool:
     """Our own system emails (contact-form notifications etc.) come from the
@@ -311,6 +327,15 @@ def _store(db, polled_key: str, item: dict) -> bool:
 # Loop
 # ---------------------------------------------------------------------------
 
+def _configured(key: str) -> bool:
+    return bool(
+        settings.zoho_client_id
+        and settings.zoho_client_secret
+        and settings.zoho_refresh_token(key)
+        and settings.zoho_account_id(key)
+    )
+
+
 def _record_error(key: str, error: str) -> None:
     db = SessionLocal()
     try:
@@ -326,9 +351,40 @@ def _record_error(key: str, error: str) -> None:
         db.close()
 
 
+def _gather(key: str, last_id: int, first_run: bool) -> tuple[int, list[dict]]:
+    """Returns (new baseline id, summaries to import, oldest first)."""
+    if first_run:
+        newest = _list_messages(key, 1, LIST_LIMIT)
+        baseline = max([int(m["messageId"]) for m in newest] + [0])
+
+        if settings.mail_sync_backfill_days <= 0:
+            return baseline, []
+
+        cutoff = datetime.now(timezone.utc) - timedelta(days=settings.mail_sync_backfill_days)
+        picked: list[dict] = []
+        for page in range(BACKFILL_MAX_PAGES):
+            batch = _list_messages(key, 1 + page * BACKFILL_PAGE, BACKFILL_PAGE)
+            if not batch:
+                break
+            for m in batch:
+                received = _ms_to_dt(m.get("receivedTime"))
+                if received and received >= cutoff:
+                    picked.append(m)
+            oldest = _ms_to_dt(batch[-1].get("receivedTime"))
+            if len(batch) < BACKFILL_PAGE or (oldest and oldest < cutoff):
+                break
+        picked.sort(key=lambda m: int(m["messageId"]))
+        return baseline, picked
+
+    newest = _list_messages(key, 1, LIST_LIMIT)
+    fresh = [m for m in newest if int(m["messageId"]) > last_id]
+    fresh.sort(key=lambda m: int(m["messageId"]))
+    return last_id, fresh[:MAX_PER_CYCLE]
+
+
 def _process_mailbox(key: str) -> int:
     """Sync one mailbox. Runs in a worker thread. Returns messages saved."""
-    if not settings.zoho_password(key):
+    if not _configured(key):
         return 0
 
     db = SessionLocal()
@@ -343,20 +399,23 @@ def _process_mailbox(key: str) -> int:
             state = models.MailSyncState(mailbox=key, last_uid=0)
             db.add(state)
 
-        validity, start_uid, items = _fetch(key, int(state.last_uid or 0), state.uidvalidity)
+        first_run = state.last_synced_at is None
+        baseline, summaries = _gather(key, int(state.last_uid or 0), first_run)
 
         saved = failed = 0
-        for item in items:
+        highest = baseline
+        for summary in summaries:
+            highest = max(highest, int(summary["messageId"]))
             try:
+                item = _load_message(key, summary)
                 with db.begin_nested():
                     if _store(db, key, item):
                         saved += 1
             except Exception:
                 failed += 1
-                log.exception("Could not import uid %s from %s", item.get("uid"), key)
+                log.exception("Could not import message %s from %s", summary.get("messageId"), key)
 
-        state.uidvalidity = validity
-        state.last_uid = max([start_uid] + [i["uid"] for i in items])
+        state.last_uid = highest
         state.last_synced_at = datetime.now(timezone.utc)
         state.last_error = f"{failed} message(s) could not be imported" if failed else None
         db.commit()
