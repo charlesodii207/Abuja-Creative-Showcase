@@ -16,11 +16,19 @@ def register_exhibitor(
     db: Session = Depends(get_db),
 ):
     reference_number = utils.generate_reference_number(db)
-    amount_kobo = utils.get_exhibitor_amount_kobo(
-        payload.exhibit_type,
-        payload.booth_size,
-        payload.auction_quantity,
-    )
+
+    # Booths and the fashion runway are priced in utils.py. The auction
+    # option has been removed, so get_exhibitor_amount_kobo raises a
+    # ValueError for it (or for a booth with no size) — return that as a
+    # clear 400 instead of letting it surface as a 500.
+    try:
+        amount_kobo = utils.get_exhibitor_amount_kobo(
+            payload.exhibit_type,
+            payload.booth_size,
+            payload.auction_quantity,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
     registrant = models.Registrant(
         full_name=payload.full_name,

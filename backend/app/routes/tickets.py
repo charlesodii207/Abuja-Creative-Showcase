@@ -24,6 +24,20 @@ def _event_day_wat(moment: datetime) -> date:
     return moment.astimezone(WAT).date()
 
 
+def _is_day_pass(registrant: models.Registrant) -> bool:
+    """
+    True for the single-day (₦10,000) attendee ticket, which is admitted
+    once and then blocked for the following calendar day. Read live from
+    the attendee's current ticket type, so an upgraded ticket stops being
+    treated as a day pass straight away.
+
+    NOTE: this assumes TicketType.general is the ₦10,000 day pass. If that
+    enum value is renamed in the pricing migration, update it here.
+    """
+    detail = registrant.attendee_detail
+    return detail is not None and detail.ticket_type == models.TicketType.general
+
+
 @router.post("/checkin", response_model=schemas.CheckinResponse)
 def checkin_ticket(
     payload: schemas.CheckinRequest,
@@ -101,6 +115,50 @@ def checkin_ticket(
             checked_in_at=todays_accepted.scanned_at,
             message=f"Already arrived today at {entry_time_wat}.",
         )
+
+    # Day pass (₦10,000): admitted on a day, blocked the next calendar day,
+    # admitted again the day after, and so on. A day pass is blocked exactly
+    # when it was ACCEPTED yesterday. Blocked scans are logged as
+    # "duplicate", never "accepted", so they don't extend the cycle.
+    # Dates are Nigeria calendar dates, so the reset happens at 12:00am WAT
+    # rather than 48 hours after the last scan.
+    if _is_day_pass(registrant):
+        yesterday = today - timedelta(days=1)
+        yesterdays_accepted = (
+            db.query(models.ScanLog)
+            .filter(
+                models.ScanLog.ticket_id == ticket.id,
+                models.ScanLog.event_day == yesterday,
+                models.ScanLog.result == "accepted",
+            )
+            .order_by(models.ScanLog.scanned_at.asc())
+            .first()
+        )
+
+        if yesterdays_accepted:
+            db.add(models.ScanLog(
+                ticket_id=ticket.id,
+                event_day=today,
+                result="duplicate",
+                scanned_at=now,
+                first_entry_at=yesterdays_accepted.scanned_at,
+                checked_in_by_admin_id=admin.id,
+                checked_in_by_name=admin.full_name,
+            ))
+            db.commit()
+
+            used_at = yesterdays_accepted.scanned_at.astimezone(WAT)
+
+            return schemas.CheckinResponse(
+                result="already_checked_in",
+                full_name=registrant.full_name,
+                category_tag=tag,
+                checked_in_at=yesterdays_accepted.scanned_at,
+                message=(
+                    f"Day pass already used on {used_at.strftime('%a %d %b')} "
+                    f"at {used_at.strftime('%H:%M')}."
+                ),
+            )
 
     # First accepted scan of the day for this ticket.
     db.add(models.ScanLog(

@@ -23,26 +23,29 @@ class ExhibitorRegistrationRequest(BaseModel):
     goal: str | None = None
     exhibit_type: ExhibitType
     booth_size: BoothSize | None = None
+    # Auction has been removed. These two fields are kept only so old
+    # clients and existing rows don't break; new registrations can't use them.
     auction_item_description: str | None = None
     auction_quantity: int | None = None
 
     @model_validator(mode="after")
     def check_exhibit_fields(self):
-        if self.exhibit_type == ExhibitType.booth and not self.booth_size:
-            raise ValueError(
-                "booth_size is required when exhibit_type is 'booth'"
-            )
-
         if self.exhibit_type == ExhibitType.auction:
-            if not self.auction_item_description:
+            raise ValueError("The auction option is no longer available.")
+
+        if self.exhibit_type == ExhibitType.booth:
+            if not self.booth_size:
                 raise ValueError(
-                    "auction_item_description is required when exhibit_type is 'auction'"
+                    "booth_size is required when exhibit_type is 'booth'"
                 )
 
-            if not self.auction_quantity or self.auction_quantity < 1:
-                raise ValueError(
-                    "auction_quantity must be at least 1 when exhibit_type is 'auction'"
-                )
+        if self.exhibit_type == ExhibitType.fashion_runway:
+            # Flat-priced option: no booth size applies.
+            self.booth_size = None
+
+        # Neither remaining option uses the old auction fields.
+        self.auction_item_description = None
+        self.auction_quantity = None
 
         return self
 

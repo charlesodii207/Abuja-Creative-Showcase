@@ -50,13 +50,19 @@ CHECKIN_NOTE = (
     "Present this ticket at check-in each day. "
     "Do not share, forward or publish it."
 )
+# The 1-Day Pass is admitted once, so it must not say "each day".
+CHECKIN_NOTE_ONE_DAY = (
+    "Valid for one day's entry only. "
+    "Do not share, forward or publish it."
+)
+ONE_DAY_LABEL = "1-DAY PASS"
 
 # Two-colour gradient (left -> right) for the ticket-type banner, so
-# General/VIP/Masterclass/Exhibitor/Pitcher are distinguishable at a
+# 1-Day/2-Day/Masterclass/Exhibitor/Pitcher are distinguishable at a
 # glance, not just by the printed label.
 ACCENT_GRADIENTS: dict[str, tuple] = {
-    "GENERAL ADMISSION": (TEAL, GOLD),
-    "VIP ACCESS": (GOLD, RED),
+    "1-DAY PASS": (TEAL, GOLD),
+    "2-DAY PASS": (GOLD, RED),
     "MASTERCLASS ACCESS": (RED, GOLD),
     "EXHIBITOR ACCESS": (TEAL, RED),
     "PITCHER ACCESS": (GOLD, TEAL),
@@ -178,7 +184,7 @@ def _fit_text(text, font, size, max_w_mm, spacing=0.0, min_size=8.0):
 
 
 def _split_label(label: str) -> list[str]:
-    """'GENERAL ADMISSION' -> ['GENERAL', 'ADMISSION']; one word stays as is."""
+    """'1-DAY PASS' -> ['1-DAY', 'PASS']; one word stays as is."""
     words = label.upper().split()
     if len(words) <= 1:
         return [label.upper()]
@@ -296,8 +302,14 @@ def _draw_banner(c, x0, y0, w, h, lines, size, text_x, accent, slant=3.0, text_c
 def ticket_labels_for(registrant) -> tuple[str, str]:
     """
     Returns (ticket_label, holder_label) for a registrant, e.g.
-    ("GENERAL ADMISSION", "ATTENDEE"). Uses the same live data the door
+    ("1-DAY PASS", "ATTENDEE"). Uses the same live data the door
     scanner uses, so an upgraded ticket prints its new type.
+
+    The stored ticket types are unchanged (general / vip / masterclass);
+    only the printed names changed:
+      general     -> 1-DAY PASS
+      vip         -> 2-DAY PASS
+      masterclass -> MASTERCLASS ACCESS
     """
     from app import models  # local import keeps this module easy to test
 
@@ -306,8 +318,8 @@ def ticket_labels_for(registrant) -> tuple[str, str]:
     if category == models.RegistrantCategory.attendee:
         tier = registrant.attendee_detail.ticket_type
         label = {
-            models.TicketType.general: "GENERAL ADMISSION",
-            models.TicketType.vip: "VIP ACCESS",
+            models.TicketType.general: "1-DAY PASS",
+            models.TicketType.vip: "2-DAY PASS",
             models.TicketType.masterclass: "MASTERCLASS ACCESS",
         }[tier]
         return label, "ATTENDEE"
@@ -411,7 +423,7 @@ def generate_ticket_pdf(
     c.line(9 * mm, 17.4 * mm, 122 * mm, 17.4 * mm)
     c.setStrokeAlpha(1)
 
-    access_display = ticket_label.title().replace("Vip", "VIP")
+    access_display = ticket_label.title()
     col_width = 34  # mm available per column before the next one starts
     cols = [
         (9, "EVENT DATE", EVENT_DATES),
@@ -423,7 +435,8 @@ def generate_ticket_pdf(
         fitted_val, fitted_size = _fit_text(val, "Helvetica-Bold", 8.4, col_width, min_size=6.0)
         _text(c, fitted_val, cx, 9.0, "Helvetica-Bold", fitted_size, white)
 
-    _text(c, CHECKIN_NOTE, 9, 4.2, "Helvetica", 5.3, MUTED)
+    note = CHECKIN_NOTE_ONE_DAY if ticket_label.upper() == ONE_DAY_LABEL else CHECKIN_NOTE
+    _text(c, note, 9, 4.2, "Helvetica", 5.3, MUTED)
     _text(c, WEBSITE, 122, 4.2, "Helvetica", 5.3, MUTED, align="right")
 
     # BIG QR (main panel)

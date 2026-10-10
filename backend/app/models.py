@@ -28,19 +28,27 @@ class RegistrantStatus(str, enum.Enum):
 
 
 class TicketType(str, enum.Enum):
+    # Stored values are unchanged; only the labels people see were renamed:
+    #   general     = 1-Day Pass   (₦10,000)
+    #   vip         = 2-Day Pass   (₦15,000)
+    #   masterclass = Masterclass  (₦50,000, both days)
     general = "general"
     vip = "vip"
     masterclass = "masterclass"
 
 
 class BoothSize(str, enum.Enum):
+    # small = Normal booth (₦200,000), big = Double booth (₦300,000)
     small = "small"
     big = "big"
 
 
 class ExhibitType(str, enum.Enum):
     booth = "booth"
+    # "auction" has been removed as an option, but Postgres can't drop an
+    # enum value cleanly, so it stays here for any old rows.
     auction = "auction"
+    fashion_runway = "fashion_runway"
 
 
 # ---------------------------------------------------------------------------

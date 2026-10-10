@@ -1018,12 +1018,12 @@ def send_registration_continue_email(
 
 # The only addresses the dashboard can send from. The frontend sends a KEY
 # ("info"), never a raw address, so nobody can spoof another sender.
-# Change "from_name" if you want e.g. the director's mail to show a personal name.
+# "from_name" is the name recipients see at the top of the email.
 MAILBOXES: dict[str, dict[str, str]] = {
     "admin":     {"label": "Admin",     "from_name": "Afriqa Creative Showcase", "address": "admin@africacreativeshowcase.com"},
     "info":      {"label": "Info",      "from_name": "Afriqa Creative Showcase", "address": "info@africacreativeshowcase.com"},
-    "director":  {"label": "Director",  "from_name": "Afriqa Creative Showcase", "address": "director@africacreativeshowcase.com"},
-    "convener":  {"label": "Convener",  "from_name": "Afriqa Creative Showcase", "address": "convener@africacreativeshowcase.com"},
+    "director":  {"label": "Director",  "from_name": "Ebere Ojadua",             "address": "director@africacreativeshowcase.com"},
+    "convener":  {"label": "Convener",  "from_name": "Paulgold Olalekan Joseph", "address": "convener@africacreativeshowcase.com"},
     "bookings":  {"label": "Bookings",  "from_name": "Afriqa Creative Showcase", "address": "bookings@africacreativeshowcase.com"},
     "marketing": {"label": "Marketing", "from_name": "Afriqa Creative Showcase", "address": "marketing@africacreativeshowcase.com"},
 }

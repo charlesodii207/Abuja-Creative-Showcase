@@ -68,11 +68,19 @@ def get_ticket_tag(registrant: "models.Registrant") -> str:
     """
     Returns a short human-readable label so door staff know which
     physical tag/wristband to hand out for this ticket.
+
+    The stored enum values are unchanged (general / vip / masterclass,
+    small / big) — only the labels shown to people were renamed:
+      general     -> 1-Day Pass   (₦10,000)
+      vip         -> 2-Day Pass   (₦15,000)
+      masterclass -> Masterclass  (₦50,000, both days)
+      small       -> Normal booth (₦200,000)
+      big         -> Double booth (₦300,000)
     """
     if registrant.category == models.RegistrantCategory.attendee:
         tier_display = {
-            models.TicketType.general: "General",
-            models.TicketType.vip: "VIP",
+            models.TicketType.general: "1-Day Pass",
+            models.TicketType.vip: "2-Day Pass",
             models.TicketType.masterclass: "Masterclass",
         }
         return f"Attendee - {tier_display[registrant.attendee_detail.ticket_type]}"
@@ -80,8 +88,11 @@ def get_ticket_tag(registrant: "models.Registrant") -> str:
     if registrant.category == models.RegistrantCategory.exhibitor:
         detail = registrant.exhibitor_detail
         if detail.exhibit_type == models.ExhibitType.booth:
-            size_display = {models.BoothSize.small: "Small", models.BoothSize.big: "Big"}
+            size_display = {models.BoothSize.small: "Normal", models.BoothSize.big: "Double"}
             return f"Exhibitor - Booth ({size_display[detail.booth_size]})"
+        if detail.exhibit_type == models.ExhibitType.fashion_runway:
+            return "Exhibitor - Fashion Runway"
+        # Auction is no longer offered, but old test registrations may still have it.
         return "Exhibitor - Auction"
 
     if registrant.category == models.RegistrantCategory.pitcher:
@@ -96,18 +107,23 @@ def get_ticket_tag(registrant: "models.Registrant") -> str:
 # route ever hardcodes a price itself.
 
 BOOTH_PRICES_KOBO = {
-    BoothSize.small: 250_000 * 100,   # ₦250,000
-    BoothSize.big: 500_000 * 100,     # ₦500,000
+    BoothSize.small: 200_000 * 100,   # ₦200,000 — Normal booth
+    BoothSize.big: 300_000 * 100,     # ₦300,000 — Double booth (includes space to display art)
 }
 
-AUCTION_PRICE_KOBO = 10_000 * 100     # ₦10,000 — placeholder, not yet finalized
+FASHION_RUNWAY_PRICE_KOBO = 300_000 * 100   # ₦300,000
+
+# Retired: "Auction Your Work" is no longer offered. Kept only so any other
+# module that still imports it doesn't break; get_exhibitor_amount_kobo
+# below now refuses auction registrations.
+AUCTION_PRICE_KOBO = 10_000 * 100
 
 PITCHER_FEE_KOBO = 100_000 * 100      # ₦100,000
 
 TICKET_PRICES_KOBO = {
-    TicketType.general: 5_000 * 100,       # ₦5,000
-    TicketType.vip: 10_000 * 100,          # ₦10,000 — includes everything General includes
-    TicketType.masterclass: 25_000 * 100,  # ₦25,000 — includes everything VIP includes
+    TicketType.general: 10_000 * 100,       # ₦10,000 — 1-Day Pass (admitted once, see tickets.py)
+    TicketType.vip: 15_000 * 100,           # ₦15,000 — 2-Day Pass, both days
+    TicketType.masterclass: 50_000 * 100,   # ₦50,000 — both days, includes the main masterclasses on day 2
 }
 
 
@@ -115,19 +131,20 @@ def get_exhibitor_amount_kobo(
     exhibit_type: ExhibitType, booth_size: BoothSize | None, auction_quantity: int | None = None
 ) -> int:
     """
-    Returns the amount (in kobo) an exhibitor owes, based on whether
-    they're buying a booth (priced by size) or auctioning items
-    (per-item placeholder price × quantity).
+    Returns the amount (in kobo) an exhibitor owes: a booth (priced by
+    size) or the fashion runway (flat price). The auction option has been
+    removed, so auction registrations are refused.
     """
     if exhibit_type == ExhibitType.booth:
         if booth_size is None:
             raise ValueError("booth_size is required when exhibit_type is 'booth'")
         return BOOTH_PRICES_KOBO[booth_size]
 
+    if exhibit_type == ExhibitType.fashion_runway:
+        return FASHION_RUNWAY_PRICE_KOBO
+
     if exhibit_type == ExhibitType.auction:
-        if not auction_quantity or auction_quantity < 1:
-            raise ValueError("auction_quantity must be at least 1 when exhibit_type is 'auction'")
-        return AUCTION_PRICE_KOBO * auction_quantity
+        raise ValueError("The auction option is no longer available.")
 
     raise ValueError(f"Unknown exhibit_type: {exhibit_type}")
 
