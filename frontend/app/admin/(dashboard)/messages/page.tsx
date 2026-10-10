@@ -20,6 +20,12 @@ import {
   type MessageThreadDetail,
   type MessageThreadStatus,
 } from "../../../../lib/admin/api";
+import {
+  applySuggestion,
+  greetingFor,
+  removeSuggestion,
+  signoffFor,
+} from "../../../../lib/admin/signoffs";
 
 function timeAgo(iso: string | null | undefined) {
   if (!iso) return "";
@@ -74,6 +80,35 @@ function splitQuoted(raw: string | null | undefined) {
 
 const DEFAULT_MAILBOX = "info"; // website-form messages
 
+// Small label showing where a conversation came from.
+function SourceBadge({
+  channel,
+  mailboxLabel,
+  long = false,
+}: {
+  channel?: string | null;
+  mailboxLabel?: string;
+  long?: boolean;
+}) {
+  const isEmail = channel === "email";
+  const text = isEmail
+    ? long
+      ? `Email · ${mailboxLabel || "Mailbox"} mailbox`
+      : "Email"
+    : "Contact form";
+  return (
+    <span
+      className={`inline-block font-body text-[10px] uppercase tracking-wide rounded-sm px-1.5 py-0.5 border whitespace-nowrap ${
+        isEmail
+          ? "text-teal border-teal/50 bg-teal/10"
+          : "text-gold border-gold/50 bg-gold/10"
+      }`}
+    >
+      {text}
+    </span>
+  );
+}
+
 export default function MessagesPage() {
   const [mailboxes, setMailboxes] = useState<MailboxOption[]>([]);
   const [mailboxesLoaded, setMailboxesLoaded] = useState(false);
@@ -91,6 +126,7 @@ export default function MessagesPage() {
   const [threadError, setThreadError] = useState<string | null>(null);
 
   const [replyBody, setReplyBody] = useState("");
+  const [replySuggest, setReplySuggest] = useState(false);
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
 
@@ -110,6 +146,7 @@ export default function MessagesPage() {
   const [composeCc, setComposeCc] = useState("");
   const [composeSubject, setComposeSubject] = useState("");
   const [composeBody, setComposeBody] = useState("");
+  const [composeSuggest, setComposeSuggest] = useState(false);
   const [composeSending, setComposeSending] = useState(false);
   const [composeError, setComposeError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -174,6 +211,7 @@ export default function MessagesPage() {
     setThreadError(null);
     setSendError(null);
     setReplyBody("");
+    setReplySuggest(false);
     setQuotedOpen({});
     resetHtmlViewer();
 
@@ -205,6 +243,46 @@ export default function MessagesPage() {
   const threadMailbox = selectedThread?.mailbox ?? DEFAULT_MAILBOX;
   const canSendThread = sendableKeys.has(threadMailbox);
 
+  // --- Suggested greeting / sign-off (reply) ---
+  const replyGreeting = greetingFor({
+    channel: selectedThread?.channel,
+    name: selectedThread?.sender_name,
+  });
+  const replySignoff = signoffFor(threadMailbox);
+
+  function toggleReplySuggest() {
+    if (replySuggest) {
+      setReplyBody(removeSuggestion(replyBody, replyGreeting, replySignoff));
+      setReplySuggest(false);
+    } else {
+      setReplyBody(applySuggestion(replyBody, replyGreeting, replySignoff));
+      setReplySuggest(true);
+    }
+  }
+
+  // --- Suggested greeting / sign-off (compose) ---
+  const composeGreeting = greetingFor({ channel: "email" });
+
+  function toggleComposeSuggest() {
+    const signoff = signoffFor(composeFrom);
+    if (composeSuggest) {
+      setComposeBody(removeSuggestion(composeBody, composeGreeting, signoff));
+      setComposeSuggest(false);
+    } else {
+      setComposeBody(applySuggestion(composeBody, composeGreeting, signoff));
+      setComposeSuggest(true);
+    }
+  }
+
+  // Changing the sender swaps the sign-off if the suggestion is switched on.
+  function changeComposeFrom(next: string) {
+    if (composeSuggest) {
+      const stripped = removeSuggestion(composeBody, composeGreeting, signoffFor(composeFrom));
+      setComposeBody(applySuggestion(stripped, composeGreeting, signoffFor(next)));
+    }
+    setComposeFrom(next);
+  }
+
   async function handleReply(e: FormEvent) {
     e.preventDefault();
     if (!selectedId || !replyBody.trim()) return;
@@ -216,6 +294,7 @@ export default function MessagesPage() {
       const detail = await getMessageThread(selectedId);
       setSelectedThread(detail);
       setReplyBody("");
+      setReplySuggest(false);
       loadThreads();
     } catch (err) {
       setSendError(err instanceof ApiError ? err.message : "Couldn't send that reply.");
@@ -298,6 +377,7 @@ export default function MessagesPage() {
       setComposeCc("");
       setComposeSubject("");
       setComposeBody("");
+      setComposeSuggest(false);
       setNotice("Email sent.");
       loadThreads();
     } catch (err) {
@@ -329,6 +409,13 @@ export default function MessagesPage() {
       </div>
     );
   }
+
+  const suggestButtonClass = (on: boolean) =>
+    `font-body text-xs rounded-sm px-3 py-1.5 border transition-colors ${
+      on
+        ? "border-gold text-gold bg-gold/10"
+        : "border-ink-raised text-muted hover:text-cream"
+    }`;
 
   return (
     // On phones the page sits under the 3.5rem top bar, so it is sized to
@@ -445,11 +532,14 @@ export default function MessagesPage() {
                 <p className="font-body text-xs text-muted-on-paper">
                   {timeAgo(t.latest_message?.created_at ?? t.updated_at)}
                 </p>
-                {mailboxFilter === "all" && t.mailbox && (
-                  <span className="font-body text-[10px] uppercase tracking-wide text-teal border border-ink-raised rounded-sm px-1.5 py-0.5">
-                    {mailboxLabelFor(t.mailbox)}
-                  </span>
-                )}
+                <div className="flex items-center gap-1.5">
+                  <SourceBadge channel={t.channel} />
+                  {mailboxFilter === "all" && t.mailbox && (
+                    <span className="font-body text-[10px] uppercase tracking-wide text-muted border border-ink-raised rounded-sm px-1.5 py-0.5">
+                      {mailboxLabelFor(t.mailbox)}
+                    </span>
+                  )}
+                </div>
               </div>
             </button>
           ))}
@@ -499,6 +589,13 @@ export default function MessagesPage() {
                     ← Back
                   </button>
                   <div className="min-w-0">
+                    <div className="mb-1">
+                      <SourceBadge
+                        channel={selectedThread.channel}
+                        mailboxLabel={mailboxLabelFor(threadMailbox)}
+                        long
+                      />
+                    </div>
                     <p className="font-body text-sm text-cream truncate">
                       {selectedThread.sender_name}
                     </p>
@@ -510,9 +607,6 @@ export default function MessagesPage() {
                         {selectedThread.subject}
                       </p>
                     )}
-                    <p className="font-body text-[11px] text-teal truncate">
-                      Mailbox: {mailboxLabelFor(threadMailbox)}
-                    </p>
                   </div>
                 </div>
                 {canSendThread && (
@@ -613,16 +707,25 @@ export default function MessagesPage() {
                   {sendError && (
                     <p className="font-body text-sm text-red mb-2">{sendError}</p>
                   )}
-                  <p className="font-body text-[11px] text-muted mb-1">
-                    Replying from {mailboxes.find((m) => m.key === threadMailbox)?.address}
-                  </p>
+                  <div className="flex items-center justify-between gap-3 mb-1">
+                    <p className="font-body text-[11px] text-muted">
+                      Replying from {mailboxes.find((m) => m.key === threadMailbox)?.address}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={toggleReplySuggest}
+                      className={suggestButtonClass(replySuggest)}
+                    >
+                      {replySuggest ? "✓ Greeting & sign-off added" : "+ Add greeting & sign-off"}
+                    </button>
+                  </div>
                   <div className="flex gap-2">
                     <textarea
                       value={replyBody}
                       onChange={(e) => setReplyBody(e.target.value)}
-                      placeholder="Write a reply…"
-                      rows={2}
-                      className="flex-1 min-w-0 bg-ink border border-ink-raised rounded-sm px-3 py-2 font-body text-sm text-cream focus:outline-none focus:ring-2 focus:ring-gold resize-none"
+                      placeholder="Write your reply. Nothing is added automatically."
+                      rows={replySuggest ? 8 : 3}
+                      className="flex-1 min-w-0 bg-ink border border-ink-raised rounded-sm px-3 py-2 font-body text-sm text-cream focus:outline-none focus:ring-2 focus:ring-gold resize-y"
                     />
                     <button
                       type="submit"
@@ -673,7 +776,7 @@ export default function MessagesPage() {
               <span className="font-body text-xs text-muted">From</span>
               <select
                 value={composeFrom}
-                onChange={(e) => setComposeFrom(e.target.value)}
+                onChange={(e) => changeComposeFrom(e.target.value)}
                 className="mt-1 w-full bg-ink border border-ink-raised rounded-sm px-3 py-2 font-body text-sm text-cream focus:outline-none focus:ring-2 focus:ring-gold"
               >
                 {sendable.map((m) => (
@@ -716,19 +819,29 @@ export default function MessagesPage() {
               />
             </label>
 
-            <label className="block">
-              <span className="font-body text-xs text-muted">Message</span>
+            <div className="block">
+              <div className="flex items-center justify-between gap-3">
+                <span className="font-body text-xs text-muted">Message</span>
+                <button
+                  type="button"
+                  onClick={toggleComposeSuggest}
+                  className={suggestButtonClass(composeSuggest)}
+                >
+                  {composeSuggest ? "✓ Greeting & sign-off added" : "+ Add greeting & sign-off"}
+                </button>
+              </div>
               <textarea
                 value={composeBody}
                 onChange={(e) => setComposeBody(e.target.value)}
-                rows={8}
+                rows={10}
+                placeholder="Write your message. Nothing is added automatically."
                 className="mt-1 w-full bg-ink border border-ink-raised rounded-sm px-3 py-2 font-body text-sm text-cream focus:outline-none focus:ring-2 focus:ring-gold resize-y"
               />
-            </label>
+            </div>
 
             <p className="font-body text-[11px] text-muted">
-              Sent with the Afriqa Creative Showcase header and footer. Replies come back
-              to the sending mailbox.
+              Only the logo header and the footer are added automatically. Replies come
+              back to the sending mailbox.
             </p>
 
             {composeError && (
