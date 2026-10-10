@@ -21,6 +21,10 @@ BRAND_NAME = "Afriqa Creative Showcase"
 WEBSITE_URL = "https://africacreativeshowcase.com"
 CONTACT_EMAIL = "info@africacreativeshowcase.com"
 
+# Transparent PNG (Gmail's image proxy can't handle WebP and fills the
+# transparent area with black). Must exist in frontend/public/images/.
+LOGO_URL = f"{WEBSITE_URL}/images/acs-logo-email.png"
+
 # Fill in the real links. Any entry with an empty URL is simply left out.
 SOCIAL_LINKS = [
     ("Instagram", ""),
@@ -44,7 +48,7 @@ def _footer_links() -> str:
     def link(label: str, url: str) -> str:
         return (
             f'<a href="{_safe(url)}" style="color:{TEAL};text-decoration:none;'
-            f'font-weight:600;">{_safe(label)}</a>'
+            f'font-weight:600;white-space:nowrap;">{_safe(label)}</a>'
         )
 
     rows = []
@@ -56,13 +60,10 @@ def _footer_links() -> str:
             f'{sep.join(socials)}</div>'
         )
 
-    contact = [
-        link(CONTACT_EMAIL, f"mailto:{CONTACT_EMAIL}"),
-        link("africacreativeshowcase.com", WEBSITE_URL),
-    ]
     rows.append(
-        f'<div style="font-size:12px;line-height:1.8;margin-top:10px;">'
-        f'{sep.join(contact)}</div>'
+        f'<div style="font-size:12px;line-height:1.9;margin-top:10px;">'
+        f'{link(CONTACT_EMAIL, f"mailto:{CONTACT_EMAIL}")}<br>'
+        f'{link("africacreativeshowcase.com", WEBSITE_URL)}</div>'
     )
 
     return "".join(rows)
@@ -190,7 +191,7 @@ def _branded_html(html: str) -> str:
                         >
 
                             <img
-                                src="{WEBSITE_URL}/images/acs-logo.webp"
+                                src="{LOGO_URL}"
                                 alt="{BRAND_NAME}"
                                 width="72"
                                 style="

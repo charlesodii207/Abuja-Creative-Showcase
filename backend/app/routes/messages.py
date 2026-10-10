@@ -1,3 +1,4 @@
+import re
 from datetime import datetime, timezone
 from html import escape
 from uuid import UUID
@@ -104,9 +105,11 @@ def _reply_subject(subject: str) -> str:
 
 def _wrap_body(body: str) -> str:
     """Exactly what the person typed, escaped, with line breaks kept.
-    No greeting or sign-off is added: the sender writes those. _branded_html
-    adds only the logo header and the footer around it."""
-    safe_body = escape(body).replace("\n", "<br>")
+    No greeting or sign-off is added: the sender writes those. Runs of
+    blank lines are squeezed to one. _branded_html adds only the logo
+    header and the footer around it."""
+    cleaned = re.sub(r"\n{3,}", "\n\n", body.replace("\r", "")).strip()
+    safe_body = escape(cleaned).replace("\n", "<br>")
     return f"""
     <div style="font-family: Arial, sans-serif; line-height: 1.6;">
         {safe_body}
