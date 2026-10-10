@@ -46,6 +46,32 @@ function parseAddresses(raw: string): string[] {
     .filter(Boolean);
 }
 
+// Where a reply's quoted history starts ("On Sat, ... wrote:", Outlook headers...).
+const QUOTE_MARKERS = [
+  /(?:^|\n)On [\s\S]{5,200}?wrote:/i,
+  /(?:^|\n)-{2,}\s*Original Message\s*-{2,}/i,
+  /(?:^|\n)From:[^\n]+\n(?:Sent|Date):/i,
+];
+
+// Splits an email body into what the person actually wrote and the quoted
+// history below it. Also squeezes runs of blank lines.
+function splitQuoted(raw: string | null | undefined) {
+  const body = (raw || "")
+    .replace(/\r/g, "")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+
+  let cut = -1;
+  for (const re of QUOTE_MARKERS) {
+    const m = re.exec(body);
+    if (m && m.index > 0 && (cut === -1 || m.index < cut)) cut = m.index;
+  }
+
+  if (cut === -1) return { main: body, quoted: "" };
+  return { main: body.slice(0, cut).trim(), quoted: body.slice(cut).trim() };
+}
+
 const DEFAULT_MAILBOX = "info"; // website-form messages
 
 export default function MessagesPage() {
@@ -67,6 +93,9 @@ export default function MessagesPage() {
   const [replyBody, setReplyBody] = useState("");
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
+
+  // Which messages have their quoted history expanded
+  const [quotedOpen, setQuotedOpen] = useState<Record<string, boolean>>({});
 
   // Original-HTML viewer (one message at a time)
   const [htmlOpenId, setHtmlOpenId] = useState<string | null>(null);
@@ -145,6 +174,7 @@ export default function MessagesPage() {
     setThreadError(null);
     setSendError(null);
     setReplyBody("");
+    setQuotedOpen({});
     resetHtmlViewer();
 
     getMessageThread(id)
@@ -248,6 +278,11 @@ export default function MessagesPage() {
     if (to.length === 0) return setComposeError("Add at least one recipient.");
     if (!composeSubject.trim()) return setComposeError("Add a subject.");
     if (!composeBody.trim()) return setComposeError("Write a message.");
+
+    // Name the bad address instead of a vague error.
+    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const bad = [...to, ...cc].find((a) => !emailRe.test(a));
+    if (bad) return setComposeError(`"${bad}" isn't a valid email address.`);
 
     setComposeSending(true);
     try {
@@ -404,7 +439,7 @@ export default function MessagesPage() {
                 </p>
               )}
               <p className="font-body text-xs text-muted truncate mb-1">
-                {t.latest_message?.body ?? ""}
+                {splitQuoted(t.latest_message?.body).main}
               </p>
               <div className="flex items-center justify-between gap-2">
                 <p className="font-body text-xs text-muted-on-paper">
@@ -493,6 +528,7 @@ export default function MessagesPage() {
               <div className="flex-1 overflow-y-auto px-4 sm:px-5 py-4 space-y-3">
                 {selectedThread.messages.map((m) => {
                   const admin = isAdminMessage(m);
+                  const { main, quoted } = splitQuoted(m.body);
                   return (
                     <div
                       key={m.id}
@@ -503,13 +539,31 @@ export default function MessagesPage() {
                           admin ? "bg-gold text-ink" : "bg-ink-raised text-cream"
                         }`}
                       >
-                        {m.body}
+                        {main || m.body}
                       </div>
+
+                      {quoted && (
+                        <>
+                          <button
+                            onClick={() =>
+                              setQuotedOpen((prev) => ({ ...prev, [m.id]: !prev[m.id] }))
+                            }
+                            className="font-body text-xs text-muted hover:text-cream mt-1"
+                          >
+                            {quotedOpen[m.id] ? "Hide quoted text" : "··· Show quoted text"}
+                          </button>
+                          {quotedOpen[m.id] && (
+                            <div className="mt-1 rounded-sm border border-ink-raised px-3 py-2 font-body text-xs text-muted whitespace-pre-wrap break-words max-h-64 overflow-y-auto">
+                              {quoted}
+                            </div>
+                          )}
+                        </>
+                      )}
 
                       {!admin && m.has_html && (
                         <button
                           onClick={() => toggleOriginal(m.id)}
-                          className="font-body text-xs text-teal hover:underline mt-1"
+                          className="block font-body text-xs text-teal hover:underline mt-1"
                         >
                           {htmlOpenId === m.id ? "Hide original email" : "View original email"}
                         </button>
