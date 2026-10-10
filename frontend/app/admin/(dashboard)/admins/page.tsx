@@ -1,7 +1,7 @@
 // app/admin/(dashboard)/admins/page.tsx
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import {
   listAdmins,
   createAdmin,
@@ -59,11 +59,37 @@ function mailboxText(a: AdminSummary): string {
   return parts.length > 0 ? parts.join("; ") : "None assigned";
 }
 
-// One quiet line: the pages this person can open, first three then "+N more".
+// One labelled row: a small caps label on the left, the value on the right.
+function AccessLine({
+  label,
+  title,
+  children,
+}: {
+  label: string;
+  title?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex items-baseline gap-3 font-body text-xs leading-5">
+      <span className="w-[4.75rem] shrink-0 text-[10px] uppercase tracking-wide text-muted/70">
+        {label}
+      </span>
+      <span title={title} className="min-w-0 max-w-[18rem] truncate">
+        {children}
+      </span>
+    </div>
+  );
+}
+
+// The pages this person can open: first three, then "+N more".
 // The full list is in the tooltip and in the Edit access panel.
 function AccessSummary({ admin }: { admin: AdminSummary }) {
   if (admin.role !== "admin") {
-    return <span className="font-body text-xs text-teal">Full access</span>;
+    return (
+      <AccessLine label="Pages">
+        <span className="text-teal">Full access</span>
+      </AccessLine>
+    );
   }
 
   const labels = visibleSectionKeys(
@@ -72,19 +98,22 @@ function AccessSummary({ admin }: { admin: AdminSummary }) {
   ).map(sectionLabel);
 
   if (labels.length === 0) {
-    return <span className="font-body text-xs text-muted">None assigned</span>;
+    return (
+      <AccessLine label="Pages">
+        <span className="text-muted">None</span>
+      </AccessLine>
+    );
   }
 
   const more = labels.length - 3;
 
   return (
-    <span
-      title={labels.join(", ")}
-      className="block max-w-[18rem] truncate font-body text-xs text-muted"
-    >
-      {labels.slice(0, 3).join(" · ")}
-      {more > 0 ? ` · +${more} more` : ""}
-    </span>
+    <AccessLine label="Pages" title={labels.join(", ")}>
+      <span className="text-cream/80">
+        {labels.slice(0, 3).join(" · ")}
+        {more > 0 ? ` · +${more} more` : ""}
+      </span>
+    </AccessLine>
   );
 }
 
@@ -92,14 +121,22 @@ function AccessSummary({ admin }: { admin: AdminSummary }) {
 // get this data from the API).
 function MailboxSummary({ admin }: { admin: AdminSummary }) {
   if (admin.role === "system_owner") {
-    return <span className="font-body text-xs text-teal">Mailboxes: all</span>;
+    return (
+      <AccessLine label="Mailboxes">
+        <span className="text-teal">All</span>
+      </AccessLine>
+    );
   }
 
   const send = admin.mailboxes_send ?? [];
   const read = admin.mailboxes_read ?? [];
 
   if (read.length === 0 && send.length === 0) {
-    return <span className="font-body text-xs text-muted">Mailboxes: none</span>;
+    return (
+      <AccessLine label="Mailboxes">
+        <span className="text-muted">None</span>
+      </AccessLine>
+    );
   }
 
   const labels = read.map((k) =>
@@ -107,12 +144,9 @@ function MailboxSummary({ admin }: { admin: AdminSummary }) {
   );
 
   return (
-    <span
-      title={labels.join(", ")}
-      className="block max-w-[18rem] truncate font-body text-xs text-muted"
-    >
-      Mailboxes: {labels.join(" · ")}
-    </span>
+    <AccessLine label="Mailboxes" title={labels.join(", ")}>
+      <span className="text-cream/80">{labels.join(" · ")}</span>
+    </AccessLine>
   );
 }
 
@@ -191,7 +225,8 @@ export default function AdminsPage() {
   const isOwner = myProfile?.role === "system_owner";
   const isSenior = isOwner || myProfile?.role === "super_admin";
   // Plain admins only get fellow admins back from the API (the backend does
-  // the filtering) and have no actions at all.
+  // the filtering, and blanks their access fields) and have no actions at all.
+  // The Access column is hidden for them everywhere on this page.
   const isViewOnly = !isSenior;
 
   // The menu only hides things. The API enforces the same rules.
@@ -470,7 +505,7 @@ export default function AdminsPage() {
 
       {isViewOnly ? (
         <p className="font-body text-xs text-muted mb-6">
-          You can see who your fellow admins are, but not the pages they've been given. This page is view-only for your role.
+          You can see who your fellow admins are, but not the pages or mailboxes they've been given. This page is view-only for your role.
         </p>
       ) : (
         <div className="mb-6" />
@@ -647,14 +682,10 @@ export default function AdminsPage() {
                     {a.role.replace("_", " ")}
                   </p>
                   {!isViewOnly && (
-                    <>
-                      <p className="mt-1">
-                        <AccessSummary admin={a} />
-                      </p>
-                      <p className="mt-1">
-                        <MailboxSummary admin={a} />
-                      </p>
-                    </>
+                    <div className="mt-2 space-y-1">
+                      <AccessSummary admin={a} />
+                      <MailboxSummary admin={a} />
+                    </div>
                   )}
 
                   {!isViewOnly && menuItems(a).length > 0 && (
@@ -693,7 +724,7 @@ export default function AdminsPage() {
                       key={a.id}
                       className="border-b border-ink-raised last:border-b-0"
                     >
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 align-top">
                         <span className="text-cream">{a.full_name}</span>
                         <span className="block text-xs text-muted">
                           {a.username} ·{" "}
@@ -701,14 +732,16 @@ export default function AdminsPage() {
                         </span>
                       </td>
                       {!isViewOnly && (
-                        <td className="px-4 py-3 space-y-1">
-                          <AccessSummary admin={a} />
-                          <MailboxSummary admin={a} />
+                        <td className="px-4 py-3 align-top">
+                          <div className="space-y-1">
+                            <AccessSummary admin={a} />
+                            <MailboxSummary admin={a} />
+                          </div>
                         </td>
                       )}
-                      <td className="px-4 py-3">{statusText(a)}</td>
+                      <td className="px-4 py-3 align-top">{statusText(a)}</td>
                       {!isViewOnly && (
-                        <td className="px-4 py-3 text-right">
+                        <td className="px-4 py-3 text-right align-top">
                           <RowMenu items={menuItems(a)} />
                         </td>
                       )}
