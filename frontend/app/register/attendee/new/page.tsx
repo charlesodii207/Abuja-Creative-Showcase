@@ -3,6 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 
+// The values below are what the backend stores (general / vip / masterclass).
+// Only the names people see changed:
+//   general     -> 1-Day Pass
+//   vip         -> 2-Day Pass
+//   masterclass -> Masterclass Pass
 type TicketType = "general" | "vip" | "masterclass";
 
 const TIERS: {
@@ -13,24 +18,24 @@ const TIERS: {
 }[] = [
   {
     value: "general",
-    label: "General",
-    price: "₦5,000",
+    label: "1-Day Pass",
+    price: "₦10,000",
     blurb:
-      "Full access to the Showcase — screenings, performances, and the Creative Market.",
+      "Entry for one day of the Showcase, on either day you choose — screenings, performances, and the Creative Market.",
   },
   {
     value: "vip",
-    label: "VIP",
-    price: "₦10,000",
+    label: "2-Day Pass",
+    price: "₦15,000",
     blurb:
-      "Everything General includes, plus priority seating and VIP-only areas.",
+      "Entry on both days, 4 and 5 December — screenings, performances, and the Creative Market.",
   },
   {
     value: "masterclass",
-    label: "Masterclass",
-    price: "₦25,000",
+    label: "Masterclass Pass",
+    price: "₦50,000",
     blurb:
-      "Everything VIP includes, plus full access to all masterclasses and workshops.",
+      "Both days, plus the main masterclasses and workshops on Day 2.",
   },
 ];
 
@@ -41,6 +46,9 @@ export default function AttendeeNewRegistrationPage() {
     phone: "",
     ticket_type: "general" as TicketType,
   });
+
+  // Must be ticked before the form can be submitted.
+  const [accepted, setAccepted] = useState(false);
 
   const [status, setStatus] = useState<
     "idle" | "submitting" | "success" | "error"
@@ -55,6 +63,7 @@ export default function AttendeeNewRegistrationPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!accepted) return;
     setStatus("submitting");
 
     try {
@@ -405,6 +414,38 @@ export default function AttendeeNewRegistrationPage() {
                   />
                 </div>
 
+                <label className="flex cursor-pointer items-start gap-3">
+                  <input
+                    type="checkbox"
+                    required
+                    checked={accepted}
+                    onChange={(e) => setAccepted(e.target.checked)}
+                    className="mt-1 h-4 w-4 shrink-0 cursor-pointer accent-[#00A5A8]"
+                  />
+
+                  <span className="text-sm leading-relaxed text-[#F5EFE6]/65">
+                    I have read and agree to the{" "}
+                    <Link
+                      href="/terms"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[#00A5A8] underline underline-offset-2 hover:text-[#E59200]"
+                    >
+                      Terms &amp; Conditions
+                    </Link>{" "}
+                    and the{" "}
+                    <Link
+                      href="/privacy"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[#00A5A8] underline underline-offset-2 hover:text-[#E59200]"
+                    >
+                      Privacy Policy
+                    </Link>
+                    .
+                  </span>
+                </label>
+
                 {status === "error" && (
                   <div className="rounded-xl border border-[#B80319]/30 bg-[#B80319]/10 px-4 py-3">
                     <p className="text-sm leading-relaxed text-[#F5EFE6]/80">
@@ -416,7 +457,7 @@ export default function AttendeeNewRegistrationPage() {
 
                 <button
                   type="submit"
-                  disabled={status === "submitting"}
+                  disabled={status === "submitting" || !accepted}
                   className="w-full rounded-full bg-[#00A5A8] px-7 py-4 text-sm font-semibold text-[#11152F] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(0,165,168,0.18)] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {status === "submitting"

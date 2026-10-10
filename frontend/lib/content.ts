@@ -6,7 +6,7 @@ export const event = {
   shortName: "ACS",
   tagline: "Where Creativity Meets Opportunity",
   dates: "December 4–5, 2026",
-  venue: "Venue to be announced, Abuja, FCT",
+  venue: "Old Parade Ground, Abuja, FCT",
   organizer: "AFRIGOS Film & Media Academy",
 };
 
@@ -131,15 +131,15 @@ export const faqs = [
   },
   {
     q: "How do I take part?",
-    a: "Registration is open. Attendee tickets are open registration. Exhibitor, Press, Pitching, and Investor spots go through an application and review process.",
+    a: "Registration is open. Attendee, Exhibitor, and Pitching spots are confirmed as soon as you pay. Press and Investor spots go through an application and review process.",
   },
   {
     q: "Is there a fee to attend?",
-    a: "Attendee ticket pricing starts at ₦5,000 (General/VIP). Masterclasses are sold as a separate pass.",
+    a: "Tickets are ₦10,000 for a single day or ₦15,000 for both days. The Masterclass Pass is ₦50,000 and covers both days, with the main masterclass sessions on Day 2.",
   },
   {
     q: "Can my organization exhibit or sponsor?",
-    a: "Yes. Exhibitor booths are available in small (₦250,000) and big (₦500,000) sizes, with an option to include an auction of items. Sponsorship packages are also available — check back here or use the contact details in the footer.",
+    a: "Yes. Exhibitors can choose a Normal booth (₦200,000), a Double booth (₦300,000, with space to display your art), or the Fashion Runway (₦300,000). Sponsorship packages are also available — check back here or use the contact details in the footer.",
   },
 ];
 
@@ -157,7 +157,7 @@ export const participationCategories = [
     name: "Attendee",
     slug: "attendee",
     blurb:
-      "Full access with a General or VIP ticket. Add a Masterclass Pass if you'd like one.",
+      "Choose a 1-day ticket, a 2-day ticket, or the Masterclass Pass, which covers both days including the main masterclass sessions.",
     note: "",
     guaranteed: true,
   },
@@ -165,7 +165,7 @@ export const participationCategories = [
     name: "Exhibitor",
     slug: "exhibitor",
     blurb:
-      "Showcase your creative business, sell products, and connect with buyers and brands at the Creative Market. Optionally include an auction of your own items.",
+      "Showcase your creative business, sell products, and connect with buyers and brands at the Creative Market. Choose a Normal or Double booth, or take part in the Fashion Runway.",
     note: "",
     guaranteed: false,
   },
