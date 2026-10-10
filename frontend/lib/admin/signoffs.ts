@@ -31,17 +31,24 @@ export function greetingFor(opts: { channel?: string | null; name?: string | nul
   return "Hello,";
 }
 
+// Squeezes 3+ line breaks into one blank line and trims the ends.
+export function tidyBody(text: string): string {
+  return text.replace(/\r/g, "").replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+}
+
+// Greeting, one blank line, the message, one blank line, sign-off.
+// With an empty message it leaves exactly one blank line to type in.
 export function applySuggestion(body: string, greeting: string, signoff: string): string {
-  const text = body.trim();
+  const text = tidyBody(body);
   return text
     ? `${greeting}\n\n${text}\n\n${signoff}`
-    : `${greeting}\n\n\n\n${signoff}`;
+    : `${greeting}\n\n\n${signoff}`;
 }
 
 export function removeSuggestion(body: string, greeting: string, signoff: string): string {
-  let out = body;
+  let out = body.replace(/\r/g, "");
   if (out.startsWith(greeting)) out = out.slice(greeting.length);
   out = out.trimEnd();
   if (out.endsWith(signoff)) out = out.slice(0, -signoff.length);
-  return out.trim();
+  return tidyBody(out);
 }
