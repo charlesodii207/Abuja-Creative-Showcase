@@ -50,9 +50,8 @@ export default function ExhibitorRegisterPage() {
               </p>
 
               <p className="mt-4 text-sm leading-relaxed text-[#B8B3AA]/70">
-                Exhibitor spaces aren&apos;t capped to a fixed number;
-                applications are reviewed and accepted as they come in, so
-                applying early genuinely improves your chances.
+                Exhibitor spaces aren&apos;t capped to a fixed number, and your
+                space is confirmed as soon as your payment goes through.
               </p>
 
               <p className="mt-4 text-sm leading-relaxed text-[#B8B3AA]/70">
@@ -62,29 +61,37 @@ export default function ExhibitorRegisterPage() {
                 networking.
               </p>
 
-              <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              <div className="mt-6 grid gap-3 sm:grid-cols-3">
                 <div className="rounded-xl border border-[#E59200]/20 bg-[#151A3A] px-4 py-4">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#B8B3AA]/45">
-                    Small Booth
+                    Normal Booth
                   </p>
                   <p className="mt-1 font-display text-xl text-[#E59200]">
-                    ₦250,000
+                    ₦200,000
                   </p>
                 </div>
 
                 <div className="rounded-xl border border-[#E59200]/20 bg-[#151A3A] px-4 py-4">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#B8B3AA]/45">
-                    Big Booth
+                    Double Booth
                   </p>
                   <p className="mt-1 font-display text-xl text-[#E59200]">
-                    ₦500,000
+                    ₦300,000
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-[#E59200]/20 bg-[#151A3A] px-4 py-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#B8B3AA]/45">
+                    Fashion Runway
+                  </p>
+                  <p className="mt-1 font-display text-xl text-[#E59200]">
+                    ₦300,000
                   </p>
                 </div>
               </div>
 
               <p className="mt-5 text-xs leading-relaxed text-[#B8B3AA]/55">
-                You can also optionally include an auction of your own items
-                as part of your space.
+                The Double Booth includes space to display your art.
               </p>
             </div>
 

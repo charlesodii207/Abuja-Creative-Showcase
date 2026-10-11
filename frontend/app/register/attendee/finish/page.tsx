@@ -5,15 +5,26 @@ import Link from "next/link";
 
 type Phase = "enter-ref" | "loading" | "unpaid" | "paid" | "rejected" | "error";
 
+// The values below are what the backend stores (general / vip / masterclass).
+// Only the names people see changed:
+//   general     -> 1-Day Pass
+//   vip         -> 2-Day Pass
+//   masterclass -> Masterclass Pass
+const TICKET_LABELS: Record<string, string> = {
+  general: "1-Day Pass",
+  vip: "2-Day Pass",
+  masterclass: "Masterclass Pass",
+};
+
 const UPGRADE_OPTIONS: Record<
   string,
   { value: string; label: string }[]
 > = {
   general: [
-    { value: "vip", label: "VIP" },
-    { value: "masterclass", label: "Masterclass" },
+    { value: "vip", label: "2-Day Pass" },
+    { value: "masterclass", label: "Masterclass Pass" },
   ],
-  vip: [{ value: "masterclass", label: "Masterclass" }],
+  vip: [{ value: "masterclass", label: "Masterclass Pass" }],
   masterclass: [],
 };
 
@@ -141,6 +152,7 @@ export default function AttendeeFinishPage() {
   }
 
   const upgradeChoices = UPGRADE_OPTIONS[ticketType] || [];
+  const ticketLabel = TICKET_LABELS[ticketType] ?? ticketType;
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#11152F]">
@@ -240,8 +252,8 @@ export default function AttendeeFinishPage() {
 
             <p className="mt-3 font-display text-2xl text-[#F5EFE6]">
               Attendee —{" "}
-              <span className="capitalize text-[#E59200]">
-                {ticketType}
+              <span className="text-[#E59200]">
+                {ticketLabel}
               </span>
             </p>
 
@@ -280,8 +292,8 @@ export default function AttendeeFinishPage() {
 
             <p className="mt-3 font-display text-2xl text-[#F5EFE6]">
               Attendee —{" "}
-              <span className="capitalize text-[#00A5A8]">
-                {ticketType}
+              <span className="text-[#00A5A8]">
+                {ticketLabel}
               </span>
             </p>
 
@@ -326,7 +338,7 @@ export default function AttendeeFinishPage() {
                   onChange={(e) => setUpgradeTier(e.target.value)}
                   className="mt-2 w-full rounded-xl border border-white/10 bg-[#151A3A] px-4 py-3 text-[#F5EFE6] outline-none transition-colors focus:border-[#00A5A8]/60"
                 >
-                  <option value="">Select a tier</option>
+                  <option value="">Select a ticket</option>
 
                   {upgradeChoices.map((opt) => (
                     <option key={opt.value} value={opt.value}>

@@ -3,15 +3,24 @@
 import { useState } from "react";
 import Link from "next/link";
 
-type ExhibitType = "booth" | "auction";
+// The backend still stores booth sizes as "small" / "big".
+// Only the names people see changed:
+//   small -> Normal Booth (₦200,000)
+//   big   -> Double Booth (₦300,000, includes space to display art)
+type ExhibitType = "booth" | "fashion_runway";
 type BoothSize = "small" | "big";
 
 const BOOTH_PRICES: Record<BoothSize, string> = {
-  small: "₦250,000",
-  big: "₦500,000",
+  small: "₦200,000",
+  big: "₦300,000",
 };
 
-const AUCTION_PRICE_PER_ITEM = 10000;
+const BOOTH_LABELS: Record<BoothSize, string> = {
+  small: "Normal Booth",
+  big: "Double Booth",
+};
+
+const FASHION_RUNWAY_PRICE = "₦300,000";
 
 export default function ExhibitorRegistrationPage() {
   const [exhibitType, setExhibitType] = useState<ExhibitType | null>(null);
@@ -26,9 +35,10 @@ export default function ExhibitorRegistrationPage() {
     portfolio_url: "",
     goal: "",
     booth_size: "" as BoothSize | "",
-    auction_item_description: "",
-    auction_quantity: 1,
   });
+
+  // Must be ticked before the form can be submitted.
+  const [accepted, setAccepted] = useState(false);
 
   const [status, setStatus] = useState<
     "idle" | "submitting" | "success" | "error"
@@ -44,14 +54,20 @@ export default function ExhibitorRegistrationPage() {
       ? form.booth_size
         ? BOOTH_PRICES[form.booth_size as BoothSize]
         : null
-      : exhibitType === "auction"
-        ? `₦${(
-            AUCTION_PRICE_PER_ITEM * form.auction_quantity
-          ).toLocaleString()} (${form.auction_quantity} × ₦${AUCTION_PRICE_PER_ITEM.toLocaleString()})`
+      : exhibitType === "fashion_runway"
+        ? FASHION_RUNWAY_PRICE
         : null;
+
+  const participationLabel =
+    exhibitType === "fashion_runway"
+      ? "Fashion Runway"
+      : form.booth_size
+        ? BOOTH_LABELS[form.booth_size as BoothSize]
+        : "Booth";
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!accepted) return;
     setStatus("submitting");
 
     try {
@@ -66,12 +82,6 @@ export default function ExhibitorRegistrationPage() {
         goal: form.goal,
         exhibit_type: exhibitType,
         booth_size: exhibitType === "booth" ? form.booth_size : null,
-        auction_item_description:
-          exhibitType === "auction"
-            ? form.auction_item_description
-            : null,
-        auction_quantity:
-          exhibitType === "auction" ? form.auction_quantity : null,
       };
 
       const res = await fetch(
@@ -154,10 +164,8 @@ export default function ExhibitorRegistrationPage() {
                       Participation
                     </p>
 
-                    <p className="mt-2 font-display text-2xl capitalize text-[#F5EFE6]">
-                      {exhibitType === "booth"
-                        ? `${form.booth_size} Booth`
-                        : "Auction"}
+                    <p className="mt-2 font-display text-2xl text-[#F5EFE6]">
+                      {participationLabel}
                     </p>
                   </div>
 
@@ -283,6 +291,7 @@ export default function ExhibitorRegistrationPage() {
                 <p className="mt-4 text-sm leading-relaxed text-[#B8B3AA]/65">
                   Get a dedicated space to sell products, showcase your
                   business, and meet buyers, brands, and visitors directly.
+                  Choose a Normal or Double booth.
                 </p>
 
                 <div className="mt-7 flex items-center justify-between border-t border-white/10 pt-5">
@@ -291,7 +300,7 @@ export default function ExhibitorRegistrationPage() {
                   </span>
 
                   <span className="font-display text-xl text-[#E59200]">
-                    ₦250,000
+                    ₦200,000
                   </span>
                 </div>
               </div>
@@ -299,7 +308,7 @@ export default function ExhibitorRegistrationPage() {
 
             <button
               type="button"
-              onClick={() => setExhibitType("auction")}
+              onClick={() => setExhibitType("fashion_runway")}
               className="group relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#151A3A] p-7 text-left transition-all duration-300 hover:-translate-y-1 hover:border-[#00A5A8]/40 hover:shadow-[0_25px_60px_rgba(0,0,0,0.16)] sm:p-9"
             >
               <span
@@ -323,21 +332,21 @@ export default function ExhibitorRegistrationPage() {
                 </p>
 
                 <h2 className="mt-2 font-display text-3xl text-[#F5EFE6]">
-                  Auction Your Work
+                  Fashion Runway
                 </h2>
 
                 <p className="mt-4 text-sm leading-relaxed text-[#B8B3AA]/65">
-                  No booth needed. Put one or more pieces of art or fashion up
-                  for auction at the Showcase.
+                  No booth needed. Take part in the Fashion Runway at the
+                  Showcase.
                 </p>
 
                 <div className="mt-7 flex items-center justify-between border-t border-white/10 pt-5">
                   <span className="text-[10px] uppercase tracking-[0.18em] text-[#B8B3AA]/40">
-                    Per item
+                    Price
                   </span>
 
                   <span className="font-display text-xl text-[#00A5A8]">
-                    ₦10,000
+                    ₦300,000
                   </span>
                 </div>
               </div>
@@ -387,15 +396,13 @@ export default function ExhibitorRegistrationPage() {
             </p>
 
             <h1 className="mt-3 font-display text-4xl leading-[1.05] text-[#F5EFE6] sm:text-5xl">
-              {exhibitType === "booth"
-                ? "Book Your Booth"
-                : "Auction Your Work"}
+              {exhibitType === "booth" ? "Book Your Booth" : "Fashion Runway"}
             </h1>
 
             <p className="mt-4 max-w-2xl text-base leading-relaxed text-[#B8B3AA]/70">
               {exhibitType === "booth"
                 ? "Tell us about your business and choose the booth space that fits your showcase."
-                : "Tell us about your work and the pieces you would like to place in the auction."}
+                : "Tell us about your brand and what you plan to present."}
             </p>
           </div>
 
@@ -567,7 +574,7 @@ export default function ExhibitorRegistrationPage() {
                 />
               </div>
 
-              {exhibitType === "booth" ? (
+              {exhibitType === "booth" && (
                 <div className="mt-5">
                   <label className="block text-sm font-medium text-[#F5EFE6]/75">
                     Booth Size
@@ -588,60 +595,45 @@ export default function ExhibitorRegistrationPage() {
                       Select a booth size
                     </option>
 
-                    <option value="small">Small — ₦250,000</option>
-                    <option value="big">Big — ₦500,000</option>
+                    <option value="small">Normal — ₦200,000</option>
+                    <option value="big">
+                      Double — ₦300,000 (includes space to display your art)
+                    </option>
                   </select>
                 </div>
-              ) : (
-                <div className="mt-5 grid gap-5 sm:grid-cols-[1fr_180px]">
-                  <div>
-                    <label className="block text-sm font-medium text-[#F5EFE6]/75">
-                      Auction Item Description
-                    </label>
-
-                    <textarea
-                      required
-                      rows={3}
-                      placeholder="Describe the item(s) you'd like to auction."
-                      value={form.auction_item_description}
-                      onChange={(e) =>
-                        setForm({
-                          ...form,
-                          auction_item_description: e.target.value,
-                        })
-                      }
-                      className="mt-2 w-full resize-none rounded-xl border border-white/10 bg-[#11152F] px-4 py-3.5 text-[#F5EFE6] placeholder:text-[#B8B3AA]/35 outline-none transition-colors focus:border-[#00A5A8]/60"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-[#F5EFE6]/75">
-                      Number of Items
-                    </label>
-
-                    <input
-                      required
-                      type="number"
-                      min={1}
-                      value={form.auction_quantity}
-                      onChange={(e) =>
-                        setForm({
-                          ...form,
-                          auction_quantity: Math.max(
-                            1,
-                            Number(e.target.value)
-                          ),
-                        })
-                      }
-                      className="mt-2 w-full rounded-xl border border-white/10 bg-[#11152F] px-4 py-3.5 text-[#F5EFE6] outline-none transition-colors focus:border-[#00A5A8]/60"
-                    />
-
-                    <p className="mt-2 text-[10px] uppercase tracking-[0.15em] text-[#B8B3AA]/40">
-                      ₦10,000 per item
-                    </p>
-                  </div>
-                </div>
               )}
+
+              <label className="mt-6 flex cursor-pointer items-start gap-3">
+                <input
+                  type="checkbox"
+                  required
+                  checked={accepted}
+                  onChange={(e) => setAccepted(e.target.checked)}
+                  className="mt-1 h-4 w-4 shrink-0 cursor-pointer accent-[#00A5A8]"
+                />
+
+                <span className="text-sm leading-relaxed text-[#F5EFE6]/65">
+                  I have read and agree to the{" "}
+                  <Link
+                    href="/terms"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[#00A5A8] underline underline-offset-2 hover:text-[#E59200]"
+                  >
+                    Terms &amp; Conditions
+                  </Link>{" "}
+                  and the{" "}
+                  <Link
+                    href="/privacy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[#00A5A8] underline underline-offset-2 hover:text-[#E59200]"
+                  >
+                    Privacy Policy
+                  </Link>
+                  .
+                </span>
+              </label>
 
               {status === "error" && (
                 <div className="mt-6 rounded-xl border border-[#B80319]/30 bg-[#B80319]/10 px-4 py-3">
@@ -654,7 +646,7 @@ export default function ExhibitorRegistrationPage() {
 
               <button
                 type="submit"
-                disabled={status === "submitting"}
+                disabled={status === "submitting" || !accepted}
                 className="mt-7 w-full rounded-full bg-[#00A5A8] px-7 py-4 text-sm font-semibold text-[#11152F] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(0,165,168,0.18)] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {status === "submitting"
@@ -673,22 +665,22 @@ export default function ExhibitorRegistrationPage() {
                   Participation
                 </p>
 
-                <p className="mt-2 font-display text-2xl capitalize text-[#F5EFE6]">
-                  {exhibitType === "booth"
-                    ? `${form.booth_size || "Booth"}`
-                    : "Auction"}
+                <p className="mt-2 font-display text-2xl text-[#F5EFE6]">
+                  {participationLabel}
                 </p>
 
                 {exhibitType === "booth" && (
                   <p className="mt-2 text-sm text-[#B8B3AA]/60">
                     A dedicated Creative Market space for your business and
                     work.
+                    {form.booth_size === "big" &&
+                      " Includes space to display your art."}
                   </p>
                 )}
 
-                {exhibitType === "auction" && (
+                {exhibitType === "fashion_runway" && (
                   <p className="mt-2 text-sm text-[#B8B3AA]/60">
-                    Your work will be submitted for auction at the Showcase.
+                    Your place in the Fashion Runway at the Showcase.
                   </p>
                 )}
               </div>
