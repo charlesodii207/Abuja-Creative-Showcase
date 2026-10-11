@@ -5,7 +5,7 @@ from app.config import settings
 from app.database import get_db
 from app import models, schemas, utils
 from app.emailer import send_payment_required_email
-from app.paystack import initialize_transaction, PaystackError
+from app.kora import initialize_transaction, KoraError
 
 router = APIRouter(prefix="/register/exhibitor", tags=["exhibitor"])
 
@@ -68,13 +68,14 @@ def register_exhibitor(
             reference=reference_number,
             callback_url=callback_url,
         )
-    except PaystackError as e:
+    except KoraError as e:
         db.rollback()
         raise HTTPException(
             status_code=502,
             detail=f"Could not start payment: {e}",
         )
 
+    # The column is still called paystack_reference; it now holds the Kora reference.
     exhibitor_detail.paystack_reference = transaction["reference"]
     db.commit()
 

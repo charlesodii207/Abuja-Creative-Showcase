@@ -5,7 +5,7 @@ from app.config import settings
 from app.database import get_db
 from app import models, schemas, utils
 from app.emailer import send_payment_required_email
-from app.paystack import initialize_transaction, PaystackError
+from app.kora import initialize_transaction, KoraError
 
 router = APIRouter(prefix="/register/pitcher", tags=["pitcher"])
 
@@ -51,13 +51,14 @@ def register_pitcher(
             reference=reference_number,
             callback_url=callback_url,
         )
-    except PaystackError as e:
+    except KoraError as e:
         db.rollback()
         raise HTTPException(
             status_code=502,
             detail=f"Could not start payment: {e}",
         )
 
+    # The column is still called paystack_reference; it now holds the Kora reference.
     pitcher_detail.paystack_reference = transaction["reference"]
     db.commit()
 
@@ -72,6 +73,8 @@ def register_pitcher(
         payment_url=transaction["authorization_url"],
     )
 
+    # The response field is still called paystack_authorization_url so the
+    # frontend keeps working unchanged; it now holds Kora's checkout URL.
     return schemas.RegistrationResponse(
         reference_number=reference_number,
         message="Registration successful — complete payment to confirm your spot.",

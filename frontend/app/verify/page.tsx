@@ -49,11 +49,20 @@ function VerifyContent() {
   const [paymentNotice, setPaymentNotice] = useState("");
   const [referenceInput, setReferenceInput] = useState("");
 
-  const reference = searchParams.get("ref")?.trim() || "";
+  // Our own return link looks like /verify?ref=ACS-XXXX, and the payment
+  // provider (Kora) adds its own `reference` after it. If the provider ever
+  // glues that on with a second "?" instead of "&", the whole tail ends up
+  // inside `ref`, so split it back apart here to be safe.
+  const rawRef = searchParams.get("ref")?.trim() || "";
+  const [reference, embeddedQuery] = rawRef.split("?");
+  const embeddedPaymentReference = embeddedQuery
+    ? new URLSearchParams(embeddedQuery).get("reference")?.trim() || ""
+    : "";
 
   const paymentReference =
     searchParams.get("reference")?.trim() ||
     searchParams.get("trxref")?.trim() ||
+    embeddedPaymentReference ||
     "";
 
   async function loadStatus(referenceNumber: string) {
@@ -102,7 +111,7 @@ function VerifyContent() {
         setPaymentNotice("");
 
         /*
-         * If Paystack sent the customer back here, confirm the
+         * If the payment provider sent the customer back here, confirm the
          * transaction first. A failed or unrecognised payment must NOT
          * kill the page: we still load the registration status so the
          * person can see where they stand and try again.
@@ -221,8 +230,10 @@ function VerifyContent() {
         );
       }
 
+      // The backend field is still named paystack_authorization_url so the
+      // site keeps working unchanged; it now holds Kora's checkout link.
       if (!data.paystack_authorization_url) {
-        throw new Error("Paystack did not return a payment link.");
+        throw new Error("We did not get a payment link. Please try again.");
       }
 
       window.location.href = data.paystack_authorization_url;
@@ -444,7 +455,7 @@ function VerifyContent() {
                 </button>
 
                 <p className="mt-4 text-center text-xs leading-6 text-muted">
-                  You&apos;ll be redirected to Paystack to complete your
+                  You&apos;ll be redirected to Kora to complete your
                   payment securely.
                 </p>
               </div>

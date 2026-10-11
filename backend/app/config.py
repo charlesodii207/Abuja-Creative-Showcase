@@ -23,8 +23,19 @@ class Settings(BaseSettings):
         "Afriqa Creative Showcase <info@africacreativeshowcase.com>"
     )
 
-    paystack_secret_key: str
-    paystack_public_key: str
+    # Kora (Korapay) payments. The key decides test or live mode:
+    # sk_test_... for testing, sk_live_... once ACS is live.
+    kora_secret_key: str = ""
+    kora_public_key: str = ""
+    # Full public URL of the backend's /payments/webhook route, e.g.
+    # https://your-backend-host/payments/webhook. Optional: if blank, payments
+    # are only confirmed when the customer's browser returns to the site.
+    kora_webhook_url: str = ""
+
+    # Paystack is being replaced by Kora. These now default to empty so the
+    # app still starts once the Paystack keys are removed from .env.
+    paystack_secret_key: str = ""
+    paystack_public_key: str = ""
 
     frontend_url: str = "https://africacreativeshowcase.com"
 

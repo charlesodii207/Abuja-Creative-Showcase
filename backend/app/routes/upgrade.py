@@ -5,10 +5,18 @@ from app.config import settings
 from app.database import get_db
 from app import models, schemas, utils
 from app.emailer import send_payment_required_email
-from app.paystack import initialize_transaction, PaystackError
+from app.kora import initialize_transaction, KoraError
 from app.routes.payments import _confirm_payment
 
 router = APIRouter(prefix="/upgrade", tags=["upgrade"])
+
+# The stored ticket types are unchanged (general / vip / masterclass); only
+# the names people see changed, including in the payment email.
+TICKET_LABELS = {
+    models.TicketType.general: "1-Day Pass",
+    models.TicketType.vip: "2-Day Pass",
+    models.TicketType.masterclass: "Masterclass Pass",
+}
 
 
 @router.post("", response_model=schemas.UpgradeResponse)
@@ -43,7 +51,7 @@ def upgrade_ticket(
     # A previous upgrade attempt is still unresolved (pending_upgrade_ticket_type
     # only clears once one succeeds). Rather than blindly overwrite it and
     # risk orphaning a payment that actually went through on the old link,
-    # check with Paystack directly first — the same check the webhook and
+    # check with Kora directly first — the same check the webhook and
     # /verify already trust.
     if (
         attendee_detail.pending_upgrade_reference
@@ -90,7 +98,7 @@ def upgrade_ticket(
             reference=upgrade_reference,
             callback_url=callback_url,
         )
-    except PaystackError as e:
+    except KoraError as e:
         raise HTTPException(
             status_code=502,
             detail=f"Could not start upgrade payment: {e}",
@@ -103,25 +111,26 @@ def upgrade_ticket(
 
     diff_amount_naira = diff_amount_kobo // 100
 
+    current_label = TICKET_LABELS[attendee_detail.ticket_type]
+    new_label = TICKET_LABELS[payload.ticket_type]
+
     send_payment_required_email(
         to=registrant.email,
         full_name=registrant.full_name,
         reference_number=registrant.reference_number,
-        description=(
-            f"Ticket upgrade from "
-            f"{attendee_detail.ticket_type.value.title()} to "
-            f"{payload.ticket_type.value.title()}"
-        ),
+        description=f"Ticket upgrade from {current_label} to {new_label}",
         amount_naira=diff_amount_naira,
         payment_url=transaction["authorization_url"],
     )
 
+    # The response field is still called paystack_authorization_url so the
+    # frontend keeps working unchanged; it now holds Kora's checkout URL.
     return schemas.UpgradeResponse(
         reference_number=registrant.reference_number,
         ticket_type=attendee_detail.ticket_type.value,
         message=(
             f"Complete payment of ₦{diff_amount_naira:,} to finish "
-            f"upgrading to {payload.ticket_type.value}."
+            f"upgrading to the {new_label}."
         ),
         amount_kobo=diff_amount_kobo,
         paystack_authorization_url=transaction["authorization_url"],

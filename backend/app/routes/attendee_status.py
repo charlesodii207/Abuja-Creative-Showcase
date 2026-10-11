@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.database import get_db
 from app import models, schemas
-from app.paystack import initialize_transaction, PaystackError
+from app.kora import initialize_transaction, KoraError
 from app import utils
 
 router = APIRouter(prefix="/register/attendee", tags=["attendee-status"])
@@ -59,7 +59,7 @@ def attendee_status(payload: schemas.AttendeeStatusRequest, db: Session = Depend
 @router.post("/resume-payment", response_model=schemas.ResumePaymentResponse)
 def resume_payment(payload: schemas.ResumePaymentRequest, db: Session = Depends(get_db)):
     """
-    Starts a fresh Paystack payment attempt for someone who registered
+    Starts a fresh Kora payment attempt for someone who registered
     but never completed (or lost) their original payment link. Only
     valid while the ticket is still unpaid and the registrant hasn't
     been rejected.
@@ -105,7 +105,7 @@ def resume_payment(payload: schemas.ResumePaymentRequest, db: Session = Depends(
             reference=resume_reference,
             callback_url=callback_url,
         )
-    except PaystackError as e:
+    except KoraError as e:
         raise HTTPException(
             status_code=502,
             detail=f"Could not start payment: {e}",
@@ -114,6 +114,8 @@ def resume_payment(payload: schemas.ResumePaymentRequest, db: Session = Depends(
     detail.pending_payment_reference = transaction["reference"]
     db.commit()
 
+    # The response field is still called paystack_authorization_url so the
+    # frontend keeps working unchanged; it now holds Kora's checkout URL.
     return schemas.ResumePaymentResponse(
         reference_number=registrant.reference_number,
         amount_kobo=detail.amount_kobo,

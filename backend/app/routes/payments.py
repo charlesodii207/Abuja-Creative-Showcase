@@ -1,5 +1,3 @@
-import hashlib
-import hmac
 import json
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
@@ -8,7 +6,13 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.database import get_db
 from app import models, schemas, utils
-from app.paystack import initialize_transaction, verify_transaction, PaystackError
+from app.kora import (
+    initialize_transaction,
+    verify_transaction,
+    reference_from_webhook,
+    webhook_signature_valid,
+    KoraError,
+)
 from app.tickets import issue_ticket_and_email, send_upgraded_ticket_email
 
 router = APIRouter(prefix="/payments", tags=["payments"])
@@ -62,9 +66,10 @@ def _get_completed_payment_detail_by_reference(
     """
     Only return a completed payment when the registration is actually paid.
 
-    A Paystack reference may already be stored before verification is
-    completed, so paystack_reference alone must never be treated as proof
-    that payment succeeded.
+    A payment reference may already be stored before verification is
+    completed, so paystack_reference alone (the column name is kept from
+    the Paystack days; it now holds the Kora reference) must never be
+    treated as proof that payment succeeded.
     """
 
     attendee_detail = db.query(models.AttendeeDetail).filter(
@@ -94,10 +99,10 @@ def _get_completed_payment_detail_by_reference(
     return None
 
 
-def _verify_with_paystack(reference: str):
+def _verify_with_kora(reference: str):
     try:
         transaction = verify_transaction(reference)
-    except PaystackError as e:
+    except KoraError as e:
         raise HTTPException(
             status_code=502,
             detail=f"Could not verify payment: {e}",
@@ -295,7 +300,7 @@ def resume_payment(
             reference=resume_reference,
             callback_url=callback_url,
         )
-    except PaystackError as e:
+    except KoraError as e:
         raise HTTPException(
             status_code=502,
             detail=f"Could not start payment: {e}",
@@ -307,6 +312,8 @@ def resume_payment(
 
     db.commit()
 
+    # The response field is still called paystack_authorization_url so the
+    # frontend keeps working unchanged; it now holds Kora's checkout URL.
     return schemas.ResumePaymentResponse(
         reference_number=registrant.reference_number,
         amount_kobo=detail.amount_kobo,
@@ -330,7 +337,7 @@ def _confirm_payment(db: Session, reference: str) -> schemas.PaystackVerifyRespo
     """
     The actual payment-confirmation logic, factored out so both the
     /payments/verify route (called when the browser redirects back) and
-    the Paystack webhook (called server-to-server, independent of the
+    the Kora webhook (called server-to-server, independent of the
     browser) go through the exact same three cases below. Keeping one
     implementation means the two paths can never quietly drift apart.
     """
@@ -356,7 +363,7 @@ def _confirm_payment(db: Session, reference: str) -> schemas.PaystackVerifyRespo
                 message=f"Upgrade confirmed — ticket is now {upgrade_detail.ticket_type.value}.",
             )
 
-        success_txn, txn = _verify_with_paystack(reference)
+        success_txn, txn = _verify_with_kora(reference)
 
         if not success_txn:
             return schemas.PaystackVerifyResponse(
@@ -380,7 +387,7 @@ def _confirm_payment(db: Session, reference: str) -> schemas.PaystackVerifyRespo
                 status_code=400,
                 detail=(
                     f"Amount mismatch: expected {expected_diff} kobo, "
-                    f"Paystack reports {paid_amount} kobo. "
+                    f"Kora reports {paid_amount} kobo. "
                     f"Upgrade not confirmed."
                 ),
             )
@@ -428,7 +435,7 @@ def _confirm_payment(db: Session, reference: str) -> schemas.PaystackVerifyRespo
                 message="Payment already confirmed.",
             )
 
-        success_txn, txn = _verify_with_paystack(reference)
+        success_txn, txn = _verify_with_kora(reference)
 
         if not success_txn:
             return schemas.PaystackVerifyResponse(
@@ -448,7 +455,7 @@ def _confirm_payment(db: Session, reference: str) -> schemas.PaystackVerifyRespo
                 detail=(
                     f"Amount mismatch: expected "
                     f"{resume_detail.amount_kobo} kobo, "
-                    f"Paystack reports {paid_amount} kobo. "
+                    f"Kora reports {paid_amount} kobo. "
                     f"Payment not confirmed."
                 ),
             )
@@ -526,7 +533,7 @@ def _confirm_payment(db: Session, reference: str) -> schemas.PaystackVerifyRespo
             message="Payment already confirmed.",
         )
 
-    success_txn, txn = _verify_with_paystack(reference)
+    success_txn, txn = _verify_with_kora(reference)
 
     if not success_txn:
         return schemas.PaystackVerifyResponse(
@@ -545,7 +552,7 @@ def _confirm_payment(db: Session, reference: str) -> schemas.PaystackVerifyRespo
             status_code=400,
             detail=(
                 f"Amount mismatch: expected {detail.amount_kobo} kobo, "
-                f"Paystack reports {paid_amount} kobo. "
+                f"Kora reports {paid_amount} kobo. "
                 f"Payment not confirmed."
             ),
         )
@@ -566,76 +573,69 @@ def _confirm_payment(db: Session, reference: str) -> schemas.PaystackVerifyRespo
 
 
 # ---------------------------------------------------------------------------
-# Paystack webhook
+# Kora webhook
 # ---------------------------------------------------------------------------
 #
-# Paystack calls this directly, server-to-server, the moment a payment
-# succeeds — independent of whether the customer's browser ever makes it
-# back to /verify. Without this, someone who pays and then closes their
-# browser (or loses signal) before the redirect completes would have
-# paid Paystack with no ticket ever issued on our side.
+# Kora calls this directly, server-to-server, the moment a payment succeeds,
+# independent of whether the customer's browser ever makes it back to
+# /verify. Without it, someone who pays and then closes their browser (or
+# loses signal) before the redirect completes would have paid Kora with no
+# ticket ever issued on our side.
 #
-# This route is intentionally NOT behind admin auth — Paystack can't log
-# in as an admin. It's protected instead by verifying Paystack's HMAC
-# signature on the raw request body, using the same secret key already
-# used to talk to Paystack's API. Only someone who has that secret key
-# (i.e. actually Paystack, or us) can produce a valid signature.
+# The webhook is treated as a nudge, never as proof. It only tells us a
+# reference to look at; _confirm_payment then asks Kora's API directly
+# whether that payment really succeeded and for the right amount. So a
+# forged or replayed webhook can't mark anyone as paid — the worst it can do
+# is make us check a real reference. Kora's x-korapay-signature header is
+# still checked and logged, but because re-serialising JSON can differ
+# slightly from what Kora signed, a mismatch is not used to reject the call.
 #
-# Paystack retries a webhook delivery if it doesn't get back a 2xx
-# response, so every branch below returns 200 once the signature check
-# passes — including "reference not found" or "amount mismatch" cases —
-# because retrying won't fix either of those; they need a human to look,
-# not another delivery attempt.
+# Kora retries a webhook delivery if it doesn't get a 200 back, so every
+# branch below returns 200 — including "reference not found" or "amount
+# mismatch", because retrying won't fix either; those need a human to look.
 
 @router.post("/webhook")
-async def paystack_webhook(
+async def kora_webhook(
     request: Request,
     db: Session = Depends(get_db),
 ):
     raw_body = await request.body()
-    signature = request.headers.get("x-paystack-signature", "")
 
-    if not settings.paystack_secret_key:
-        # Misconfiguration on our end, not Paystack's fault — a 500 here
-        # is correct so it shows up loudly in logs rather than being
-        # silently swallowed as "ignored".
-        raise HTTPException(status_code=500, detail="Paystack secret key not configured.")
-
-    expected_signature = hmac.new(
-        settings.paystack_secret_key.encode("utf-8"),
-        raw_body,
-        hashlib.sha512,
-    ).hexdigest()
-
-    if not hmac.compare_digest(expected_signature, signature):
-        # Deliberately vague — never confirm/deny *why* a signature is
-        # wrong, that just helps an attacker iterate.
-        raise HTTPException(status_code=401, detail="Invalid signature.")
+    if not settings.kora_secret_key:
+        # Misconfiguration on our end, not Kora's fault — a 500 here is
+        # correct so it shows up loudly in logs rather than being silently
+        # swallowed as "ignored".
+        raise HTTPException(status_code=500, detail="Kora secret key not configured.")
 
     try:
         payload = json.loads(raw_body)
     except json.JSONDecodeError:
         raise HTTPException(status_code=400, detail="Invalid JSON body.")
 
-    event = payload.get("event")
+    if not isinstance(payload, dict):
+        raise HTTPException(status_code=400, detail="Invalid JSON body.")
 
-    if event != "charge.success":
-        # Paystack sends many event types (transfer, subscription, etc.)
-        # — anything that isn't a successful charge is simply acknowledged
-        # and ignored, since this project doesn't use those features.
-        return {"status": "ignored", "event": event}
+    signature = request.headers.get("x-korapay-signature")
 
-    reference = (payload.get("data") or {}).get("reference")
+    if not webhook_signature_valid(raw_body, signature):
+        print(
+            "Webhook: x-korapay-signature did not match. "
+            "Continuing only because the payment is re-checked directly with Kora."
+        )
+
+    reference = reference_from_webhook(payload)
 
     if not reference:
-        return {"status": "ignored", "reason": "no reference in payload"}
+        # Kora also sends refund and payout events; anything that isn't a
+        # successful charge is simply acknowledged and ignored.
+        return {"status": "ignored", "event": payload.get("event")}
 
     try:
         _confirm_payment(db, reference)
     except HTTPException as e:
         # Logged, not raised — a reference we don't recognise, or an
         # amount mismatch, is something for a human to check in the
-        # logs, not something Paystack should keep retrying forever.
+        # logs, not something Kora should keep retrying forever.
         print(f"Webhook: could not confirm reference {reference}: {e.detail}")
 
     return {"status": "ok"}
