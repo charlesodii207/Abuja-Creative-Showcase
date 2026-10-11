@@ -807,11 +807,28 @@ def send_ticket_email(
     full_name: str,
     pdf_base64: str,
     pdf_filename: str,
+    one_day_pass: bool = False,
 ) -> bool:
     """
     Send the issued PDF ticket to the registrant. The ticket number and
     QR code live inside the attached PDF only — never in the email body.
+
+    When one_day_pass is True (the ₦10,000 1-Day Pass), the email also
+    explains that the pass admits the holder once, and how to upgrade.
     """
+    one_day_note = ""
+
+    if one_day_pass:
+        one_day_note = """
+    <p>
+        <strong>About your 1-Day Pass:</strong> it admits you once, on
+        the day you choose to attend. After you have been scanned in, it
+        cannot be used for entry on the other day. If you would like to
+        attend both days, you can upgrade to the 2-Day Pass on our
+        website using your reference number.
+    </p>
+    """
+
     html = f"""
     <p>Hello {_safe(full_name)},</p>
 
@@ -823,6 +840,8 @@ def send_ticket_email(
     <p>
         Your official event ticket is attached to this email.
     </p>
+
+    {one_day_note}
 
     <p>
         Please keep your ticket safe and do not share, forward, or

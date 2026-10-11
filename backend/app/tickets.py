@@ -123,6 +123,8 @@ def _send_ticket_pdf_email(registrant: models.Registrant, ticket_number: str) ->
         full_name=registrant.full_name,
         pdf_base64=pdf_base64,
         pdf_filename=filename,
+        # The 1-Day Pass admits once, so its email says so (and how to upgrade).
+        one_day_pass=(ticket_label.upper() == ticket_pdf.ONE_DAY_LABEL),
     )
 
     if not sent:
