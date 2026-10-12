@@ -474,6 +474,19 @@ export default function AttendeeNewRegistrationPage() {
           </div>
         </form>
 
+        {/* Link to the group (bulk) ticket page */}
+        <div className="mt-8 rounded-[1.5rem] border border-[#E59200]/20 bg-[#151A3A] px-6 py-6 text-center">
+          <p className="text-sm text-[#F5EFE6]/75">
+            Buying for a team, school or group?
+          </p>
+          <Link
+            href="/group"
+            className="mt-3 inline-flex items-center justify-center rounded-full border border-[#E59200]/50 px-6 py-2.5 text-sm font-semibold text-[#E59200] transition-colors hover:bg-[#E59200]/10"
+          >
+            Buy Multiple Tickets <span className="ml-2">→</span>
+          </Link>
+        </div>
+
         <div className="mt-10 flex items-center justify-center gap-3">
           <span className="h-px w-10 bg-white/10" />
 

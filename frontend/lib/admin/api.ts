@@ -63,10 +63,14 @@ export async function adminFetch<T>(
 ): Promise<T> {
   const token = getToken();
 
+  // File uploads send FormData: the browser must set the Content-Type itself
+  // (it adds the multipart boundary), so only JSON requests get one here.
+  const isForm = typeof FormData !== "undefined" && options.body instanceof FormData;
+
   const res = await fetch(`${API_URL}${path}`, {
     ...options,
     headers: {
-      "Content-Type": "application/json",
+      ...(isForm ? {} : { "Content-Type": "application/json" }),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(options.headers || {}),
     },
@@ -531,6 +535,76 @@ export async function listAdminLogs(filters?: {
 export type MessageThreadStatus = "open" | "closed";
 export type MessageSenderType = "visitor" | "admin";
 
+// --- Attachments ---
+// These limits mirror the backend (app/routers/messages.py). The backend is
+// the real gatekeeper; checking here just gives a faster, friendlier error.
+
+export type MessageAttachment = {
+  filename: string;
+  size: number;
+  content_type?: string | null;
+};
+
+export const MAX_ATTACHMENTS = 10;
+export const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024; // per file
+export const MAX_TOTAL_ATTACHMENT_BYTES = 15 * 1024 * 1024; // all files together
+export const ATTACHMENT_ACCEPT = ".pdf,.png,.jpg,.jpeg,.gif,.webp,.docx,.xlsx,.txt";
+
+const ALLOWED_ATTACHMENT_EXTENSIONS = ATTACHMENT_ACCEPT.split(",");
+
+export function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+/**
+ * Adds newly picked files to the ones already chosen, skipping any that break
+ * the rules. Returns the new list and a message about the first problem found
+ * (null when everything was accepted).
+ */
+export function addAttachments(
+  current: File[],
+  incoming: File[]
+): { files: File[]; error: string | null } {
+  const files = [...current];
+  let total = files.reduce((sum, f) => sum + f.size, 0);
+  let error: string | null = null;
+
+  for (const file of incoming) {
+    const ext = `.${file.name.split(".").pop()?.toLowerCase() ?? ""}`;
+
+    if (!ALLOWED_ATTACHMENT_EXTENSIONS.includes(ext)) {
+      error ??= `"${file.name}" isn't a supported file type. Use PDF, PNG, JPG, GIF, WebP, DOCX, XLSX or TXT.`;
+      continue;
+    }
+    if (file.size === 0) {
+      error ??= `"${file.name}" is empty.`;
+      continue;
+    }
+    if (file.size > MAX_ATTACHMENT_BYTES) {
+      error ??= `"${file.name}" is larger than ${MAX_ATTACHMENT_BYTES / (1024 * 1024)}MB.`;
+      continue;
+    }
+    if (files.length >= MAX_ATTACHMENTS) {
+      error ??= `You can attach up to ${MAX_ATTACHMENTS} files.`;
+      continue;
+    }
+    if (total + file.size > MAX_TOTAL_ATTACHMENT_BYTES) {
+      error ??= `Attachments can't be more than ${MAX_TOTAL_ATTACHMENT_BYTES / (1024 * 1024)}MB in total.`;
+      continue;
+    }
+    if (files.some((f) => f.name === file.name && f.size === file.size)) {
+      continue; // same file picked twice
+    }
+
+    files.push(file);
+    total += file.size;
+  }
+
+  return { files, error };
+}
+
 export type Message = {
   id: string;
   sender: MessageSenderType;
@@ -550,6 +624,8 @@ export type Message = {
   // True when the original HTML of an inbound email exists. Fetch it with
   // getMessageHtml() and show it ONLY inside <iframe sandbox="" srcDoc=...>.
   has_html?: boolean;
+  // Files that were sent with this email (details only, not the files).
+  attachments?: MessageAttachment[];
 };
 
 export type MessageThreadSummary = {
@@ -607,12 +683,20 @@ export async function markThreadRead(threadId: string) {
   );
 }
 
-export async function replyToThread(threadId: string, body: string) {
+export async function replyToThread(
+  threadId: string,
+  body: string,
+  files: File[] = []
+) {
+  const form = new FormData();
+  form.append("body", body);
+  files.forEach((file) => form.append("files", file));
+
   return adminFetch<{ id: string; status: string; message: string }>(
     `/admin/messages/${encodeURIComponent(threadId)}/reply`,
     {
       method: "POST",
-      body: JSON.stringify({ body }),
+      body: form,
     }
   );
 }
@@ -663,12 +747,21 @@ export async function composeMessage(payload: {
   cc?: string[];
   subject: string;
   body: string; // plain text; the server wraps it in the branded template
+  files?: File[];
 }) {
+  const form = new FormData();
+  form.append("mailbox", payload.mailbox);
+  payload.to.forEach((address) => form.append("to", address));
+  (payload.cc ?? []).forEach((address) => form.append("cc", address));
+  form.append("subject", payload.subject);
+  form.append("body", payload.body);
+  (payload.files ?? []).forEach((file) => form.append("files", file));
+
   return adminFetch<{ id: string; status: string; message: string }>(
     "/admin/messages/compose",
     {
       method: "POST",
-      body: JSON.stringify({ cc: [], ...payload }),
+      body: form,
     }
   );
 }

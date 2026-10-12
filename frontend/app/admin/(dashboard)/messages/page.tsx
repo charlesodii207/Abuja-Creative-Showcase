@@ -13,6 +13,9 @@ import {
   composeMessage,
   getMessageHtml,
   getMailboxUnreadCounts,
+  addAttachments,
+  formatFileSize,
+  ATTACHMENT_ACCEPT,
   ApiError,
   type Message,
   type MailboxOption,
@@ -109,6 +112,85 @@ function SourceBadge({
   );
 }
 
+// Paperclip button plus the list of chosen files (each with a remove button).
+function AttachmentPicker({
+  files,
+  onChange,
+  disabled = false,
+}: {
+  files: File[];
+  onChange: (files: File[]) => void;
+  disabled?: boolean;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  function handlePick(list: FileList | null) {
+    if (!list) return;
+    const result = addAttachments(files, Array.from(list));
+    setError(result.error);
+    onChange(result.files);
+    // Lets the same file be picked again after removing it.
+    if (inputRef.current) inputRef.current.value = "";
+  }
+
+  function removeAt(index: number) {
+    setError(null);
+    onChange(files.filter((_, i) => i !== index));
+  }
+
+  return (
+    <div className="mt-2">
+      <input
+        ref={inputRef}
+        type="file"
+        multiple
+        accept={ATTACHMENT_ACCEPT}
+        onChange={(e) => handlePick(e.target.files)}
+        className="hidden"
+      />
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          disabled={disabled}
+          className="font-body text-xs rounded-sm px-3 py-1.5 border border-ink-raised text-muted hover:text-cream transition-colors disabled:opacity-60"
+        >
+          📎 Attach files
+        </button>
+        <span className="font-body text-[11px] text-muted">
+          PDF, images, Word, Excel, text. Up to 5MB each, 15MB total.
+        </span>
+      </div>
+
+      {files.length > 0 && (
+        <ul className="mt-2 flex flex-wrap gap-2">
+          {files.map((file, i) => (
+            <li
+              key={`${file.name}-${file.size}-${i}`}
+              className="flex items-center gap-2 max-w-full border border-ink-raised rounded-sm px-2 py-1 font-body text-xs text-cream"
+            >
+              <span className="truncate max-w-[12rem] sm:max-w-[16rem]">{file.name}</span>
+              <span className="text-muted shrink-0">{formatFileSize(file.size)}</span>
+              <button
+                type="button"
+                onClick={() => removeAt(i)}
+                disabled={disabled}
+                aria-label={`Remove ${file.name}`}
+                className="text-muted hover:text-red shrink-0 disabled:opacity-60"
+              >
+                ✕
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {error && <p className="font-body text-xs text-red mt-2">{error}</p>}
+    </div>
+  );
+}
+
 export default function MessagesPage() {
   const [mailboxes, setMailboxes] = useState<MailboxOption[]>([]);
   const [mailboxesLoaded, setMailboxesLoaded] = useState(false);
@@ -127,6 +209,7 @@ export default function MessagesPage() {
 
   const [replyBody, setReplyBody] = useState("");
   const [replySuggest, setReplySuggest] = useState(false);
+  const [replyFiles, setReplyFiles] = useState<File[]>([]);
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
 
@@ -147,6 +230,7 @@ export default function MessagesPage() {
   const [composeSubject, setComposeSubject] = useState("");
   const [composeBody, setComposeBody] = useState("");
   const [composeSuggest, setComposeSuggest] = useState(false);
+  const [composeFiles, setComposeFiles] = useState<File[]>([]);
   const [composeSending, setComposeSending] = useState(false);
   const [composeError, setComposeError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -212,6 +296,7 @@ export default function MessagesPage() {
     setSendError(null);
     setReplyBody("");
     setReplySuggest(false);
+    setReplyFiles([]);
     setQuotedOpen({});
     resetHtmlViewer();
 
@@ -290,11 +375,12 @@ export default function MessagesPage() {
     setSending(true);
     setSendError(null);
     try {
-      await replyToThread(selectedId, replyBody.trim());
+      await replyToThread(selectedId, replyBody.trim(), replyFiles);
       const detail = await getMessageThread(selectedId);
       setSelectedThread(detail);
       setReplyBody("");
       setReplySuggest(false);
+      setReplyFiles([]);
       loadThreads();
     } catch (err) {
       setSendError(err instanceof ApiError ? err.message : "Couldn't send that reply.");
@@ -371,6 +457,7 @@ export default function MessagesPage() {
         cc,
         subject: composeSubject.trim(),
         body: composeBody.trim(),
+        files: composeFiles,
       });
       setComposeOpen(false);
       setComposeTo("");
@@ -378,6 +465,7 @@ export default function MessagesPage() {
       setComposeSubject("");
       setComposeBody("");
       setComposeSuggest(false);
+      setComposeFiles([]);
       setNotice("Email sent.");
       loadThreads();
     } catch (err) {
@@ -636,6 +724,25 @@ export default function MessagesPage() {
                         {main || m.body}
                       </div>
 
+                      {m.attachments && m.attachments.length > 0 && (
+                        <ul
+                          className={`mt-1 flex flex-wrap gap-1.5 ${admin ? "justify-end" : ""}`}
+                        >
+                          {m.attachments.map((a, i) => (
+                            <li
+                              key={`${a.filename}-${i}`}
+                              className="flex items-center gap-1.5 max-w-full border border-ink-raised rounded-sm px-2 py-1 font-body text-xs text-muted"
+                            >
+                              <span aria-hidden>📎</span>
+                              <span className="truncate max-w-[14rem] text-cream/80">
+                                {a.filename}
+                              </span>
+                              <span className="shrink-0">{formatFileSize(a.size)}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+
                       {quoted && (
                         <>
                           <button
@@ -735,6 +842,11 @@ export default function MessagesPage() {
                       {sending ? "Sending…" : "Send"}
                     </button>
                   </div>
+                  <AttachmentPicker
+                    files={replyFiles}
+                    onChange={setReplyFiles}
+                    disabled={sending}
+                  />
                 </form>
               ) : (
                 <div className="px-4 sm:px-5 py-3 sm:py-4 border-t border-ink-raised shrink-0">
@@ -838,6 +950,12 @@ export default function MessagesPage() {
                 className="mt-1 w-full bg-ink border border-ink-raised rounded-sm px-3 py-2 font-body text-sm text-cream focus:outline-none focus:ring-2 focus:ring-gold resize-y"
               />
             </div>
+
+            <AttachmentPicker
+              files={composeFiles}
+              onChange={setComposeFiles}
+              disabled={composeSending}
+            />
 
             <p className="font-body text-[11px] text-muted">
               Only the logo header and the footer are added automatically. Replies come
