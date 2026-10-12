@@ -14,6 +14,7 @@ from app.kora import (
     KoraError,
 )
 from app.tickets import issue_ticket_and_email, send_upgraded_ticket_email
+from app.routes.group_orders import confirm_group_order
 
 router = APIRouter(prefix="/payments", tags=["payments"])
 
@@ -629,6 +630,14 @@ async def kora_webhook(
         # Kora also sends refund and payout events; anything that isn't a
         # successful charge is simply acknowledged and ignored.
         return {"status": "ignored", "event": payload.get("event")}
+
+    # Group (bulk) ticket orders have references starting with GRP-.
+    if reference.startswith("GRP-"):
+        try:
+            confirm_group_order(db, reference)
+        except HTTPException as e:
+            print(f"Webhook: could not confirm group order {reference}: {e.detail}")
+        return {"status": "ok"}
 
     try:
         _confirm_payment(db, reference)

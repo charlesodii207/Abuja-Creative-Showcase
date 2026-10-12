@@ -568,3 +568,75 @@ class Booking(Base):
 
     cancelled_by_name = Column(String, nullable=True)
     cancelled_at = Column(DateTime(timezone=True), nullable=True)
+
+
+# ---------------------------------------------------------------------------
+# Group (bulk) ticket orders
+# ---------------------------------------------------------------------------
+
+class GroupOrder(Base):
+    """
+    One bulk purchase: a buyer pays once for `quantity` tickets. Nothing is
+    created in `registrants` until the payment is confirmed; then one real
+    ticket per seat is made and linked through GroupTicket.
+    """
+
+    __tablename__ = "group_orders"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    reference_number = Column(String, unique=True, nullable=False, index=True)  # also the Kora reference
+    # Long random code in the private "Manage your tickets" link.
+    access_token = Column(String, unique=True, nullable=False, index=True)
+
+    buyer_name = Column(String, nullable=False)
+    email = Column(String, nullable=False, index=True)
+    phone = Column(String, nullable=False)
+
+    # "general" | "vip" | "masterclass" (same values as TicketType)
+    ticket_type = Column(String, nullable=False)
+    quantity = Column(Integer, nullable=False)
+    unit_amount_kobo = Column(Integer, nullable=False)
+    amount_kobo = Column(Integer, nullable=False)
+
+    # "pending" | "paid"
+    status = Column(String, nullable=False, default="pending", index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    paid_at = Column(DateTime(timezone=True), nullable=True)
+
+    tickets = relationship(
+        "GroupTicket",
+        back_populates="order",
+        order_by="GroupTicket.seq",
+    )
+
+
+class GroupTicket(Base):
+    """Links one seat of a group order to its real Registrant/Ticket."""
+
+    __tablename__ = "group_tickets"
+    __table_args__ = (
+        UniqueConstraint("group_order_id", "seq", name="uq_group_tickets_order_seq"),
+    )
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    group_order_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("group_orders.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    registrant_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("registrants.id"),
+        nullable=False,
+        unique=True,
+    )
+    seq = Column(Integer, nullable=False)  # 1..quantity
+
+    assigned_name = Column(String, nullable=True)
+    assigned_email = Column(String, nullable=True)
+    send_count = Column(Integer, nullable=False, default=0, server_default="0")
+    last_sent_at = Column(DateTime(timezone=True), nullable=True)
+
+    order = relationship("GroupOrder", back_populates="tickets")
+    registrant = relationship("Registrant")

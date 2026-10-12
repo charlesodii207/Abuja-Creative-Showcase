@@ -27,6 +27,9 @@ class Settings(BaseSettings):
     # sk_test_... for testing, sk_live_... once ACS is live.
     kora_secret_key: str = ""
     kora_public_key: str = ""
+    # Present in .env / Render. The Checkout Redirect flow doesn't use it,
+    # but it must be declared here or the app refuses to read .env.
+    kora_encryption_key: str = ""
     # Full public URL of the backend's /payments/webhook route, e.g.
     # https://your-backend-host/payments/webhook. Optional: if blank, payments
     # are only confirmed when the customer's browser returns to the site.
