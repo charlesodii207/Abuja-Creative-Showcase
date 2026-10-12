@@ -216,6 +216,12 @@ class ContactInquiryResponse(BaseModel):
 # Contact messaging
 # ---------------------------------------------------------------------------
 
+class AttachmentInfo(BaseModel):
+    filename: str
+    size: int
+    content_type: str | None = None
+
+
 class ContactMessageSummary(BaseModel):
     id: str
     sender_type: str
@@ -231,6 +237,7 @@ class ContactMessageSummary(BaseModel):
     to_addresses: str | None = None
     cc_addresses: str | None = None
     has_html: bool = False                # original HTML exists: fetch /admin/messages/html/{id}
+    attachments: list[AttachmentInfo] = []   # files sent with an outbound email
 
     class Config:
         from_attributes = True

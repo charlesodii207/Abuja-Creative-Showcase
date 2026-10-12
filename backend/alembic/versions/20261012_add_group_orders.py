@@ -1,51 +1,15 @@
 """add group orders
 
 Revision ID: 8f3a1c9d2b7e
+Revises: 21f898cc5b5e
 Create Date: 2026-10-12
-
-You do not need to edit this file. It looks at the other migration files
-in this folder and joins itself onto the newest one automatically.
 """
-import os
-import re
-
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 revision = "8f3a1c9d2b7e"
-
-
-def _find_previous_head():
-    """Finds the newest existing migration (the one nothing else points to)."""
-    here = os.path.dirname(os.path.abspath(__file__))
-    this_file = os.path.basename(__file__)
-    revisions = {}
-    pointed_to = set()
-
-    for name in os.listdir(here):
-        if not name.endswith(".py") or name.startswith("__") or name == this_file:
-            continue
-        with open(os.path.join(here, name), encoding="utf-8") as f:
-            text = f.read()
-        rev = re.search(r'^revision\s*(?::[^=]+)?=\s*["\']([^"\']+)["\']', text, re.M)
-        down = re.search(r'^down_revision\s*(?::[^=]+)?=\s*(.+)$', text, re.M)
-        if not rev:
-            continue
-        revisions[rev.group(1)] = name
-        if down:
-            pointed_to.update(re.findall(r'["\']([^"\']+)["\']', down.group(1)))
-
-    heads = [r for r in revisions if r not in pointed_to]
-    if len(heads) != 1:
-        raise RuntimeError(
-            f"Expected exactly one existing migration head, found {heads}. "
-            "Set down_revision by hand."
-        )
-    return heads[0]
-
-
-down_revision = _find_previous_head()
+down_revision = "21f898cc5b5e"
 branch_labels = None
 depends_on = None
 

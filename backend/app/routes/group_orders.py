@@ -417,6 +417,8 @@ def manage_group_order(token: str, db: Session = Depends(get_db)):
         "tickets": [
             {
                 "seq": gt.seq,
+                # Read live, so a ticket upgraded later shows its new type.
+                "ticket_label": TYPE_LABELS[gt.registrant.attendee_detail.ticket_type],
                 "assigned_name": gt.assigned_name,
                 "assigned_email": gt.assigned_email,
                 "send_count": gt.send_count,

@@ -1,9 +1,12 @@
+import base64
+import os
 import re
 from datetime import datetime, timezone
 from html import escape
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
+from pydantic import EmailStr, TypeAdapter, ValidationError
 from sqlalchemy import func
 from sqlalchemy.orm import Session, selectinload
 
@@ -35,6 +38,173 @@ MESSAGES_PERMISSION = "messages"
 
 DEFAULT_MAILBOX = "info"   # website-form messages
 
+
+# ---------------------------------------------------------------------------
+# Attachment rules
+# ---------------------------------------------------------------------------
+# Resend caps one email at 40MB *after* base64 encoding (which adds about a
+# third), so 15MB of raw files stays comfortably under it.
+
+MAX_ATTACHMENTS = 10
+MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024        # per file
+MAX_TOTAL_ATTACHMENT_BYTES = 15 * 1024 * 1024  # all files in one email
+
+ALLOWED_ATTACHMENT_TYPES = {
+    ".pdf": "application/pdf",
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".gif": "image/gif",
+    ".webp": "image/webp",
+    ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    ".txt": "text/plain",
+}
+
+_email_adapter = TypeAdapter(EmailStr)
+
+
+def _content_matches_extension(ext: str, data: bytes) -> bool:
+    """Check the file's first bytes, so a renamed .exe can't pass as a .pdf."""
+    if ext == ".pdf":
+        return data.startswith(b"%PDF-")
+    if ext == ".png":
+        return data.startswith(b"\x89PNG\r\n\x1a\n")
+    if ext in (".jpg", ".jpeg"):
+        return data.startswith(b"\xff\xd8\xff")
+    if ext == ".gif":
+        return data.startswith((b"GIF87a", b"GIF89a"))
+    if ext == ".webp":
+        return data[:4] == b"RIFF" and data[8:12] == b"WEBP"
+    if ext in (".docx", ".xlsx"):
+        # Both are zip containers.
+        return data.startswith(b"PK\x03\x04")
+    if ext == ".txt":
+        if b"\x00" in data:
+            return False
+        try:
+            data.decode("utf-8")
+        except UnicodeDecodeError:
+            return False
+        return True
+    return False
+
+
+def _safe_filename(name: str) -> str:
+    """Drop any path, keep letters/digits/spaces/dots/dashes, cap the length."""
+    base = os.path.basename((name or "").replace("\\", "/")).strip()
+    base = re.sub(r"[^\w.\- ()]", "_", base)
+    stem, ext = os.path.splitext(base)
+    stem = stem[:100].strip(" .")
+    ext = ext[:10]
+    if not stem:
+        stem = "attachment"
+    return f"{stem}{ext}"
+
+
+def _prepare_attachments(
+    files: list[UploadFile] | None,
+) -> tuple[list[dict], list[dict]]:
+    """
+    Validate uploaded files.
+
+    Returns (resend_attachments, metadata):
+      - resend_attachments: [{"filename", "content" (base64)}] for Resend
+      - metadata: [{"filename", "size", "content_type"}] saved on the message
+    """
+    uploads = [f for f in (files or []) if f is not None and f.filename]
+
+    if not uploads:
+        return [], []
+
+    if len(uploads) > MAX_ATTACHMENTS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"You can attach up to {MAX_ATTACHMENTS} files per email.",
+        )
+
+    resend_attachments: list[dict] = []
+    metadata: list[dict] = []
+    total = 0
+
+    for upload in uploads:
+        filename = _safe_filename(upload.filename)
+        ext = os.path.splitext(filename)[1].lower()
+
+        if ext not in ALLOWED_ATTACHMENT_TYPES:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f'"{filename}" isn\'t a supported file type. '
+                    "Allowed: PDF, PNG, JPG, GIF, WebP, DOCX, XLSX, TXT."
+                ),
+            )
+
+        # Read one byte past the limit so an oversized file is caught
+        # without loading all of it into memory.
+        data = upload.file.read(MAX_ATTACHMENT_BYTES + 1)
+
+        if not data:
+            raise HTTPException(status_code=400, detail=f'"{filename}" is empty.')
+
+        if len(data) > MAX_ATTACHMENT_BYTES:
+            raise HTTPException(
+                status_code=400,
+                detail=f'"{filename}" is larger than {MAX_ATTACHMENT_BYTES // (1024 * 1024)}MB.',
+            )
+
+        if not _content_matches_extension(ext, data):
+            raise HTTPException(
+                status_code=400,
+                detail=f'"{filename}" doesn\'t look like a real {ext[1:].upper()} file.',
+            )
+
+        total += len(data)
+        if total > MAX_TOTAL_ATTACHMENT_BYTES:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "The attachments are too large together. "
+                    f"Keep them under {MAX_TOTAL_ATTACHMENT_BYTES // (1024 * 1024)}MB in total."
+                ),
+            )
+
+        resend_attachments.append({
+            "filename": filename,
+            "content": base64.b64encode(data).decode("ascii"),
+        })
+        metadata.append({
+            "filename": filename,
+            "size": len(data),
+            "content_type": ALLOWED_ATTACHMENT_TYPES[ext],
+        })
+
+    return resend_attachments, metadata
+
+
+def _clean_emails(values: list[str]) -> list[str]:
+    """Trim, validate and de-duplicate addresses, naming the bad one on error."""
+    cleaned: list[str] = []
+
+    for raw in values or []:
+        address = (raw or "").strip()
+        if not address:
+            continue
+        try:
+            address = str(_email_adapter.validate_python(address))
+        except ValidationError:
+            raise HTTPException(
+                status_code=400,
+                detail=f'"{address}" isn\'t a valid email address.',
+            )
+        cleaned.append(address.lower())
+
+    return list(dict.fromkeys(cleaned))
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
 
 def _get_thread(
     db: Session,
@@ -80,6 +250,9 @@ def _serialize_message(message: models.ContactMessage) -> schemas.ContactMessage
         to_addresses=message.to_addresses,
         cc_addresses=message.cc_addresses,
         has_html=bool(message.body_html),
+        attachments=[
+            schemas.AttachmentInfo(**a) for a in (message.attachments or [])
+        ],
     )
 
 
@@ -115,6 +288,13 @@ def _wrap_body(body: str) -> str:
         {safe_body}
     </div>
     """
+
+
+def _attachment_log_note(metadata: list[dict]) -> str:
+    if not metadata:
+        return ""
+    names = ", ".join(a["filename"] for a in metadata)
+    return f" with {len(metadata)} attachment(s): {names}"
 
 
 # ---------------------------------------------------------------------------
@@ -285,22 +465,27 @@ def get_message_html(
 
 @router.post("/compose", response_model=schemas.AdminActionResponse)
 def compose_message(
-    payload: schemas.SendMailRequest,
+    mailbox: str = Form(...),               # a key like "info", never a raw address
+    to: list[str] = Form(...),
+    subject: str = Form(...),
+    body: str = Form(...),                  # plain text; escaped + wrapped in the branded template
+    cc: list[str] = Form(default=[]),
+    files: list[UploadFile] = File(default=[]),
     db: Session = Depends(get_db),
     current_admin: models.Admin = Depends(require_permission(MESSAGES_PERMISSION)),
 ):
-    """Send a new email from a mailbox this admin has send access to."""
+    """Send a new email (optionally with attachments) from a mailbox this admin has send access to."""
 
-    require_mailbox(current_admin, payload.mailbox, "send")
+    require_mailbox(current_admin, mailbox, "send")
 
-    to = list(dict.fromkeys(str(a).lower() for a in payload.to))
-    cc = [a for a in dict.fromkeys(str(a).lower() for a in payload.cc) if a not in to]
-    subject = payload.subject.strip()
-    body = payload.body.strip()
+    to_list = _clean_emails(to)
+    cc_list = [a for a in _clean_emails(cc) if a not in to_list]
+    subject = subject.strip()
+    body = body.strip()
 
-    if not to:
+    if not to_list:
         raise HTTPException(status_code=400, detail="Add at least one recipient.")
-    if len(to) + len(cc) > 10:
+    if len(to_list) + len(cc_list) > 10:
         raise HTTPException(status_code=400, detail="Maximum 10 recipients per email.")
     if not subject:
         raise HTTPException(status_code=400, detail="Subject cannot be empty.")
@@ -308,28 +493,31 @@ def compose_message(
         raise HTTPException(status_code=400, detail="Message cannot be empty.")
     subject = subject[:200]
 
+    resend_attachments, attachment_meta = _prepare_attachments(files)
+
     message_id = new_message_id()
 
     sent = send_from_mailbox(
-        payload.mailbox,
-        to,
+        mailbox,
+        to_list,
         subject,
         _wrap_body(body),
-        cc=cc or None,
+        cc=cc_list or None,
         message_id=message_id,
+        attachments=resend_attachments or None,
     )
     if not sent:
         raise HTTPException(status_code=500, detail="We couldn't send the email. Please try again.")
 
-    from_address = mailbox_address(payload.mailbox)
+    from_address = mailbox_address(mailbox)
 
     thread = models.ContactThread(
-        sender_name=to[0],
-        sender_email=to[0],
+        sender_name=to_list[0],
+        sender_email=to_list[0],
         subject=subject,
         status="open",
         is_replied=True,
-        mailbox=payload.mailbox,
+        mailbox=mailbox,
         channel="email",
     )
     db.add(thread)
@@ -344,11 +532,12 @@ def compose_message(
         body=body,
         admin_id=current_admin.id,
         is_read=True,
-        mailbox=payload.mailbox,
+        mailbox=mailbox,
         direction="outbound",
         message_id=message_id,
-        to_addresses=", ".join(to),
-        cc_addresses=", ".join(cc) or None,
+        to_addresses=", ".join(to_list),
+        cc_addresses=", ".join(cc_list) or None,
+        attachments=attachment_meta or None,
     ))
     db.commit()
 
@@ -358,7 +547,10 @@ def compose_message(
         "send_email",
         target_type="contact_thread",
         target_reference=str(thread.id),
-        detail=f"Sent from {from_address} to {', '.join(to)}: {subject}",
+        detail=(
+            f"Sent from {from_address} to {', '.join(to_list)}: {subject}"
+            f"{_attachment_log_note(attachment_meta)}"
+        ),
     )
 
     return schemas.AdminActionResponse(
@@ -441,12 +633,14 @@ def mark_message_thread_read(
 @router.post("/{thread_id}/reply", response_model=schemas.ContactReplyResponse)
 def reply_to_message_thread(
     thread_id: str,
-    payload: schemas.ContactReplyRequest,
+    body: str = Form(...),
+    files: list[UploadFile] = File(default=[]),
     db: Session = Depends(get_db),
     current_admin: models.Admin = Depends(require_permission(MESSAGES_PERMISSION)),
 ):
     """
-    Send an email reply to the sender and record it in the thread.
+    Send an email reply (optionally with attachments) to the sender and
+    record it in the thread.
 
     The reply goes out from the mailbox the conversation belongs to
     (info@ for website-form messages), and the admin needs SEND access to it.
@@ -455,10 +649,12 @@ def reply_to_message_thread(
     thread = _get_thread(db, thread_id, current_admin, "send")
     mailbox = thread.mailbox or DEFAULT_MAILBOX
 
-    body = payload.body.strip()
+    body = body.strip()
 
     if not body:
         raise HTTPException(status_code=400, detail="Reply message cannot be empty.")
+
+    resend_attachments, attachment_meta = _prepare_attachments(files)
 
     reply_subject = _reply_subject(thread.subject)
 
@@ -478,6 +674,7 @@ def reply_to_message_thread(
         in_reply_to=in_reply_to,
         references=references,
         message_id=message_id,
+        attachments=resend_attachments or None,
     )
 
     if not sent:
@@ -503,6 +700,7 @@ def reply_to_message_thread(
         in_reply_to=in_reply_to,
         references_header=references,
         to_addresses=thread.sender_email,
+        attachments=attachment_meta or None,
     )
 
     db.add(message)
@@ -520,7 +718,10 @@ def reply_to_message_thread(
         "reply_to_contact_message",
         target_type="contact_thread",
         target_reference=str(thread.id),
-        detail=f"Replied to {thread.sender_email} from {from_address}.",
+        detail=(
+            f"Replied to {thread.sender_email} from {from_address}"
+            f"{_attachment_log_note(attachment_meta)}."
+        ),
     )
 
     return schemas.ContactReplyResponse(message=_serialize_message(message))

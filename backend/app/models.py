@@ -3,7 +3,7 @@ import uuid
 
 from sqlalchemy import (
     Column, String, Boolean, DateTime, Date, ForeignKey, Enum, Text, Integer,
-    BigInteger, UniqueConstraint, func
+    BigInteger, UniqueConstraint, JSON, func
 )
 from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import relationship
@@ -210,6 +210,9 @@ class ContactMessage(Base):
     # Raw HTML from inbound mail. UNTRUSTED: only ever shown in a sandboxed iframe.
     body_html = Column(Text, nullable=True)
     imap_uid = Column(BigInteger, nullable=True)
+    # Files sent with an outbound email: [{"filename", "size", "content_type"}].
+    # Only the details are kept, not the files themselves.
+    attachments = Column(JSON, nullable=True)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 

@@ -37,3 +37,4 @@ watchfiles==1.2.0
 websockets==17.1
 reportlab
 pypdf
+python-multipart

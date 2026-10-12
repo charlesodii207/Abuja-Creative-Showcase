@@ -1070,11 +1070,15 @@ def send_from_mailbox(
     in_reply_to: str | None = None,
     references: str | None = None,
     message_id: str | None = None,
+    attachments: list[dict] | None = None,
 ) -> str | None:
     """
     Send a branded email (same header/footer as every other ACS email) from
     one of the whitelisted mailboxes. Reply-To is the same mailbox, so the
     recipient's answer lands in Zoho and is picked up by the sync.
+
+    attachments is a list of {"filename": str, "content": <base64 string>},
+    the same shape the ticket and badge emails already use.
 
     Returns the Resend id on success, None on failure.
     """
@@ -1090,6 +1094,8 @@ def send_from_mailbox(
         }
         if cc:
             payload["cc"] = list(cc)
+        if attachments:
+            payload["attachments"] = attachments
 
         headers: dict[str, str] = {}
         if message_id:
