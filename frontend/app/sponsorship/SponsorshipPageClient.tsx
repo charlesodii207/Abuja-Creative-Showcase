@@ -345,7 +345,7 @@ export default function SponsorshipPageClient() {
         className="pointer-events-none absolute left-1/2 top-40 h-96 w-96 -translate-x-1/2 rounded-full bg-[#B80319]/[0.035] blur-[120px]"
       />
 
-      <div className="relative mx-auto max-w-6xl px-6 py-20 md:py-28">
+      <div className="relative mx-auto max-w-6xl px-6 pt-10 pb-20 md:pt-14 md:pb-28">
         <div className="max-w-2xl">
           <div className="tricolor-rule mb-7">
             <span />

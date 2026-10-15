@@ -98,7 +98,7 @@ export default function LookupForm() {
         className="pointer-events-none absolute -left-20 bottom-20 h-44 w-44 rounded-full border border-[#00A5A8]/10"
       />
 
-      <div className="mx-auto max-w-3xl px-6 py-20 sm:px-8 md:py-28">
+      <div className="mx-auto max-w-3xl px-6 pt-10 pb-20 sm:px-8 md:pt-14 md:pb-28">
         <div className="text-center">
           <div className="tricolor-rule mx-auto mb-7">
             <span />

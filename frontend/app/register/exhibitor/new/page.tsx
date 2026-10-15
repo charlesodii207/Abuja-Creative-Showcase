@@ -125,7 +125,7 @@ export default function ExhibitorRegistrationPage() {
           className="pointer-events-none absolute -left-24 bottom-16 h-52 w-52 rounded-full border border-[#00A5A8]/10"
         />
 
-        <div className="mx-auto flex min-h-screen max-w-4xl items-center justify-center px-6 py-20 sm:px-8 md:py-28">
+        <div className="mx-auto flex min-h-screen max-w-4xl items-center justify-center px-6 pt-10 pb-20 sm:px-8 md:pt-14 md:pb-28">
           <div className="relative w-full">
             <div
               aria-hidden="true"
@@ -236,7 +236,7 @@ export default function ExhibitorRegistrationPage() {
           className="pointer-events-none absolute -left-24 bottom-16 h-52 w-52 rounded-full border border-[#00A5A8]/10"
         />
 
-        <div className="mx-auto max-w-4xl px-6 py-20 sm:px-8 md:py-28">
+        <div className="mx-auto max-w-4xl px-6 pt-10 pb-20 sm:px-8 md:pt-14 md:pb-28">
           <div className="text-center">
             <div className="tricolor-rule mx-auto mb-7">
               <span />
@@ -382,7 +382,7 @@ export default function ExhibitorRegistrationPage() {
         className="pointer-events-none absolute -left-24 bottom-16 h-52 w-52 rounded-full border border-[#00A5A8]/10"
       />
 
-      <div className="mx-auto max-w-4xl px-6 py-20 sm:px-8 md:py-28">
+      <div className="mx-auto max-w-4xl px-6 pt-10 pb-20 sm:px-8 md:pt-14 md:pb-28">
         <div className="flex items-end justify-between gap-6">
           <div>
             <div className="tricolor-rule mb-7">

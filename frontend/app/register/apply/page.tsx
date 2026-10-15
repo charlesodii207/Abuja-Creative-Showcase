@@ -13,7 +13,7 @@ export default function ApplyPage() {
   );
 
   return (
-    <main className="mx-auto max-w-4xl px-6 py-20 md:py-28">
+    <main className="mx-auto max-w-4xl px-6 pt-10 pb-20 md:pt-14 md:pb-28">
       <div className="tricolor-rule mb-6">
         <span /><span /><span />
       </div>

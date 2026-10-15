@@ -121,7 +121,7 @@ function ManageContent() {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#11152F]">
-      <div className="mx-auto max-w-4xl px-6 py-20 sm:px-8 md:py-28">
+      <div className="mx-auto max-w-4xl px-6 pt-10 pb-20 sm:px-8 md:pt-14 md:pb-28">
         <div className="text-center">
           <div className="tricolor-rule mx-auto mb-7">
             <span />

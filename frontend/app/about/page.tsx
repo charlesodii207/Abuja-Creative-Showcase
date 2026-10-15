@@ -25,7 +25,7 @@ export default function AboutPage() {
         className="pointer-events-none absolute -left-16 bottom-32 h-32 w-32 rounded-full border border-[#00A5A8]/15"
       />
 
-      <div className="mx-auto max-w-4xl px-6 py-20 sm:px-8 md:py-28 lg:px-10">
+      <div className="mx-auto max-w-4xl px-6 pt-10 pb-20 sm:px-8 md:pt-14 md:pb-28 lg:px-10">
         <div className="relative">
           {/* Editorial frame */}
           <div
