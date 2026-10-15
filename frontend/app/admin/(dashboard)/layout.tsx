@@ -8,6 +8,7 @@ import {
   getToken,
   getAdminProfile,
   getMailboxUnreadCounts,
+  getManualPaymentPendingCount,
   getMe,
   updateProfile,
   logout,
@@ -28,6 +29,7 @@ type NavItem = {
 const NAV_ITEMS: NavItem[] = [
   { label: "Overview", href: "/admin/overview" },
   { label: "Registrants", href: "/admin/registrants" },
+  { label: "Manual payments", href: "/admin/manual-payments", permission: "manual_payments" },
   { label: "Bookings", href: "/admin/bookings", permission: "hotels" },
   { label: "Messages", href: "/admin/messages", permission: "messages" },
   // Every admin can open this; regular admins get a view-only list.
@@ -82,6 +84,7 @@ export default function DashboardLayout({
   const [profile, setProfile] = useState<AdminProfile | null>(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [pendingPayments, setPendingPayments] = useState(0);
 
   useEffect(() => {
     if (!getToken()) {
@@ -191,6 +194,35 @@ export default function DashboardLayout({
     };
   }, [checking, canSeeMessages, pathname]);
 
+  // Admins who can confirm bank transfers get a badge counting the ones
+  // still waiting to be checked.
+  const canSeeManualPayments = NAV_ITEMS.some(
+    (item) => item.href === "/admin/manual-payments" && canSee(item, profile)
+  );
+
+  useEffect(() => {
+    if (checking || !canSeeManualPayments) return;
+
+    let cancelled = false;
+
+    function refresh() {
+      getManualPaymentPendingCount()
+        .then((res) => {
+          if (!cancelled) setPendingPayments(res.pending);
+        })
+        .catch(() => {
+          // silent — badge just won't update this cycle
+        });
+    }
+
+    refresh();
+    const interval = setInterval(refresh, UNREAD_POLL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [checking, canSeeManualPayments, pathname]);
+
   function handleLogout() {
     logout();
     router.replace("/admin/login");
@@ -287,7 +319,13 @@ export default function DashboardLayout({
         <nav className="flex-1 px-3 overflow-y-auto">
           {visibleNav.map((item) => {
             const active = isActive(pathname, item.href);
-            const showBadge = item.href === "/admin/messages" && unreadCount > 0;
+            const badgeCount =
+              item.href === "/admin/messages"
+                ? unreadCount
+                : item.href === "/admin/manual-payments"
+                  ? pendingPayments
+                  : 0;
+            const showBadge = badgeCount > 0;
 
             return (
               <Link
@@ -303,7 +341,7 @@ export default function DashboardLayout({
 
                 {showBadge && (
                   <span className="font-body text-xs bg-gold text-ink rounded-full min-w-[1.25rem] h-5 px-1.5 flex items-center justify-center">
-                    {unreadCount > 99 ? "99+" : unreadCount}
+                    {badgeCount > 99 ? "99+" : badgeCount}
                   </span>
                 )}
               </Link>

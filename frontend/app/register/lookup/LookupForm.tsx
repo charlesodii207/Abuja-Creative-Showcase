@@ -10,6 +10,10 @@ interface LookupResult {
   reference_number: string;
 }
 
+// Categories that can have a payment step. Those people get a button to the
+// status page (/verify), where they can pay by Kora or bank transfer.
+const PAYING_CATEGORIES = ["attendee", "exhibitor", "pitcher"];
+
 export default function LookupForm() {
   const [referenceNumber, setReferenceNumber] = useState("");
   const [status, setStatus] = useState<
@@ -49,8 +53,16 @@ export default function LookupForm() {
       return "Your application is still under review.";
     }
 
+    if (s === "awaiting_payment") {
+      return "Your registration is waiting for payment. Open your full status to pay by card or bank transfer.";
+    }
+
+    if (s === "confirmed") {
+      return "Your payment is confirmed and your registration is complete.";
+    }
+
     if (s === "approved" && category === "exhibitor") {
-      return "You're approved! Payment is not yet open — we'll notify you when it is.";
+      return "You're approved! Open your full status to see your payment options.";
     }
 
     if (s === "approved") {
@@ -62,6 +74,16 @@ export default function LookupForm() {
     }
 
     return "";
+  }
+
+  // Show the "full status & payment" button for anyone who might owe payment
+  // or has a payment in progress. The status page handles the rest and tells
+  // paid people they're all set.
+  function showPaymentButton(r: LookupResult) {
+    return (
+      PAYING_CATEGORIES.includes(r.category.toLowerCase()) &&
+      r.status !== "rejected"
+    );
   }
 
   return (
@@ -116,7 +138,7 @@ export default function LookupForm() {
             <p className="mt-3 font-display text-2xl capitalize text-[#F5EFE6] sm:text-3xl">
               {result.category}{" "}
               <span className="text-[#00A5A8]">
-                — {result.status}
+                — {result.status.replace(/_/g, " ")}
               </span>
             </p>
 
@@ -136,16 +158,27 @@ export default function LookupForm() {
               </p>
             </div>
 
-            <button
-              onClick={() => {
-                setStatus("idle");
-                setResult(null);
-                setReferenceNumber("");
-              }}
-              className="mt-8 rounded-full border border-white/15 bg-[#11152F]/40 px-6 py-3 text-sm font-medium text-[#F5EFE6]/80 transition-all duration-300 hover:-translate-y-0.5 hover:border-[#00A5A8]/40 hover:text-[#F5EFE6]"
-            >
-              Check Another Reference Number
-            </button>
+            {showPaymentButton(result) && (
+              <Link
+                href={`/verify?ref=${encodeURIComponent(result.reference_number)}`}
+                className="mt-8 inline-block rounded-full bg-[#00A5A8] px-7 py-3.5 text-sm font-semibold text-[#11152F] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(0,165,168,0.18)]"
+              >
+                View full status &amp; payment
+              </Link>
+            )}
+
+            <div>
+              <button
+                onClick={() => {
+                  setStatus("idle");
+                  setResult(null);
+                  setReferenceNumber("");
+                }}
+                className="mt-4 rounded-full border border-white/15 bg-[#11152F]/40 px-6 py-3 text-sm font-medium text-[#F5EFE6]/80 transition-all duration-300 hover:-translate-y-0.5 hover:border-[#00A5A8]/40 hover:text-[#F5EFE6]"
+              >
+                Check Another Reference Number
+              </button>
+            </div>
           </div>
         ) : (
           <form

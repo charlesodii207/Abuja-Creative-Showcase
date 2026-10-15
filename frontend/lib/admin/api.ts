@@ -892,3 +892,68 @@ export async function resendBookingConfirmation(referenceNumber: string) {
     { method: "POST" }
   );
 }
+
+
+// --- Manual payments (bank transfers) ---
+// Needs the "manual_payments" permission (Payments Confirmation department).
+
+export type ManualPaymentStatus = "pending" | "confirmed" | "rejected" | "revoked";
+
+export type ManualPayment = {
+  id: string;
+  reference_number: string;
+  full_name: string;
+  email: string;
+  phone: string;
+  category: RegistrantCategory;
+  amount_kobo: number;
+  status: ManualPaymentStatus;
+  created_at: string | null;
+  reviewed_at: string | null;
+  reviewed_by: string | null;
+  note: string | null;
+};
+
+type ManualPaymentActionResult = { id: string; status: string; message: string };
+
+export async function listManualPayments(status?: ManualPaymentStatus) {
+  const params = new URLSearchParams();
+
+  if (status) params.set("status", status);
+
+  const qs = params.toString();
+
+  return adminFetch<ManualPayment[]>(
+    `/admin/manual-payments${qs ? `?${qs}` : ""}`
+  );
+}
+
+// Sidebar badge: how many bank transfers are waiting to be checked.
+export async function getManualPaymentPendingCount() {
+  return adminFetch<{ pending: number }>("/admin/manual-payments/pending-count");
+}
+
+// The admin has seen the money in the bank. Marks the person paid and
+// emails their ticket.
+export async function confirmManualPayment(claimId: string) {
+  return adminFetch<ManualPaymentActionResult>(
+    `/admin/manual-payments/${encodeURIComponent(claimId)}/confirm`,
+    { method: "POST" }
+  );
+}
+
+// No matching payment found. The person is emailed (the note is included).
+export async function rejectManualPayment(claimId: string, note?: string) {
+  return adminFetch<ManualPaymentActionResult>(
+    `/admin/manual-payments/${encodeURIComponent(claimId)}/reject`,
+    { method: "POST", body: JSON.stringify({ note: note ?? null }) }
+  );
+}
+
+// Undo a confirmation made by mistake: unpaid again, ticket stops working.
+export async function revokeManualPayment(claimId: string, note?: string) {
+  return adminFetch<ManualPaymentActionResult>(
+    `/admin/manual-payments/${encodeURIComponent(claimId)}/revoke`,
+    { method: "POST", body: JSON.stringify({ note: note ?? null }) }
+  );
+}

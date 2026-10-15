@@ -41,8 +41,6 @@ export default function AttendeeFinishPage() {
   const [upgradeTier, setUpgradeTier] = useState("");
   const [upgrading, setUpgrading] = useState(false);
 
-  const [resuming, setResuming] = useState(false);
-
   async function checkStatus(e: React.FormEvent) {
     e.preventDefault();
     setPhase("loading");
@@ -83,37 +81,6 @@ export default function AttendeeFinishPage() {
     } catch {
       setError("Something went wrong. Please try again.");
       setPhase("error");
-    }
-  }
-
-  async function resumePayment() {
-    setResuming(true);
-    setError("");
-
-    try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/register/attendee/resume-payment`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            reference_number: referenceNumber,
-          }),
-        }
-      );
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.detail || "Could not start payment.");
-        setResuming(false);
-        return;
-      }
-
-      window.location.href = data.paystack_authorization_url;
-    } catch {
-      setError("Something went wrong starting payment.");
-      setResuming(false);
     }
   }
 
@@ -261,22 +228,16 @@ export default function AttendeeFinishPage() {
 
             <p className="mx-auto mt-5 max-w-md text-sm leading-relaxed text-[#B8B3AA]/70">
               Your registration is still awaiting payment. Complete payment
-              to secure your slot.
+              to secure your slot. You can pay online or by bank transfer.
             </p>
 
-            <button
-              onClick={resumePayment}
-              disabled={resuming}
-              className="mt-7 w-full rounded-full bg-[#E59200] px-7 py-4 text-sm font-semibold text-[#11152F] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(229,146,0,0.18)] disabled:cursor-not-allowed disabled:opacity-50"
+            {/* The payment choice (Kora or bank transfer) lives on /verify. */}
+            <Link
+              href={`/verify?ref=${encodeURIComponent(referenceNumber)}`}
+              className="mt-7 block w-full rounded-full bg-[#E59200] px-7 py-4 text-sm font-semibold text-[#11152F] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(229,146,0,0.18)]"
             >
-              {resuming
-                ? "Starting payment..."
-                : "Complete Payment & Secure Your Slot"}
-            </button>
-
-            {error && (
-              <p className="mt-4 text-sm text-[#B80319]">{error}</p>
-            )}
+              Complete Payment &amp; Secure Your Slot
+            </Link>
           </div>
         )}
 

@@ -38,6 +38,12 @@ export const DEPARTMENTS: Department[] = [
     label: "Gate & Check-in",
     keys: ["event_scan", "event_log"],
   },
+  {
+    // Confirms bank transfer payments (the Manual payments page).
+    key: "payments_confirmation",
+    label: "Payments Confirmation",
+    keys: ["manual_payments"],
+  },
 ];
 
 export function departmentLabel(key: string): string {
@@ -53,6 +59,7 @@ export const SECTIONS: { key: string; label: string }[] = [
   { key: "event_scan", label: "Event scan" },
   { key: "event_log", label: "Event log" },
   { key: "hotels", label: "Bookings" },
+  { key: "manual_payments", label: "Manual payments" },
 ];
 
 export function sectionLabel(key: string): string {
