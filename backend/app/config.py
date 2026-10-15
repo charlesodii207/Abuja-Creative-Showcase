@@ -40,6 +40,18 @@ class Settings(BaseSettings):
     paystack_secret_key: str = ""
     paystack_public_key: str = ""
 
+    # ------------------------------------------------------------------
+    # Manual (bank transfer) payments. Set these in .env and on Render
+    # (BANK_NAME, BANK_ACCOUNT_NAME, BANK_ACCOUNT_NUMBER). While any of the
+    # three is blank, the bank transfer option tells people it isn't
+    # available instead of showing empty details.
+    # ------------------------------------------------------------------
+    bank_name: str = ""
+    bank_account_name: str = ""
+    bank_account_number: str = ""
+    # Who is emailed when someone taps "I've paid".
+    manual_payment_notify_email: str = "info@africacreativeshowcase.com"
+
     frontend_url: str = "https://africacreativeshowcase.com"
 
     jwt_secret: str

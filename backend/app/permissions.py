@@ -10,6 +10,8 @@ DEPARTMENT_SECTIONS: dict[str, set[str]] = {
     "digital_marketing": {"traffic", "event_log"},
     "hospitality_logistics": {"hotels", "event_log"},
     "gate_checkin": {"event_scan", "event_log"},
+    # Confirms bank transfer payments (the Manual Payments page).
+    "payments_confirmation": {"manual_payments"},
 }
 
 ALL_DEPARTMENTS = set(DEPARTMENT_SECTIONS)

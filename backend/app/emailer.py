@@ -855,6 +855,12 @@ def send_ticket_email(
     </p>
 
     <p>
+        All payments and registrations remain subject to review. If a
+        registration has to be cancelled, any amount we received from you
+        will be refunded.
+    </p>
+
+    <p>
         We look forward to welcoming you to ACS 2026.
     </p>
     """
@@ -1027,6 +1033,98 @@ def send_registration_continue_email(
     return send_email(
         to=[to],
         subject="Continue Your Afriqa Creative Showcase Registration",
+        html=html,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Manual (bank transfer) payments
+# ---------------------------------------------------------------------------
+
+def send_manual_payment_claim_alert(
+    full_name: str,
+    category: str,
+    reference_number: str,
+    amount_naira: int,
+) -> bool:
+    """
+    Tell the ACS team that someone says they have paid by bank transfer and
+    needs their payment checked. Goes to MANUAL_PAYMENT_NOTIFY_EMAIL.
+    """
+    admin_url = f"{settings.frontend_url.rstrip('/')}/admin/manual-payments"
+
+    html = f"""
+    <p>A bank transfer needs to be checked.</p>
+
+    <p>
+        <strong>{_safe(full_name)}</strong> ({_safe(category)}) says they
+        have paid <strong>&#8358;{amount_naira:,}</strong> by bank transfer.
+    </p>
+
+    {_reference_card(reference_number)}
+
+    <p>
+        Please check the bank account for this payment. Once you have seen
+        it, open Manual Payments in the dashboard and confirm it. The person
+        is then sent their ticket.
+    </p>
+
+    {_button("Open Manual Payments", admin_url, TEAL)}
+    """
+
+    return send_email(
+        to=[settings.manual_payment_notify_email],
+        subject=f"Manual payment to check: {reference_number}",
+        html=html,
+    )
+
+
+def send_manual_payment_rejected_email(
+    to: str,
+    full_name: str,
+    reference_number: str,
+    note: str | None = None,
+) -> bool:
+    """
+    Tell someone we could not find their bank transfer, so they are not left
+    waiting. They can pay again, or reply with proof of payment.
+    """
+    note_html = ""
+    if note:
+        note_html = f"""
+    <p>
+        <strong>Note from our team:</strong> {_safe(note)}
+    </p>
+    """
+
+    html = f"""
+    <p>Hi {_safe(full_name)},</p>
+
+    <p>
+        We could not find your bank transfer for the Afriqa Creative
+        Showcase.
+    </p>
+
+    {_reference_card(reference_number)}
+
+    {note_html}
+
+    <p>
+        If you have already paid, please reply to this email with your
+        payment receipt and we will look into it right away.
+    </p>
+
+    <p>
+        If you have not paid yet, you can complete your payment using the
+        button below.
+    </p>
+
+    {_button("Go to Payment", registration_verify_url(reference_number), TEAL)}
+    """
+
+    return send_email(
+        to=[to],
+        subject="We couldn't confirm your bank transfer",
         html=html,
     )
 

@@ -507,3 +507,52 @@ class ScanLogResponse(BaseModel):
     accepted_count: int
     duplicate_count: int
     entries: list[ScanLogEntry]
+
+
+# ---------------------------------------------------------------------------
+# Manual (bank transfer) payments
+# ---------------------------------------------------------------------------
+
+class ManualPaymentInstructions(BaseModel):
+    reference_number: str
+    full_name: str
+    category: str
+    amount_kobo: int
+    bank_name: str
+    account_name: str
+    account_number: str
+    # True when they have already sent an "I've paid" notice we haven't reviewed.
+    pending_claim: bool = False
+
+
+class ManualPaymentClaimRequest(BaseModel):
+    reference_number: str
+
+
+class ManualPaymentClaimResponse(BaseModel):
+    reference_number: str
+    status: str
+    message: str
+
+
+class ManualPaymentSummary(BaseModel):
+    id: str
+    reference_number: str
+    full_name: str
+    email: str
+    phone: str
+    category: str
+    amount_kobo: int
+    status: str            # "pending" | "confirmed" | "rejected" | "revoked"
+    created_at: datetime | None = None
+    reviewed_at: datetime | None = None
+    reviewed_by: str | None = None
+    note: str | None = None
+
+
+class ManualPaymentNoteRequest(BaseModel):
+    note: str | None = None
+
+
+class ManualPaymentPendingCount(BaseModel):
+    pending: int

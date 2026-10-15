@@ -217,6 +217,22 @@ def registration_status(
 
     action, message, amount_kobo = _get_registration_action(registrant)
 
+    # A bank transfer the person has told us about but we haven't checked
+    # yet. Shown instead of the "Continue to payment" button, so they don't
+    # pay twice.
+    if action == "payment_required":
+        pending_claim = db.query(models.ManualPayment).filter(
+            models.ManualPayment.registrant_id == registrant.id,
+            models.ManualPayment.status == "pending",
+        ).first()
+
+        if pending_claim:
+            action = "manual_pending"
+            message = (
+                "We've received your bank transfer notice and are checking "
+                "our account."
+            )
+
     # Ticket details are intentionally NOT returned here. The ticket
     # number and QR are only ever sent to the registrant by email.
     return schemas.RegistrationVerifyResponse(
@@ -283,6 +299,18 @@ def resume_payment(
         raise HTTPException(
             status_code=400,
             detail="This registration is already confirmed.",
+        )
+
+    if db.query(models.ManualPayment).filter(
+        models.ManualPayment.registrant_id == registrant.id,
+        models.ManualPayment.status == "pending",
+    ).first():
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Your bank transfer is still being checked. "
+                "Please wait for our confirmation."
+            ),
         )
 
     resume_reference = utils.generate_resume_reference(

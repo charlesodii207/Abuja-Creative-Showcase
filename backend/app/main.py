@@ -19,6 +19,10 @@ from app.routes.sponsors import router as sponsors_router
 from app.routes.contact import router as contact_router
 from app.routes.messages import router as messages_router
 from app.routes.payments import router as payments_router
+from app.routes.manual_payments import (
+    router as manual_payments_router,
+    admin_router as manual_payments_admin_router,
+)
 from app.routes.tickets import router as tickets_router
 from app.routes.attendee_status import router as attendee_status_router
 from app.routes.traffic import router as traffic_router
@@ -86,6 +90,8 @@ app.include_router(sponsors_router)
 app.include_router(contact_router)
 app.include_router(messages_router)
 app.include_router(payments_router)
+app.include_router(manual_payments_router)
+app.include_router(manual_payments_admin_router)
 app.include_router(tickets_router)
 app.include_router(attendee_status_router)
 app.include_router(traffic_router)

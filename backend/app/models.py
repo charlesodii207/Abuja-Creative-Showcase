@@ -3,7 +3,7 @@ import uuid
 
 from sqlalchemy import (
     Column, String, Boolean, DateTime, Date, ForeignKey, Enum, Text, Integer,
-    BigInteger, UniqueConstraint, JSON, func
+    BigInteger, UniqueConstraint, JSON, Index, func, text
 )
 from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import relationship
@@ -642,4 +642,58 @@ class GroupTicket(Base):
     last_sent_at = Column(DateTime(timezone=True), nullable=True)
 
     order = relationship("GroupOrder", back_populates="tickets")
+    registrant = relationship("Registrant")
+
+
+# ---------------------------------------------------------------------------
+# Manual (bank transfer) payments
+# ---------------------------------------------------------------------------
+
+class ManualPayment(Base):
+    """
+    A person's "I've paid" notice for a bank transfer. An admin checks the
+    bank account, then confirms or rejects it. Confirming marks the
+    registrant paid and sends the ticket, the same as a Kora payment.
+
+    status: "pending" | "confirmed" | "rejected" | "revoked"
+    A registrant can only have one pending claim at a time (enforced by the
+    partial unique index below, so a double click can't create two).
+    """
+
+    __tablename__ = "manual_payments"
+    __table_args__ = (
+        Index(
+            "uq_manual_payments_one_pending",
+            "registrant_id",
+            unique=True,
+            postgresql_where=text("status = 'pending'"),
+        ),
+    )
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    registrant_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("registrants.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    # What they owed when they sent the notice.
+    amount_kobo = Column(Integer, nullable=False)
+    status = Column(
+        String, nullable=False, default="pending", server_default="pending", index=True
+    )
+    created_at = Column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False, index=True
+    )
+
+    reviewed_at = Column(DateTime(timezone=True), nullable=True)
+    reviewed_by_admin_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("admins.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    # Snapshot of the admin's name; survives the admin account being deleted.
+    reviewed_by_name = Column(String, nullable=True)
+    note = Column(Text, nullable=True)
+
     registrant = relationship("Registrant")
