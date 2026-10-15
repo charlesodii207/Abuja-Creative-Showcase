@@ -4,6 +4,11 @@ import { FormEvent, Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
+// Kora switch. While Kora isn't ready, keep this false: the Kora button is
+// greyed out and people are told to use bank transfer. Change it to true
+// (and redeploy the frontend) once Kora is working.
+const KORA_AVAILABLE = false;
+
 type Action =
   | "payment_required"
   | "under_review"
@@ -526,15 +531,29 @@ function VerifyContent() {
                 <span className="inline-block rounded-full border border-teal/40 bg-teal/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.15em] text-teal">
                   Fastest · confirmed instantly
                 </span>
+
+                {!KORA_AVAILABLE && (
+                  <span className="ml-2 inline-block rounded-full border border-red/40 bg-red/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.15em] text-red">
+                    Unavailable for now
+                  </span>
+                )}
               </p>
 
               <button
                 type="button"
                 onClick={continueToPayment}
-                className="w-full rounded-full bg-gold px-7 py-4 text-sm font-semibold text-ink transition-transform hover:scale-[1.01]"
+                disabled={!KORA_AVAILABLE}
+                className="w-full rounded-full bg-gold px-7 py-4 text-sm font-semibold text-ink transition-transform hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:scale-100"
               >
                 Pay with Kora
               </button>
+
+              {!KORA_AVAILABLE && (
+                <p className="mt-2 text-center text-xs text-muted">
+                  Online payment is temporarily unavailable. Please use bank
+                  transfer for now.
+                </p>
+              )}
             </div>
 
             <div>
