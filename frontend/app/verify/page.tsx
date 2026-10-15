@@ -520,22 +520,38 @@ function VerifyContent() {
             </div>
           )}
 
-          <div className="mt-6 flex flex-col gap-3">
-            <button
-              type="button"
-              onClick={continueToPayment}
-              className="w-full rounded-full bg-gold px-7 py-4 text-sm font-semibold text-ink transition-transform hover:scale-[1.01]"
-            >
-              Pay with Kora
-            </button>
+          <div className="mt-6 flex flex-col gap-5">
+            <div>
+              <p className="mb-2 text-center">
+                <span className="inline-block rounded-full border border-teal/40 bg-teal/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.15em] text-teal">
+                  Fastest · confirmed instantly
+                </span>
+              </p>
 
-            <button
-              type="button"
-              onClick={openBankDetails}
-              className="w-full rounded-full border border-white/20 px-7 py-4 text-sm font-semibold text-cream transition-colors hover:border-white/40"
-            >
-              Pay with bank transfer
-            </button>
+              <button
+                type="button"
+                onClick={continueToPayment}
+                className="w-full rounded-full bg-gold px-7 py-4 text-sm font-semibold text-ink transition-transform hover:scale-[1.01]"
+              >
+                Pay with Kora
+              </button>
+            </div>
+
+            <div>
+              <p className="mb-2 text-center">
+                <span className="inline-block rounded-full border border-white/20 bg-white/5 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.15em] text-muted">
+                  Popular
+                </span>
+              </p>
+
+              <button
+                type="button"
+                onClick={openBankDetails}
+                className="w-full rounded-full bg-gold px-7 py-4 text-sm font-semibold text-ink transition-transform hover:scale-[1.01]"
+              >
+                Pay with bank transfer
+              </button>
+            </div>
           </div>
 
           <button
