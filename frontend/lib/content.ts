@@ -4,7 +4,7 @@
 export const event = {
   name: "Afriqa Creative Showcase",
   shortName: "ACS",
-  tagline: "Where Creativity Meets Opportunity",
+  tagline: "Creativity Without Borders",
   dates: "December 4–5, 2026",
   venue: "Old Parade Ground, Abuja, FCT",
   organizer: "AFRIGOS Film & Media Academy",

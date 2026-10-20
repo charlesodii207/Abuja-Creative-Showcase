@@ -43,7 +43,7 @@ export default function Footer() {
             </p>
 
             <p className="mt-3 max-w-md text-sm leading-relaxed text-[#B8B3AA]/65">
-              Where creativity meets opportunity — connecting Africa&apos;s
+              Creativity Without Borders — connecting Africa&apos;s
               creative talent with people, markets, capital, and possibility.
             </p>
 

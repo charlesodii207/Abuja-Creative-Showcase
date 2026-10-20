@@ -72,7 +72,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Afriqa Creative Showcase 2026",
     description:
-      "Where Creativity Meets Opportunity. Film × Music × Fashion × Tech. Old Parade Ground, Abuja, Nigeria.",
+      "Creativity Without Borders. Film × Music × Fashion × Tech. Old Parade Ground, Abuja, Nigeria.",
     images: ["/images/acspreview.jpeg"],
   },
 

@@ -132,7 +132,7 @@ export default function CountdownClock() {
           </h1>
 
           <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-[#B8B3AA]/70 sm:text-lg">
-            Where Creativity Meets Opportunity.
+            Creativity Without Borders.
           </p>
         </div>
 
