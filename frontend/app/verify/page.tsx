@@ -7,7 +7,7 @@ import { useSearchParams } from "next/navigation";
 // Kora switch. While Kora isn't ready, keep this false: the Kora button is
 // greyed out and people are told to use bank transfer. Change it to true
 // (and redeploy the frontend) once Kora is working.
-const KORA_AVAILABLE = false;
+const KORA_AVAILABLE = true;
 
 type Action =
   | "payment_required"
