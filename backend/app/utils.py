@@ -123,7 +123,7 @@ PITCHER_FEE_KOBO = 100_000 * 100      # ₦100,000
 TICKET_PRICES_KOBO = {
     TicketType.general: 10_000 * 100,       # ₦10,000 — 1-Day Pass (admitted once, see tickets.py)
     TicketType.vip: 15_000 * 100,           # ₦15,000 — 2-Day Pass, both days
-    TicketType.masterclass: 100 * 100,      # TEMP TEST PRICE (₦100) - change back to 50_000 * 100
+    TicketType.masterclass: 50_000 * 100,   # ₦50,000 — both days, includes the main masterclasses on day 2
 }
 
 
