@@ -83,6 +83,7 @@ function VerifyContent() {
   // glues that on with a second "?" instead of "&", the whole tail ends up
   // inside `ref`, so split it back apart here to be safe.
   const rawRef = searchParams.get("ref")?.trim() || "";
+  const wantsToPay = searchParams.get("pay") === "1";
   const [reference, embeddedQuery] = rawRef.split("?");
   const embeddedPaymentReference = embeddedQuery
     ? new URLSearchParams(embeddedQuery).get("reference")?.trim() || ""
@@ -183,9 +184,15 @@ function VerifyContent() {
 
         setPageState("loading");
 
-        await loadStatus(reference);
+        const loaded = await loadStatus(reference);
 
         if (cancelled) return;
+
+        // Just registered: go straight to "how would you like to pay?".
+        if (wantsToPay && loaded?.action === "payment_required") {
+          setPageState("choose");
+          return;
+        }
 
         setPageState("ready");
       } catch (error) {
@@ -205,7 +212,7 @@ function VerifyContent() {
     return () => {
       cancelled = true;
     };
-  }, [reference, paymentReference]);
+  }, [reference, paymentReference, wantsToPay]);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

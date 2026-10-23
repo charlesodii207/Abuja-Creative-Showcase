@@ -42,6 +42,17 @@ export default function PitcherRegistrationPage() {
 
       const data = await res.json();
 
+      // Go straight to the payment screen (online or bank transfer): no
+      // email step in between. (The payment link is still emailed as a
+      // backup.) If the server did not send a payment link, fall through to
+      // the confirmation screen below.
+      if (data.paystack_authorization_url && data.reference_number) {
+        window.location.href = `/verify?ref=${encodeURIComponent(
+          data.reference_number
+        )}&pay=1`;
+        return;
+      }
+
       setPayment({
         amount_kobo: data.amount_kobo,
       });
@@ -349,7 +360,7 @@ export default function PitcherRegistrationPage() {
                 className="mt-7 w-full rounded-full bg-[#00A5A8] px-7 py-4 text-sm font-semibold text-[#11152F] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(0,165,168,0.18)] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {status === "submitting"
-                  ? "Submitting..."
+                  ? "Please wait..."
                   : "Complete Registration →"}
               </button>
             </div>
@@ -408,8 +419,8 @@ export default function PitcherRegistrationPage() {
 
               <div className="mt-6 border-t border-white/10 pt-6">
                 <p className="text-xs leading-relaxed text-[#B8B3AA]/50">
-                  After submitting your registration, check your email for
-                  your reference number and continue through verification.
+                  After you submit, you will choose how to pay: online or by bank
+                  transfer. Your reference number is also emailed to you.
                 </p>
               </div>
             </div>

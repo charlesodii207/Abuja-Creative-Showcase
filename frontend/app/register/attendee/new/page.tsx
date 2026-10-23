@@ -104,6 +104,17 @@ function AttendeeNewRegistrationForm() {
         );
       }
 
+      // Paid tickets go straight to the payment screen (online or bank
+      // transfer): no email step in between. (The payment link is still
+      // emailed as a backup.) Free tickets have no payment link, so they
+      // fall through to the confirmation screen below.
+      if (data.paystack_authorization_url && data.reference_number) {
+        window.location.href = `/verify?ref=${encodeURIComponent(
+          data.reference_number
+        )}&pay=1`;
+        return;
+      }
+
       setConfirmation({
         amount_kobo: data.amount_kobo,
         email: form.email,
@@ -474,8 +485,8 @@ function AttendeeNewRegistrationForm() {
                 </button>
 
                 <p className="text-center text-[10px] leading-relaxed tracking-wide text-[#F5EFE6]/25">
-                  After registration, check your email for your reference
-                  number and continue through verification.
+                  After registration, you will choose how to pay: online or by bank
+                  transfer. Your reference number is also emailed to you.
                 </p>
               </div>
             </div>
