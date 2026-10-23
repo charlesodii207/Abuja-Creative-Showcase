@@ -46,7 +46,7 @@ export default function Hero() {
             to="/register"
             className="rounded-full bg-red px-7 py-3.5 text-sm font-medium text-cream transition-transform hover:scale-105"
           >
-            Register your interest
+            Register
           </Link>
           <a
             href="#programme"

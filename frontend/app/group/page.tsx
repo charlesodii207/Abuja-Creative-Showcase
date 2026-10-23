@@ -193,7 +193,7 @@ function GroupForm() {
   const [options, setOptions] = useState<Options | null>(null);
   const [loadError, setLoadError] = useState(false);
 
-  const [ticketType, setTicketType] = useState("general");
+  const [ticketType, setTicketType] = useState("vip");
   const [qtyText, setQtyText] = useState("10");
   const [form, setForm] = useState({ full_name: "", email: "", phone: "" });
   const [accepted, setAccepted] = useState(false);

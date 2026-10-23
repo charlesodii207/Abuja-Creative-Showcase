@@ -1,0 +1,699 @@
+import enum
+import uuid
+
+from sqlalchemy import (
+    Column, String, Boolean, DateTime, Date, ForeignKey, Enum, Text, Integer,
+    BigInteger, UniqueConstraint, JSON, Index, func, text
+)
+from sqlalchemy.dialects.postgresql import ARRAY, UUID
+from sqlalchemy.orm import relationship
+
+from app.database import Base
+
+
+class RegistrantCategory(str, enum.Enum):
+    attendee = "attendee"
+    exhibitor = "exhibitor"
+    press = "press"
+    pitcher = "pitcher"
+    investor = "investor"
+
+
+class RegistrantStatus(str, enum.Enum):
+    pending = "pending"
+    awaiting_payment = "awaiting_payment"
+    approved = "approved"
+    rejected = "rejected"
+    confirmed = "confirmed"
+
+
+class TicketType(str, enum.Enum):
+    # Stored values are unchanged; only the labels people see were renamed:
+    #   general     = 1-Day Pass   (₦10,000)
+    #   vip         = 2-Day Pass   (₦15,000)
+    #   masterclass = Masterclass  (₦50,000, both days)
+    general = "general"
+    vip = "vip"
+    masterclass = "masterclass"
+
+
+class BoothSize(str, enum.Enum):
+    # small = Normal booth (₦200,000), big = Double booth (₦300,000)
+    small = "small"
+    big = "big"
+
+
+class ExhibitType(str, enum.Enum):
+    booth = "booth"
+    # "auction" has been removed as an option, but Postgres can't drop an
+    # enum value cleanly, so it stays here for any old rows.
+    auction = "auction"
+    fashion_runway = "fashion_runway"
+
+
+# ---------------------------------------------------------------------------
+# Admin auth
+# ---------------------------------------------------------------------------
+
+class AdminRole(str, enum.Enum):
+    system_owner = "system_owner"
+    super_admin = "super_admin"
+    admin = "admin"
+
+
+class Admin(Base):
+    __tablename__ = "admins"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    full_name = Column(String, nullable=False)
+    username = Column(String, unique=True, nullable=False, index=True)
+    password_hash = Column(String, nullable=False)
+    role = Column(Enum(AdminRole), nullable=False)
+    must_change_password = Column(Boolean, default=True, nullable=False)
+    is_active = Column(Boolean, default=True, nullable=False)
+    # Department keys (see app/permissions.py). Only used for regular admins.
+    departments = Column(ARRAY(String), nullable=False, default=list, server_default="{}")
+    # Individual sections granted on top of the departments (see app/permissions.py).
+    extra_permissions = Column(ARRAY(String), nullable=False, default=list, server_default="{}")
+    # Shared mailboxes this admin may read / send from (see app/permissions.py).
+    # Only the system owner edits these.
+    mailboxes_read = Column(ARRAY(String), nullable=False, default=list, server_default="{}")
+    mailboxes_send = Column(ARRAY(String), nullable=False, default=list, server_default="{}")
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey("admins.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    last_login_at = Column(DateTime(timezone=True), nullable=True)
+
+    creator = relationship("Admin", remote_side=[id])
+
+    # Messaging: replies sent by this admin.
+    contact_messages = relationship(
+        "ContactMessage",
+        foreign_keys="ContactMessage.admin_id",
+        back_populates="admin",
+    )
+
+
+class AdminLog(Base):
+    """
+    Audit trail. Records both manual admin actions (approve, reject, edit,
+    mark-paid, resend-email, create/deactivate/delete admin, login) and
+    system-triggered events (e.g. automatic status-change emails), so
+    admin_id is nullable and admin_name falls back to "System" when there's
+    no human actor. admin_id also goes NULL if the acting admin is later
+    deleted; admin_name is a snapshot and stays intact either way.
+    """
+
+    __tablename__ = "admin_logs"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    admin_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("admins.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    admin_name = Column(String, nullable=True)
+    action = Column(String, nullable=False)
+    target_type = Column(String, nullable=True)
+    target_reference = Column(String, nullable=True)
+    detail = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+# ---------------------------------------------------------------------------
+# Contact messaging
+# ---------------------------------------------------------------------------
+
+class ContactThread(Base):
+    __tablename__ = "contact_threads"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+
+    sender_name = Column(String, nullable=False)
+    sender_email = Column(String, nullable=False, index=True)
+    sender_phone = Column(String, nullable=True)
+
+    subject = Column(String, nullable=False)
+
+    # Admin-controlled conversation state.
+    status = Column(String, nullable=False, default="open")
+
+    # Automatically becomes True once ACS sends a reply.
+    is_replied = Column(Boolean, nullable=False, default=False)
+
+    # Which shared mailbox this conversation belongs to ("info", "bookings", ...).
+    mailbox = Column(String, nullable=True, index=True)
+    # "form" = website contact form, "email" = arrived by / started as email.
+    channel = Column(String, nullable=False, default="form", server_default="form")
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
+
+    messages = relationship(
+        "ContactMessage",
+        back_populates="thread",
+        cascade="all, delete-orphan",
+        order_by="ContactMessage.created_at",
+    )
+
+
+class ContactMessage(Base):
+    __tablename__ = "contact_messages"
+    __table_args__ = (
+        UniqueConstraint("mailbox", "message_id", name="uq_contact_messages_mailbox_message_id"),
+    )
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+
+    thread_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("contact_threads.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    # "visitor" or "admin"
+    sender_type = Column(String, nullable=False)
+
+    sender_name = Column(String, nullable=False)
+    sender_email = Column(String, nullable=False)
+
+    subject = Column(String, nullable=False)
+    body = Column(Text, nullable=False)
+
+    # Only populated when sender_type == "admin".
+    admin_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("admins.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+
+    # Read/unread belongs to individual messages.
+    is_read = Column(Boolean, nullable=False, default=False)
+
+    # --- Email fields (shared mailboxes) ---
+    mailbox = Column(String, nullable=True, index=True)
+    direction = Column(String, nullable=True)          # "inbound" | "outbound"
+    message_id = Column(String, nullable=True)         # RFC Message-ID, for dedupe + threading
+    in_reply_to = Column(String, nullable=True)
+    references_header = Column(Text, nullable=True)
+    to_addresses = Column(Text, nullable=True)
+    cc_addresses = Column(Text, nullable=True)
+    # Raw HTML from inbound mail. UNTRUSTED: only ever shown in a sandboxed iframe.
+    body_html = Column(Text, nullable=True)
+    imap_uid = Column(BigInteger, nullable=True)
+    # Files sent with an outbound email: [{"filename", "size", "content_type"}].
+    # Only the details are kept, not the files themselves.
+    attachments = Column(JSON, nullable=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    thread = relationship(
+        "ContactThread",
+        back_populates="messages",
+    )
+
+    admin = relationship(
+        "Admin",
+        foreign_keys=[admin_id],
+        back_populates="contact_messages",
+    )
+
+
+class MailSyncState(Base):
+    """Where the Zoho IMAP sync got to, per mailbox."""
+
+    __tablename__ = "mail_sync_state"
+
+    mailbox = Column(String, primary_key=True)
+    uidvalidity = Column(BigInteger, nullable=True)
+    last_uid = Column(BigInteger, nullable=False, default=0, server_default="0")
+    last_synced_at = Column(DateTime(timezone=True), nullable=True)
+    last_error = Column(Text, nullable=True)
+
+
+# ---------------------------------------------------------------------------
+# Registrants
+# ---------------------------------------------------------------------------
+
+class Registrant(Base):
+    __tablename__ = "registrants"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    full_name = Column(String, nullable=False)
+    email = Column(String, nullable=False, index=True)
+    phone = Column(String, nullable=False, index=True)
+    category = Column(Enum(RegistrantCategory), nullable=False)
+    reference_number = Column(String, unique=True, nullable=False, index=True)
+    status = Column(
+        Enum(RegistrantStatus),
+        nullable=False,
+        default=RegistrantStatus.pending,
+    )
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    attendee_detail = relationship(
+        "AttendeeDetail",
+        back_populates="registrant",
+        uselist=False,
+    )
+    exhibitor_detail = relationship(
+        "ExhibitorDetail",
+        back_populates="registrant",
+        uselist=False,
+    )
+    press_detail = relationship(
+        "PressDetail",
+        back_populates="registrant",
+        uselist=False,
+    )
+    pitcher_detail = relationship(
+        "PitcherDetail",
+        back_populates="registrant",
+        uselist=False,
+    )
+    investor_detail = relationship(
+        "InvestorDetail",
+        back_populates="registrant",
+        uselist=False,
+    )
+    ticket = relationship(
+        "Ticket",
+        back_populates="registrant",
+        uselist=False,
+    )
+
+
+class AttendeeDetail(Base):
+    __tablename__ = "attendee_details"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    registrant_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("registrants.id"),
+        nullable=False,
+        unique=True,
+    )
+    ticket_type = Column(
+        Enum(TicketType),
+        nullable=False,
+        default=TicketType.general,
+    )
+    wants_masterclass = Column(Boolean, default=False)
+    is_paid = Column(Boolean, default=False)
+    amount_kobo = Column(Integer, nullable=True)
+    paystack_reference = Column(String, nullable=True, unique=True)
+    pending_upgrade_ticket_type = Column(Enum(TicketType), nullable=True)
+    pending_upgrade_reference = Column(String, nullable=True, unique=True)
+    pending_payment_reference = Column(String, nullable=True, unique=True)
+
+    registrant = relationship(
+        "Registrant",
+        back_populates="attendee_detail",
+    )
+
+
+class ExhibitorDetail(Base):
+    __tablename__ = "exhibitor_details"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    registrant_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("registrants.id"),
+        nullable=False,
+        unique=True,
+    )
+    company_name = Column(String, nullable=False)
+    category = Column(String, nullable=False)
+    what_bringing = Column(Text)
+    portfolio_url = Column(String)
+    goal = Column(String)
+    exhibit_type = Column(Enum(ExhibitType), nullable=False)
+    booth_size = Column(Enum(BoothSize), nullable=True)
+    auction_item_description = Column(Text, nullable=True)
+    auction_quantity = Column(Integer, nullable=True)
+    is_paid = Column(Boolean, default=False)
+    amount_kobo = Column(Integer, nullable=True)
+    paystack_reference = Column(String, nullable=True, unique=True)
+    pending_payment_reference = Column(String, nullable=True, unique=True)
+
+    registrant = relationship(
+        "Registrant",
+        back_populates="exhibitor_detail",
+    )
+
+
+class PressDetail(Base):
+    __tablename__ = "press_details"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    registrant_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("registrants.id"),
+        nullable=False,
+        unique=True,
+    )
+    outlet_name = Column(String, nullable=False)
+    proof_type = Column(String)
+    proof_url = Column(String)
+
+    registrant = relationship(
+        "Registrant",
+        back_populates="press_detail",
+    )
+
+
+class PitcherDetail(Base):
+    __tablename__ = "pitcher_details"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    registrant_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("registrants.id"),
+        nullable=False,
+        unique=True,
+    )
+    project_name = Column(String, nullable=False)
+    category = Column(String, nullable=False)
+    pitch_summary = Column(Text)
+    work_sample_url = Column(String)
+    is_paid = Column(Boolean, default=False)
+    amount_kobo = Column(Integer, nullable=True)
+    paystack_reference = Column(String, nullable=True, unique=True)
+    pending_payment_reference = Column(String, nullable=True, unique=True)
+
+    registrant = relationship(
+        "Registrant",
+        back_populates="pitcher_detail",
+    )
+
+
+class InvestorDetail(Base):
+    __tablename__ = "investor_details"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    registrant_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("registrants.id"),
+        nullable=False,
+        unique=True,
+    )
+    organization_name = Column(String, nullable=False)
+    investment_interest = Column(Text)
+    budget_range = Column(String)
+    portfolio_url = Column(String)
+
+    registrant = relationship(
+        "Registrant",
+        back_populates="investor_detail",
+    )
+
+
+class Ticket(Base):
+    __tablename__ = "tickets"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    registrant_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("registrants.id"),
+        nullable=False,
+        unique=True,
+    )
+    qr_code = Column(String, unique=True)
+    ticket_number = Column(String, unique=True)
+    # "First ever" check-in only — kept for the admin registrant detail
+    # screen. Day-by-day entries live in ScanLog below, since one flag
+    # can't represent "already came in today" vs "came in yesterday".
+    checked_in = Column(Boolean, default=False)
+    checked_in_at = Column(DateTime(timezone=True))
+
+    registrant = relationship(
+        "Registrant",
+        back_populates="ticket",
+    )
+
+
+class ScanLog(Base):
+    """
+    One row per check-in attempt at the door — accepted or duplicate.
+    event_day is the Nigeria/WAT calendar date the scan counts toward,
+    which is what makes "one accepted entry per ticket per day" and the
+    admin date-picker scan log possible. Every attempt is logged, not
+    just accepted ones, so a disputed entry at the gate can be checked.
+    """
+
+    __tablename__ = "scan_logs"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    ticket_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("tickets.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    event_day = Column(Date, nullable=False, index=True)
+    result = Column(String, nullable=False)  # "accepted" | "duplicate"
+    scanned_at = Column(DateTime(timezone=True), server_default=func.now())
+    # For a "duplicate" row, the time of that day's original accepted
+    # scan — saved here too so the admin log doesn't need a join to
+    # show "already arrived at 08:00" next to each duplicate.
+    first_entry_at = Column(DateTime(timezone=True), nullable=True)
+    checked_in_by_admin_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("admins.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    # Snapshot, same reasoning as AdminLog.admin_name: stays intact even
+    # if the admin account is later deleted.
+    checked_in_by_name = Column(String, nullable=True)
+
+    ticket = relationship("Ticket")
+
+
+# ---------------------------------------------------------------------------
+# Site traffic
+# ---------------------------------------------------------------------------
+
+class SiteVisit(Base):
+    """
+    One row per page view on the public website, recorded by POST /track.
+    ip is personal data, so keep a retention limit (e.g. delete rows older
+    than 90 days) and mention tracking in the site's privacy notice.
+    """
+
+    __tablename__ = "site_visits"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    created_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+        index=True,
+    )
+    ip = Column(String(45), nullable=False, index=True)
+    path = Column(String(300), nullable=False, index=True)
+    source = Column(String(40), nullable=False, index=True)
+    referrer_host = Column(String(120), nullable=True)
+    country = Column(String(10), nullable=True)
+    device = Column(String(20), nullable=True)
+    # True for the first page view of a browsing session: the actual click
+    # from a social post, search result, etc.
+    is_landing = Column(Boolean, nullable=False, default=False)
+
+
+# ---------------------------------------------------------------------------
+# Accommodation bookings
+# ---------------------------------------------------------------------------
+
+class Booking(Base):
+    """
+    A guest's accommodation request from the website form. It starts as
+    "new"; admins move it to "contacted", then "confirmed" (which requires
+    the hotel, dates and amount paid, and records the operator) or
+    "cancelled". The first block of columns is what the guest asked for and
+    agreed to; the second block is what was actually arranged.
+    """
+
+    __tablename__ = "bookings"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    reference_number = Column(String, unique=True, nullable=False, index=True)
+
+    # What the guest asked for
+    full_name = Column(String, nullable=False)
+    email = Column(String, nullable=False, index=True)
+    phone = Column(String, nullable=True)
+    check_in = Column(Date, nullable=True)
+    check_out = Column(Date, nullable=True)
+    nights = Column(Integer, nullable=True)
+    adults = Column(Integer, nullable=True)
+    children = Column(Integer, nullable=True)
+    guests = Column(Integer, nullable=True)
+    rooms = Column(Integer, nullable=True)
+    extra_bed_requested = Column(Boolean, nullable=False, default=False)
+    budget_range = Column(String, nullable=True)
+    preferred_area = Column(String, nullable=True)
+    # Special requests typed by the guest
+    message = Column(Text, nullable=True)
+
+    # What the guest agreed to, and under which version of the legal pages
+    terms_accepted = Column(Boolean, nullable=False, default=False)
+    privacy_accepted = Column(Boolean, nullable=False, default=False)
+    hotel_sharing_consent = Column(Boolean, nullable=False, default=False)
+    legal_version = Column(String, nullable=True)
+
+    # "new" | "contacted" | "confirmed" | "cancelled"
+    status = Column(String, nullable=False, default="new", index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)
+
+    # What was arranged (filled in when an admin confirms)
+    hotel_name = Column(String, nullable=True)
+    confirmed_check_in = Column(Date, nullable=True)
+    confirmed_check_out = Column(Date, nullable=True)
+    amount_paid_kobo = Column(Integer, nullable=True)
+    operator_admin_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("admins.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    # Snapshot of the operator's name; survives the admin account being deleted.
+    operator_name = Column(String, nullable=True)
+    confirmation_notes = Column(Text, nullable=True)
+    confirmed_at = Column(DateTime(timezone=True), nullable=True)
+
+    cancelled_by_name = Column(String, nullable=True)
+    cancelled_at = Column(DateTime(timezone=True), nullable=True)
+
+
+# ---------------------------------------------------------------------------
+# Group (bulk) ticket orders
+# ---------------------------------------------------------------------------
+
+class GroupOrder(Base):
+    """
+    One bulk purchase: a buyer pays once for `quantity` tickets. Nothing is
+    created in `registrants` until the payment is confirmed; then one real
+    ticket per seat is made and linked through GroupTicket.
+    """
+
+    __tablename__ = "group_orders"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    reference_number = Column(String, unique=True, nullable=False, index=True)  # also the Kora reference
+    # Long random code in the private "Manage your tickets" link.
+    access_token = Column(String, unique=True, nullable=False, index=True)
+
+    buyer_name = Column(String, nullable=False)
+    email = Column(String, nullable=False, index=True)
+    phone = Column(String, nullable=False)
+
+    # "general" | "vip" | "masterclass" (same values as TicketType)
+    ticket_type = Column(String, nullable=False)
+    quantity = Column(Integer, nullable=False)
+    unit_amount_kobo = Column(Integer, nullable=False)
+    amount_kobo = Column(Integer, nullable=False)
+
+    # "pending" | "paid"
+    status = Column(String, nullable=False, default="pending", index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    paid_at = Column(DateTime(timezone=True), nullable=True)
+
+    tickets = relationship(
+        "GroupTicket",
+        back_populates="order",
+        order_by="GroupTicket.seq",
+    )
+
+
+class GroupTicket(Base):
+    """Links one seat of a group order to its real Registrant/Ticket."""
+
+    __tablename__ = "group_tickets"
+    __table_args__ = (
+        UniqueConstraint("group_order_id", "seq", name="uq_group_tickets_order_seq"),
+    )
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    group_order_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("group_orders.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    registrant_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("registrants.id"),
+        nullable=False,
+        unique=True,
+    )
+    seq = Column(Integer, nullable=False)  # 1..quantity
+
+    assigned_name = Column(String, nullable=True)
+    assigned_email = Column(String, nullable=True)
+    send_count = Column(Integer, nullable=False, default=0, server_default="0")
+    last_sent_at = Column(DateTime(timezone=True), nullable=True)
+
+    order = relationship("GroupOrder", back_populates="tickets")
+    registrant = relationship("Registrant")
+
+
+# ---------------------------------------------------------------------------
+# Manual (bank transfer) payments
+# ---------------------------------------------------------------------------
+
+class ManualPayment(Base):
+    """
+    A person's "I've paid" notice for a bank transfer. An admin checks the
+    bank account, then confirms or rejects it. Confirming marks the
+    registrant paid and sends the ticket, the same as a Kora payment.
+
+    status: "pending" | "confirmed" | "rejected" | "revoked"
+    A registrant can only have one pending claim at a time (enforced by the
+    partial unique index below, so a double click can't create two).
+    """
+
+    __tablename__ = "manual_payments"
+    __table_args__ = (
+        Index(
+            "uq_manual_payments_one_pending",
+            "registrant_id",
+            unique=True,
+            postgresql_where=text("status = 'pending'"),
+        ),
+    )
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    registrant_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("registrants.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    # What they owed when they sent the notice.
+    amount_kobo = Column(Integer, nullable=False)
+    status = Column(
+        String, nullable=False, default="pending", server_default="pending", index=True
+    )
+    created_at = Column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False, index=True
+    )
+
+    reviewed_at = Column(DateTime(timezone=True), nullable=True)
+    reviewed_by_admin_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("admins.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    # Snapshot of the admin's name; survives the admin account being deleted.
+    reviewed_by_name = Column(String, nullable=True)
+    note = Column(Text, nullable=True)
+
+    registrant = relationship("Registrant")

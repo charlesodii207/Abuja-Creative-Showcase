@@ -135,7 +135,7 @@ export const faqs = [
   },
   {
     q: "Is there a fee to attend?",
-    a: "Tickets are ₦10,000 for a single day or ₦15,000 for both days. The Masterclass Pass is ₦50,000 and covers both days, with the main masterclass sessions on Day 2.",
+    a: "General entry is free and covers both days. VIP is ₦50,000 with priority seating, the Masterclass Pass is ₦100,000 and includes the masterclasses on both days, and VVIP is ₦150,000 and includes everything: front reserved seating, a reserved table at the concert and dinner, a meet and greet, the masterclasses, and Pitch and Deal Room access.",
   },
   {
     q: "Can my organization exhibit or sponsor?",
@@ -157,7 +157,7 @@ export const participationCategories = [
     name: "Attendee",
     slug: "attendee",
     blurb:
-      "Choose a 1-day ticket, a 2-day ticket, or the Masterclass Pass, which covers both days including the main masterclass sessions.",
+      "Start with a free General pass, or choose VIP, the Masterclass Pass or VVIP. Every pass covers both days.",
     note: "",
     guaranteed: true,
   },

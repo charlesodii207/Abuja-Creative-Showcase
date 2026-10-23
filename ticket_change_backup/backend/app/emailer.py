@@ -1,0 +1,1212 @@
+import uuid
+
+import resend
+from html import escape
+from urllib.parse import quote
+
+from app.config import settings
+
+resend.api_key = settings.resend_api_key
+
+RED = "#B80319"
+GOLD = "#E59200"
+TEAL = "#00A5A8"
+NAVY = "#11152F"
+NAVY_LIGHT = "#171C3D"
+CREAM = "#F5EFE6"
+MUTED = "#B8ADA0"
+BORDER = "#2A3158"
+
+BRAND_NAME = "Afriqa Creative Showcase"
+WEBSITE_URL = "https://africacreativeshowcase.com"
+CONTACT_EMAIL = "info@africacreativeshowcase.com"
+
+# Transparent PNG (Gmail's image proxy can't handle WebP and fills the
+# transparent area with black). Must exist in frontend/public/images/.
+LOGO_URL = f"{WEBSITE_URL}/images/acs-logo-email.png"
+
+# Fill in the real links. Any entry with an empty URL is simply left out.
+SOCIAL_LINKS = [
+    ("Instagram", ""),
+    ("X", ""),
+    ("Facebook", ""),
+    ("LinkedIn", ""),
+    ("YouTube", ""),
+    ("TikTok", ""),
+]
+
+
+def _safe(value: object) -> str:
+    return escape(str(value))
+
+
+def _footer_links() -> str:
+    """Social links, contact email and website for the email footer.
+    Plain text links, because they display reliably in every email app."""
+    sep = f'<span style="color:{BORDER};">&nbsp;&nbsp;|&nbsp;&nbsp;</span>'
+
+    def link(label: str, url: str) -> str:
+        return (
+            f'<a href="{_safe(url)}" style="color:{TEAL};text-decoration:none;'
+            f'font-weight:600;white-space:nowrap;">{_safe(label)}</a>'
+        )
+
+    rows = []
+
+    socials = [link(label, url) for label, url in SOCIAL_LINKS if url]
+    if socials:
+        rows.append(
+            f'<div style="font-size:13px;line-height:1.8;margin-top:14px;">'
+            f'{sep.join(socials)}</div>'
+        )
+
+    rows.append(
+        f'<div style="font-size:12px;line-height:1.9;margin-top:10px;">'
+        f'{link(CONTACT_EMAIL, f"mailto:{CONTACT_EMAIL}")}<br>'
+        f'{link("africacreativeshowcase.com", WEBSITE_URL)}</div>'
+    )
+
+    return "".join(rows)
+
+
+def _branded_html(html: str) -> str:
+    return f"""<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="color-scheme" content="dark">
+<meta name="supported-color-schemes" content="dark">
+
+<title>{BRAND_NAME}</title>
+
+<style>
+    :root {{
+        color-scheme: dark;
+        supported-color-schemes: dark;
+    }}
+
+    body,
+    table,
+    td {{
+        -webkit-text-size-adjust: 100%;
+        -ms-text-size-adjust: 100%;
+    }}
+
+    body {{
+        margin: 0;
+        padding: 0;
+        width: 100% !important;
+        background-color: {NAVY} !important;
+    }}
+
+    @media (prefers-color-scheme: light) {{
+        body,
+        .email-bg {{
+            background-color: {NAVY} !important;
+        }}
+
+        .email-text {{
+            color: {CREAM} !important;
+        }}
+
+        .email-muted {{
+            color: {MUTED} !important;
+        }}
+    }}
+
+    @media (prefers-color-scheme: dark) {{
+        body,
+        .email-bg {{
+            background-color: {NAVY} !important;
+        }}
+
+        .email-text {{
+            color: {CREAM} !important;
+        }}
+
+        .email-muted {{
+            color: {MUTED} !important;
+        }}
+    }}
+
+    [data-ogsc] .email-bg,
+    [data-ogsb] .email-bg {{
+        background-color: {NAVY} !important;
+    }}
+
+    [data-ogsc] .email-text,
+    [data-ogsb] .email-text {{
+        color: {CREAM} !important;
+    }}
+
+    a {{
+        color: {TEAL};
+    }}
+</style>
+</head>
+
+<body
+    style="margin:0;padding:0;background-color:{NAVY};"
+    bgcolor="{NAVY}"
+>
+    <table
+        width="100%"
+        cellpadding="0"
+        cellspacing="0"
+        border="0"
+        class="email-bg"
+        style="margin:0;padding:0;background-color:{NAVY};"
+        bgcolor="{NAVY}"
+    >
+        <tr>
+            <td
+                align="center"
+                class="email-bg"
+                style="padding:30px 15px;background-color:{NAVY};"
+                bgcolor="{NAVY}"
+            >
+
+                <table
+                    width="640"
+                    cellpadding="0"
+                    cellspacing="0"
+                    border="0"
+                    class="email-bg"
+                    style="
+                        width:100%;
+                        max-width:640px;
+                        background-color:{NAVY};
+                    "
+                    bgcolor="{NAVY}"
+                >
+
+                    <!-- HEADER -->
+
+                    <tr>
+                        <td
+                            align="center"
+                            style="padding:12px 20px 28px;"
+                        >
+
+                            <img
+                                src="{LOGO_URL}"
+                                alt="{BRAND_NAME}"
+                                width="72"
+                                style="
+                                    display:block;
+                                    width:72px;
+                                    height:auto;
+                                    margin:0 auto 16px;
+                                "
+                            >
+
+                            <div
+                                class="email-text"
+                                style="
+                                    font-family:Arial,Helvetica,sans-serif;
+                                    font-size:20px;
+                                    font-weight:600;
+                                    line-height:1.3;
+                                    color:{CREAM};
+                                    margin-bottom:16px;
+                                "
+                            >
+                                {BRAND_NAME}
+                            </div>
+
+                            <table
+                                cellpadding="0"
+                                cellspacing="0"
+                                border="0"
+                                width="96"
+                                style="width:96px;"
+                            >
+                                <tr>
+                                    <td
+                                        width="32"
+                                        height="4"
+                                        style="
+                                            background-color:{RED};
+                                            font-size:0;
+                                            line-height:0;
+                                        "
+                                        bgcolor="{RED}"
+                                    >
+                                        &nbsp;
+                                    </td>
+
+                                    <td
+                                        width="32"
+                                        height="4"
+                                        style="
+                                            background-color:{GOLD};
+                                            font-size:0;
+                                            line-height:0;
+                                        "
+                                        bgcolor="{GOLD}"
+                                    >
+                                        &nbsp;
+                                    </td>
+
+                                    <td
+                                        width="32"
+                                        height="4"
+                                        style="
+                                            background-color:{TEAL};
+                                            font-size:0;
+                                            line-height:0;
+                                        "
+                                        bgcolor="{TEAL}"
+                                    >
+                                        &nbsp;
+                                    </td>
+                                </tr>
+                            </table>
+
+                        </td>
+                    </tr>
+
+                    <!-- CONTENT -->
+
+                    <tr>
+                        <td
+                            class="email-bg email-text"
+                            style="
+                                padding:10px 25px 32px;
+                                background-color:{NAVY};
+                                color:{CREAM};
+                                font-family:Arial,Helvetica,sans-serif;
+                                font-size:15px;
+                                line-height:1.7;
+                            "
+                            bgcolor="{NAVY}"
+                        >
+                            {html}
+                        </td>
+                    </tr>
+
+                    <!-- FOOTER -->
+
+                    <tr>
+                        <td
+                            align="center"
+                            class="email-bg"
+                            style="
+                                border-top:1px solid {BORDER};
+                                padding:26px 25px 30px;
+                                background-color:{NAVY};
+                                font-family:Arial,Helvetica,sans-serif;
+                            "
+                            bgcolor="{NAVY}"
+                        >
+
+                            <div
+                                class="email-text"
+                                style="
+                                    color:{CREAM};
+                                    font-size:14px;
+                                    font-weight:600;
+                                    line-height:1.5;
+                                "
+                            >
+                                {BRAND_NAME}
+                            </div>
+
+                            <div
+                                class="email-muted"
+                                style="
+                                    color:{MUTED};
+                                    font-size:12px;
+                                    line-height:1.5;
+                                    margin-top:3px;
+                                "
+                            >
+                                Abuja · Nigeria
+                            </div>
+
+                            {_footer_links()}
+
+                            <div
+                                class="email-muted"
+                                style="
+                                    color:{MUTED};
+                                    font-size:11px;
+                                    line-height:1.6;
+                                    margin-top:16px;
+                                "
+                            >
+                                You are receiving this email because you registered
+                                with, or contacted, Afriqa Creative Showcase.
+                            </div>
+
+                        </td>
+                    </tr>
+
+                </table>
+
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+"""
+
+
+def send_email(
+    to: list[str],
+    subject: str,
+    html: str,
+    attachments: list[dict] | None = None,
+) -> bool:
+    """
+    Send an automated ACS email through Resend.
+
+    Returns True when Resend accepts the message and False when
+    sending fails. Failures are logged but do not raise into the
+    registration/payment flow.
+    """
+    try:
+        payload = {
+            "from": settings.email_from,
+            "to": to,
+            "subject": subject,
+            "html": _branded_html(html),
+        }
+
+        if attachments:
+            payload["attachments"] = attachments
+
+        resend.Emails.send(payload)
+
+        return True
+
+    except Exception as e:
+        print(f"Failed to send email to {to}: {e}")
+        return False
+
+
+def send_message_reply(
+    to: str,
+    subject: str,
+    html: str,
+) -> bool:
+    """
+    Send a human/admin reply from the ACS contact address.
+    """
+    try:
+        resend.Emails.send(
+            {
+                "from": settings.reply_email,
+                "to": [to],
+                "subject": subject,
+                "html": _branded_html(html),
+            }
+        )
+
+        return True
+
+    except Exception as e:
+        print(f"Failed to send message reply to {to}: {e}")
+        return False
+
+
+def _button(
+    label: str,
+    url: str,
+    color: str = GOLD,
+) -> str:
+    """
+    Branded email CTA button.
+    """
+    return f"""
+    <table
+        cellpadding="0"
+        cellspacing="0"
+        border="0"
+        style="margin:24px 0;"
+    >
+        <tr>
+            <td
+                align="center"
+                bgcolor="{color}"
+                style="
+                    border-radius:6px;
+                    background-color:{color};
+                "
+            >
+                <a
+                    href="{_safe(url)}"
+                    style="
+                        display:inline-block;
+                        padding:13px 22px;
+                        font-family:Arial,Helvetica,sans-serif;
+                        font-size:14px;
+                        font-weight:700;
+                        line-height:1;
+                        text-decoration:none;
+                        color:{NAVY};
+                        background-color:{color};
+                        border-radius:6px;
+                    "
+                >
+                    {_safe(label)}
+                </a>
+            </td>
+        </tr>
+    </table>
+    """
+
+
+def _reference_card(reference_number: str) -> str:
+    """
+    Branded reference-number block.
+    """
+    return f"""
+    <table
+        width="100%"
+        cellpadding="0"
+        cellspacing="0"
+        border="0"
+        style="
+            margin:22px 0;
+            background-color:{NAVY_LIGHT};
+            border:1px solid {BORDER};
+        "
+        bgcolor="{NAVY_LIGHT}"
+    >
+        <tr>
+            <td style="padding:18px 20px;">
+                <div
+                    style="
+                        font-family:Arial,Helvetica,sans-serif;
+                        font-size:11px;
+                        line-height:1.4;
+                        text-transform:uppercase;
+                        letter-spacing:1px;
+                        color:{MUTED};
+                    "
+                >
+                    Reference Number
+                </div>
+
+                <div
+                    style="
+                        margin-top:6px;
+                        font-family:Arial,Helvetica,sans-serif;
+                        font-size:18px;
+                        line-height:1.4;
+                        font-weight:700;
+                        letter-spacing:0.5px;
+                        color:{CREAM};
+                    "
+                >
+                    {_safe(reference_number)}
+                </div>
+            </td>
+        </tr>
+    </table>
+    """
+
+
+def send_payment_required_email(
+    to: str,
+    full_name: str,
+    reference_number: str,
+    description: str,
+    amount_naira: int,
+    payment_url: str,
+) -> bool:
+    """
+    Send a branded email asking the applicant to complete payment.
+    """
+    html = f"""
+    <p>Hi {_safe(full_name)},</p>
+
+    <p>
+        Thank you for registering for the Afriqa Creative Showcase.
+    </p>
+
+    {_reference_card(reference_number)}
+
+    <p>
+        Your registration for <strong>{_safe(description)}</strong>
+        requires payment of
+        <strong>₦{amount_naira:,}</strong>.
+    </p>
+
+    <p>
+        Complete your payment using the button below.
+    </p>
+
+    {_button("Complete Payment", payment_url, GOLD)}
+
+    <p>
+        Your registration will be confirmed once your payment has been
+        successfully verified.
+    </p>
+    """
+
+    return send_email(
+        to=[to],
+        subject="Complete Your Afriqa Creative Showcase Registration",
+        html=html,
+    )
+
+
+def send_application_received_email(
+    to: str,
+    full_name: str,
+    reference_number: str,
+    application_type: str,
+) -> bool:
+    """
+    Send confirmation that a non-payment application was received.
+    """
+    html = f"""
+    <p>Hi {_safe(full_name)},</p>
+
+    <p>
+        Thank you for applying to the Afriqa Creative Showcase.
+    </p>
+
+    {_reference_card(reference_number)}
+
+    <p>
+        We've received your
+        <strong>{_safe(application_type)}</strong>
+        application successfully.
+    </p>
+
+    <p>
+        Our team will review the information provided and contact you
+        by email once there is an update.
+    </p>
+
+    <p>
+        No further action is required from you at this stage.
+    </p>
+    """
+
+    return send_email(
+        to=[to],
+        subject=(
+            f"Your Afriqa Creative Showcase "
+            f"{application_type.title()} Application"
+        ),
+        html=html,
+    )
+
+
+def send_application_under_review_email(
+    to: str,
+    full_name: str,
+    reference_number: str,
+) -> bool:
+    """
+    Send an under-review status notification.
+    """
+    html = f"""
+    <p>Hi {_safe(full_name)},</p>
+
+    <p>
+        Thank you for submitting your application to the
+        Afriqa Creative Showcase.
+    </p>
+
+    {_reference_card(reference_number)}
+
+    <p>
+        Your application is currently <strong>under review</strong>.
+    </p>
+
+    <p>
+        Our team will contact you by email once there is an update.
+        There is nothing else you need to do at this stage.
+    </p>
+    """
+
+    return send_email(
+        to=[to],
+        subject=(
+            "Your Afriqa Creative Showcase "
+            "Application Is Under Review"
+        ),
+        html=html,
+    )
+
+
+def send_application_approved_email(
+    to: str,
+    full_name: str,
+    reference_number: str,
+    next_steps: str | None = None,
+) -> bool:
+    """
+    Send an application approval notification.
+    """
+    next_steps_html = ""
+
+    if next_steps:
+        next_steps_html = f"""
+        <p>
+            {_safe(next_steps)}
+        </p>
+        """
+
+    html = f"""
+    <p>Hi {_safe(full_name)},</p>
+
+    <p>
+        Good news — your application to the Afriqa Creative Showcase
+        has been <strong>approved</strong>.
+    </p>
+
+    {_reference_card(reference_number)}
+
+    {next_steps_html}
+
+    <p>
+        We look forward to having you at the showcase.
+    </p>
+    """
+
+    return send_email(
+        to=[to],
+        subject=(
+            "Your Afriqa Creative Showcase Application — Approved"
+        ),
+        html=html,
+    )
+
+
+def send_application_rejected_email(
+    to: str,
+    full_name: str,
+    reference_number: str,
+    refund_applicable: bool = False,
+) -> bool:
+    """
+    Send an application rejection notification. When refund_applicable
+    is True (the registrant had already paid), a refund note is added
+    so the person isn't left wondering what happens to their payment.
+    """
+    refund_html = ""
+
+    if refund_applicable:
+        refund_html = f"""
+        <p>
+            Since you had already completed payment, a refund will be
+            processed to the account or card used. Please allow a few
+            business days for it to reflect.
+        </p>
+        """
+
+    html = f"""
+    <p>Hi {_safe(full_name)},</p>
+
+    <p>
+        Thank you for applying to the Afriqa Creative Showcase.
+    </p>
+
+    {_reference_card(reference_number)}
+
+    <p>
+        After careful review, we're unable to offer you a spot
+        for this edition.
+    </p>
+
+    {refund_html}
+
+    <p>
+        We truly appreciate your interest in the showcase and encourage
+        you to stay connected with us for future opportunities.
+    </p>
+    """
+
+    return send_email(
+        to=[to],
+        subject="Your Afriqa Creative Showcase Application",
+        html=html,
+    )
+
+
+def send_payment_confirmed_email(
+    to: str,
+    full_name: str,
+    reference_number: str,
+) -> bool:
+    """
+    Send a payment confirmation notification.
+    """
+    html = f"""
+    <p>Hi {_safe(full_name)},</p>
+
+    <p>
+        Your payment has been successfully confirmed.
+    </p>
+
+    {_reference_card(reference_number)}
+
+    <p>
+        Your registration is now confirmed for the
+        Afriqa Creative Showcase.
+    </p>
+
+    <p>
+        We look forward to welcoming you to the showcase.
+    </p>
+    """
+
+    return send_email(
+        to=[to],
+        subject="Payment Confirmed — Afriqa Creative Showcase",
+        html=html,
+    )
+
+
+def send_awaiting_payment_email(
+    to: str,
+    full_name: str,
+    reference_number: str,
+) -> bool:
+    """
+    Send a branded notification that payment is still required.
+    """
+    html = f"""
+    <p>Hi {_safe(full_name)},</p>
+
+    <p>
+        Your registration for the Afriqa Creative Showcase is almost
+        complete, but payment is still needed to secure your spot.
+    </p>
+
+    {_reference_card(reference_number)}
+
+    <p>
+        Please complete the outstanding payment to finish your
+        registration.
+    </p>
+
+    <p>
+        If you already completed payment, please allow some time for
+        verification before taking further action.
+    </p>
+    """
+
+    return send_email(
+        to=[to],
+        subject="Complete Your Registration — Afriqa Creative Showcase",
+        html=html,
+    )
+
+
+def send_ticket_email(
+    to: str,
+    full_name: str,
+    pdf_base64: str,
+    pdf_filename: str,
+    one_day_pass: bool = False,
+) -> bool:
+    """
+    Send the issued PDF ticket to the registrant. The ticket number and
+    QR code live inside the attached PDF only — never in the email body.
+
+    When one_day_pass is True (the ₦10,000 1-Day Pass), the email also
+    explains that the pass admits the holder once, and how to upgrade.
+    """
+    one_day_note = ""
+
+    if one_day_pass:
+        one_day_note = """
+    <p>
+        <strong>About your 1-Day Pass:</strong> it admits you once, on
+        the day you choose to attend. After you have been scanned in, it
+        cannot be used for entry on the other day. If you would like to
+        attend both days, you can upgrade to the 2-Day Pass on our
+        website using your reference number.
+    </p>
+    """
+
+    html = f"""
+    <p>Hello {_safe(full_name)},</p>
+
+    <p>
+        Your registration for Afriqa Creative Showcase 2026 has been
+        successfully confirmed.
+    </p>
+
+    <p>
+        Your official event ticket is attached to this email.
+    </p>
+
+    {one_day_note}
+
+    <p>
+        Please keep your ticket safe and do not share, forward, or
+        publish it. Your ticket contains a unique ticket number and QR
+        code used to verify your entry.
+    </p>
+
+    <p>
+        You may print the attached ticket or present the digital copy
+        at check-in.
+    </p>
+
+    <p>
+        All payments and registrations remain subject to review. If a
+        registration has to be cancelled, any amount we received from you
+        will be refunded.
+    </p>
+
+    <p>
+        We look forward to welcoming you to ACS 2026.
+    </p>
+    """
+
+    return send_email(
+        to=[to],
+        subject="Your ACS 2026 Ticket Is Confirmed",
+        html=html,
+        attachments=[
+            {
+                "filename": pdf_filename,
+                "content": pdf_base64,
+            }
+        ],
+    )
+
+
+def send_ticket_upgraded_email(
+    to: str,
+    full_name: str,
+    new_tier_label: str,
+    pdf_base64: str,
+    pdf_filename: str,
+) -> bool:
+    """
+    Send the updated PDF ticket after an upgrade. The ticket number and
+    QR code stay the same as before — only the access type changes —
+    so the wording here is deliberately different from the first-issue
+    email, which could otherwise read as if this were a brand-new ticket.
+    """
+    html = f"""
+    <p>Hello {_safe(full_name)},</p>
+
+    <p>
+        Your ticket for Afriqa Creative Showcase 2026 has been upgraded
+        to <strong>{_safe(new_tier_label)}</strong>.
+    </p>
+
+    <p>
+        Your ticket number and QR code remain the same as before —
+        only your access type has changed. Your updated ticket is
+        attached to this email.
+    </p>
+
+    <p>
+        Please use this attached ticket at check-in going forward, and
+        keep it safe. Do not share, forward, or publish it.
+    </p>
+
+    <p>
+        We look forward to welcoming you to ACS 2026.
+    </p>
+    """
+
+    return send_email(
+        to=[to],
+        subject="Your ACS Ticket Has Been Upgraded",
+        html=html,
+        attachments=[
+            {
+                "filename": pdf_filename,
+                "content": pdf_base64,
+            }
+        ],
+    )
+
+
+def send_badge_email(
+    to: str,
+    full_name: str,
+    role_label: str,
+    reference_number: str,
+    pdf_base64: str,
+    pdf_filename: str,
+) -> bool:
+    """
+    Send an approved Investor/Press applicant their event badge as a PDF.
+    Unlike the ticket email there is no ticket number here (these groups
+    aren't ticketed) — the badge shows their name, role and reference.
+    """
+    html = f"""
+    <p>Hello {_safe(full_name)},</p>
+
+    <p>
+        Good news — your application to the Afriqa Creative Showcase has
+        been <strong>approved</strong>.
+    </p>
+
+    {_reference_card(reference_number)}
+
+    <p>
+        Your ACS 2026 <strong>{_safe(role_label)}</strong> badge is
+        attached to this email.
+    </p>
+
+    <p>
+        You may print the attached badge or keep the digital copy on your
+        phone, and have it ready when you arrive. Your reference number
+        is printed on the badge.
+    </p>
+
+    <p>
+        ACS 2026 takes place on 04 &ndash; 05 December 2026 in Abuja,
+        Nigeria. We look forward to welcoming you.
+    </p>
+    """
+
+    return send_email(
+        to=[to],
+        subject=f"Your ACS 2026 {role_label} Badge",
+        html=html,
+        attachments=[
+            {
+                "filename": pdf_filename,
+                "content": pdf_base64,
+            }
+        ],
+    )
+
+
+def registration_verify_url(reference_number: str) -> str:
+    """
+    Build the generic registration continuation URL.
+
+    This should only be used once the frontend /verify page is live.
+    """
+    return (
+        f"{settings.frontend_url.rstrip('/')}"
+        f"/verify?ref={quote(reference_number)}"
+    )
+
+
+def send_registration_continue_email(
+    to: str,
+    full_name: str,
+    reference_number: str,
+    message: str,
+) -> bool:
+    """
+    Send a generic registration continuation email.
+
+    The /verify page determines whether the applicant needs to:
+    - complete payment,
+    - provide additional information,
+    - or simply wait for review.
+    """
+    verify_url = registration_verify_url(reference_number)
+
+    html = f"""
+    <p>Hi {_safe(full_name)},</p>
+
+    <p>
+        {_safe(message)}
+    </p>
+
+    {_reference_card(reference_number)}
+
+    <p>
+        Use the button below to continue your registration.
+    </p>
+
+    {_button("Continue Registration", verify_url, TEAL)}
+
+    <p>
+        Your reference number will be used to securely identify
+        your application.
+    </p>
+    """
+
+    return send_email(
+        to=[to],
+        subject="Continue Your Afriqa Creative Showcase Registration",
+        html=html,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Manual (bank transfer) payments
+# ---------------------------------------------------------------------------
+
+def send_manual_payment_claim_alert(
+    full_name: str,
+    category: str,
+    reference_number: str,
+    amount_naira: int,
+) -> bool:
+    """
+    Tell the ACS team that someone says they have paid by bank transfer and
+    needs their payment checked. Goes to MANUAL_PAYMENT_NOTIFY_EMAIL.
+    """
+    admin_url = f"{settings.frontend_url.rstrip('/')}/admin/manual-payments"
+
+    html = f"""
+    <p>A bank transfer needs to be checked.</p>
+
+    <p>
+        <strong>{_safe(full_name)}</strong> ({_safe(category)}) says they
+        have paid <strong>&#8358;{amount_naira:,}</strong> by bank transfer.
+    </p>
+
+    {_reference_card(reference_number)}
+
+    <p>
+        Please check the bank account for this payment. Once you have seen
+        it, open Manual Payments in the dashboard and confirm it. The person
+        is then sent their ticket.
+    </p>
+
+    {_button("Open Manual Payments", admin_url, TEAL)}
+    """
+
+    return send_email(
+        to=[settings.manual_payment_notify_email],
+        subject=f"Manual payment to check: {reference_number}",
+        html=html,
+    )
+
+
+def send_manual_payment_rejected_email(
+    to: str,
+    full_name: str,
+    reference_number: str,
+    note: str | None = None,
+) -> bool:
+    """
+    Tell someone we could not find their bank transfer, so they are not left
+    waiting. They can pay again, or reply with proof of payment.
+    """
+    note_html = ""
+    if note:
+        note_html = f"""
+    <p>
+        <strong>Note from our team:</strong> {_safe(note)}
+    </p>
+    """
+
+    html = f"""
+    <p>Hi {_safe(full_name)},</p>
+
+    <p>
+        We could not find your bank transfer for the Afriqa Creative
+        Showcase.
+    </p>
+
+    {_reference_card(reference_number)}
+
+    {note_html}
+
+    <p>
+        If you have already paid, please reply to this email with your
+        payment receipt and we will look into it right away.
+    </p>
+
+    <p>
+        If you have not paid yet, you can complete your payment using the
+        button below.
+    </p>
+
+    {_button("Go to Payment", registration_verify_url(reference_number), TEAL)}
+    """
+
+    return send_email(
+        to=[to],
+        subject="We couldn't confirm your bank transfer",
+        html=html,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Shared mailboxes (sending from the admin dashboard)
+# ---------------------------------------------------------------------------
+
+# The only addresses the dashboard can send from. The frontend sends a KEY
+# ("info"), never a raw address, so nobody can spoof another sender.
+# "from_name" is the name recipients see at the top of the email.
+MAILBOXES: dict[str, dict[str, str]] = {
+    "admin":     {"label": "Admin",     "from_name": "Afriqa Creative Showcase", "address": "admin@africacreativeshowcase.com"},
+    "info":      {"label": "Info",      "from_name": "Afriqa Creative Showcase", "address": "info@africacreativeshowcase.com"},
+    "director":  {"label": "Director",  "from_name": "Ebere Ojadua",             "address": "director@africacreativeshowcase.com"},
+    "convener":  {"label": "Convener",  "from_name": "Paulgold Olalekan Joseph", "address": "convener@africacreativeshowcase.com"},
+    "bookings":  {"label": "Bookings",  "from_name": "Afriqa Creative Showcase", "address": "bookings@africacreativeshowcase.com"},
+    "marketing": {"label": "Marketing", "from_name": "Afriqa Creative Showcase", "address": "marketing@africacreativeshowcase.com"},
+}
+
+
+def mailbox_address(key: str) -> str:
+    return MAILBOXES[key]["address"]
+
+
+def mailbox_label(key: str) -> str:
+    return MAILBOXES[key]["label"]
+
+
+def new_message_id() -> str:
+    """A fresh RFC Message-ID we control, so replies can be matched to a thread."""
+    return f"<{uuid.uuid4().hex}@africacreativeshowcase.com>"
+
+
+def send_from_mailbox(
+    mailbox_key: str,
+    to: list[str],
+    subject: str,
+    html: str,
+    cc: list[str] | None = None,
+    in_reply_to: str | None = None,
+    references: str | None = None,
+    message_id: str | None = None,
+    attachments: list[dict] | None = None,
+) -> str | None:
+    """
+    Send a branded email (same header/footer as every other ACS email) from
+    one of the whitelisted mailboxes. Reply-To is the same mailbox, so the
+    recipient's answer lands in Zoho and is picked up by the sync.
+
+    attachments is a list of {"filename": str, "content": <base64 string>},
+    the same shape the ticket and badge emails already use.
+
+    Returns the Resend id on success, None on failure.
+    """
+    try:
+        box = MAILBOXES[mailbox_key]
+
+        payload: dict = {
+            "from": f"{box['from_name']} <{box['address']}>",
+            "to": list(to),
+            "subject": subject,
+            "html": _branded_html(html),
+            "reply_to": box["address"],
+        }
+        if cc:
+            payload["cc"] = list(cc)
+        if attachments:
+            payload["attachments"] = attachments
+
+        headers: dict[str, str] = {}
+        if message_id:
+            headers["Message-ID"] = message_id
+        if in_reply_to:
+            headers["In-Reply-To"] = in_reply_to
+            headers["References"] = references or in_reply_to
+        if headers:
+            payload["headers"] = headers
+
+        result = resend.Emails.send(payload)
+        return (result or {}).get("id") or "sent"
+
+    except Exception as e:
+        print(f"Failed to send from {mailbox_key} to {to}: {e}")
+        return None

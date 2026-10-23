@@ -1,0 +1,242 @@
+from datetime import date, datetime, timedelta, timezone
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy.orm import Session
+
+from app.database import get_db
+from app import models, schemas, utils
+from app.dependencies import require_permission
+
+router = APIRouter(prefix="/tickets", tags=["tickets"])
+
+# Super admins and the system owner always pass. Regular admins need the
+# "event_scan" section (door check-in) or "event_log" section (scan log),
+# which come from their departments.
+CHECKIN_PERMISSION = "event_scan"
+SCAN_LOG_PERMISSION = "event_log"
+
+# Nigeria (WAT) is UTC+1 year-round — no daylight saving to account for.
+WAT = timezone(timedelta(hours=1))
+
+
+def _event_day_wat(moment: datetime) -> date:
+    """The Nigeria-local calendar date a scan counts toward."""
+    return moment.astimezone(WAT).date()
+
+
+def _is_day_pass(registrant: models.Registrant) -> bool:
+    """
+    True for the single-day (₦10,000) attendee ticket, which is admitted
+    once and then blocked for the following calendar day. Read live from
+    the attendee's current ticket type, so an upgraded ticket stops being
+    treated as a day pass straight away.
+
+    NOTE: this assumes TicketType.general is the ₦10,000 day pass. If that
+    enum value is renamed in the pricing migration, update it here.
+    """
+    detail = registrant.attendee_detail
+    return detail is not None and detail.ticket_type == models.TicketType.general
+
+
+@router.post("/checkin", response_model=schemas.CheckinResponse)
+def checkin_ticket(
+    payload: schemas.CheckinRequest,
+    db: Session = Depends(get_db),
+    admin: models.Admin = Depends(require_permission(CHECKIN_PERMISSION)),
+):
+    ticket_number = payload.ticket_number.strip().upper()
+
+    ticket = db.query(models.Ticket).filter(
+        models.Ticket.ticket_number == ticket_number
+    ).first()
+
+    if not ticket:
+        raise HTTPException(status_code=404, detail="No ticket found with that number.")
+
+    registrant = ticket.registrant
+    tag = utils.get_ticket_tag(registrant)
+
+    # A ticket existing doesn't mean the registrant is still cleared for entry —
+    # someone can be rejected (or otherwise fall out of good standing) after
+    # their ticket was already issued. Only "confirmed" registrants get in.
+    # A ticket only ever gets created after payment (issue_ticket_and_email
+    # is only called once paid), so reaching this point already implies
+    # the person paid. "approved" is treated as good standing too —
+    # only rejected, awaiting_payment, or pending are refused entry.
+    ALLOWED_ENTRY_STATUSES = {
+        models.RegistrantStatus.approved,
+        models.RegistrantStatus.confirmed,
+    }
+
+    if registrant.status not in ALLOWED_ENTRY_STATUSES:
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                f"{registrant.full_name}'s registration is '{registrant.status.value}' — "
+                "do not admit. Check with an organizer."
+            ),
+        )
+
+    now = datetime.now(timezone.utc)
+    today = _event_day_wat(now)
+
+    # Has this ticket already had an accepted scan today (Nigeria date)?
+    todays_accepted = (
+        db.query(models.ScanLog)
+        .filter(
+            models.ScanLog.ticket_id == ticket.id,
+            models.ScanLog.event_day == today,
+            models.ScanLog.result == "accepted",
+        )
+        .order_by(models.ScanLog.scanned_at.asc())
+        .first()
+    )
+
+    if todays_accepted:
+        # Log the duplicate attempt too — the admin scan log should show
+        # every tap at the door, not only the first one that got in.
+        db.add(models.ScanLog(
+            ticket_id=ticket.id,
+            event_day=today,
+            result="duplicate",
+            scanned_at=now,
+            first_entry_at=todays_accepted.scanned_at,
+            checked_in_by_admin_id=admin.id,
+            checked_in_by_name=admin.full_name,
+        ))
+        db.commit()
+
+        entry_time_wat = todays_accepted.scanned_at.astimezone(WAT).strftime("%H:%M")
+
+        return schemas.CheckinResponse(
+            result="already_checked_in",
+            full_name=registrant.full_name,
+            category_tag=tag,
+            checked_in_at=todays_accepted.scanned_at,
+            message=f"Already arrived today at {entry_time_wat}.",
+        )
+
+    # Day pass (₦10,000): admitted on a day, blocked the next calendar day,
+    # admitted again the day after, and so on. A day pass is blocked exactly
+    # when it was ACCEPTED yesterday. Blocked scans are logged as
+    # "duplicate", never "accepted", so they don't extend the cycle.
+    # Dates are Nigeria calendar dates, so the reset happens at 12:00am WAT
+    # rather than 48 hours after the last scan.
+    if _is_day_pass(registrant):
+        yesterday = today - timedelta(days=1)
+        yesterdays_accepted = (
+            db.query(models.ScanLog)
+            .filter(
+                models.ScanLog.ticket_id == ticket.id,
+                models.ScanLog.event_day == yesterday,
+                models.ScanLog.result == "accepted",
+            )
+            .order_by(models.ScanLog.scanned_at.asc())
+            .first()
+        )
+
+        if yesterdays_accepted:
+            db.add(models.ScanLog(
+                ticket_id=ticket.id,
+                event_day=today,
+                result="duplicate",
+                scanned_at=now,
+                first_entry_at=yesterdays_accepted.scanned_at,
+                checked_in_by_admin_id=admin.id,
+                checked_in_by_name=admin.full_name,
+            ))
+            db.commit()
+
+            used_at = yesterdays_accepted.scanned_at.astimezone(WAT)
+
+            return schemas.CheckinResponse(
+                result="already_checked_in",
+                full_name=registrant.full_name,
+                category_tag=tag,
+                checked_in_at=yesterdays_accepted.scanned_at,
+                message=(
+                    f"Day pass already used on {used_at.strftime('%a %d %b')} "
+                    f"at {used_at.strftime('%H:%M')}."
+                ),
+            )
+
+    # First accepted scan of the day for this ticket.
+    db.add(models.ScanLog(
+        ticket_id=ticket.id,
+        event_day=today,
+        result="accepted",
+        scanned_at=now,
+        checked_in_by_admin_id=admin.id,
+        checked_in_by_name=admin.full_name,
+    ))
+
+    # Kept for backward compatibility with the admin registrant detail
+    # screen, which shows a single "first ever checked in" — only set
+    # once, on the very first accepted scan across the whole event.
+    if not ticket.checked_in:
+        ticket.checked_in = True
+        ticket.checked_in_at = now
+
+    db.commit()
+
+    return schemas.CheckinResponse(
+        result="approved",
+        full_name=registrant.full_name,
+        category_tag=tag,
+        checked_in_at=now,
+        message="Approved — checked in for today.",
+    )
+
+
+# ---------------------------------------------------------------------------
+# Admin: scan log for a given day
+# ---------------------------------------------------------------------------
+
+@router.get("/scan-log", response_model=schemas.ScanLogResponse)
+def get_scan_log(
+    event_day: date = Query(
+        ...,
+        description="Date in YYYY-MM-DD, Nigeria (WAT) calendar date.",
+    ),
+    db: Session = Depends(get_db),
+    _admin: models.Admin = Depends(require_permission(SCAN_LOG_PERMISSION)),
+):
+    logs = (
+        db.query(models.ScanLog)
+        .filter(models.ScanLog.event_day == event_day)
+        .order_by(models.ScanLog.scanned_at.asc())
+        .all()
+    )
+
+    entries = []
+    accepted_count = 0
+    duplicate_count = 0
+
+    for log in logs:
+        ticket = log.ticket
+        registrant = ticket.registrant if ticket else None
+
+        if log.result == "accepted":
+            accepted_count += 1
+        else:
+            duplicate_count += 1
+
+        entries.append(schemas.ScanLogEntry(
+            id=str(log.id),
+            ticket_number=ticket.ticket_number if ticket else "—",
+            full_name=registrant.full_name if registrant else "Unknown",
+            category_tag=(
+                utils.get_ticket_tag(registrant) if registrant else "—"
+            ),
+            result=log.result,
+            scanned_at=log.scanned_at,
+            checked_in_by=log.checked_in_by_name,
+        ))
+
+    return schemas.ScanLogResponse(
+        event_day=event_day.isoformat(),
+        total_scans=len(entries),
+        accepted_count=accepted_count,
+        duplicate_count=duplicate_count,
+        entries=entries,
+    )

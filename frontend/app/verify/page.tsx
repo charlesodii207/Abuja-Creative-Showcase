@@ -825,7 +825,7 @@ function VerifyContent() {
                 </p>
 
                 <p className="mt-2 text-sm leading-6 text-muted">
-                  Your registration and payment have been successfully
+                  Your registration has been successfully
                   confirmed.
                 </p>
 

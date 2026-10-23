@@ -11,9 +11,18 @@ type Phase = "enter-ref" | "loading" | "unpaid" | "paid" | "rejected" | "error";
 //   vip         -> 2-Day Pass
 //   masterclass -> Masterclass Pass
 const TICKET_LABELS: Record<string, string> = {
-  general: "1-Day Pass",
-  vip: "2-Day Pass",
-  masterclass: "Masterclass Pass",
+  general: "General",
+  vip: "VIP",
+  masterclass: "Masterclass",
+  vvip: "VVIP",
+};
+
+// Ticket prices in naira (General is free). Used to show what an upgrade costs.
+const PRICES: Record<string, number> = {
+  general: 0,
+  vip: 50000,
+  masterclass: 100000,
+  vvip: 150000,
 };
 
 const UPGRADE_OPTIONS: Record<
@@ -21,11 +30,16 @@ const UPGRADE_OPTIONS: Record<
   { value: string; label: string }[]
 > = {
   general: [
-    { value: "vip", label: "2-Day Pass" },
-    { value: "masterclass", label: "Masterclass Pass" },
+    { value: "vip", label: "VIP" },
+    { value: "masterclass", label: "Masterclass" },
+    { value: "vvip", label: "VVIP" },
   ],
-  vip: [{ value: "masterclass", label: "Masterclass Pass" }],
-  masterclass: [],
+  vip: [
+    { value: "masterclass", label: "Masterclass" },
+    { value: "vvip", label: "VVIP" },
+  ],
+  masterclass: [{ value: "vvip", label: "VVIP" }],
+  vvip: [],
 };
 
 export default function AttendeeFinishPage() {
@@ -286,7 +300,7 @@ export default function AttendeeFinishPage() {
 
                 <p className="mt-2 text-xs leading-relaxed text-[#B8B3AA]/55">
                   Your ticket number and QR code stay the same — only your
-                  access type changes. A new ticket will be emailed once
+                  access type changes. An updated ticket will be emailed once
                   payment is confirmed.
                 </p>
 
@@ -303,7 +317,9 @@ export default function AttendeeFinishPage() {
 
                   {upgradeChoices.map((opt) => (
                     <option key={opt.value} value={opt.value}>
-                      {opt.label}
+                      {`${opt.label} (pay ₦${(
+                        (PRICES[opt.value] ?? 0) - (PRICES[ticketType] ?? 0)
+                      ).toLocaleString()})`}
                     </option>
                   ))}
                 </select>
@@ -315,7 +331,7 @@ export default function AttendeeFinishPage() {
                 >
                   {upgrading
                     ? "Starting upgrade..."
-                    : "Upgrade & Pay Difference"}
+                    : "Upgrade & Pay"}
                 </button>
 
                 {error && (

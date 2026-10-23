@@ -1,12 +1,16 @@
 import Link from "next/link";
 
 function Price({ label, amount }: { label: string; amount: string }) {
+  const isFree = amount === "Free";
+
   return (
     <span className="whitespace-nowrap">
       {label}{" "}
-      <span className="line-through decoration-2 decoration-[#E59200]/70">
-        ₦
-      </span>
+      {!isFree && (
+        <span className="line-through decoration-2 decoration-[#E59200]/70">
+          ₦
+        </span>
+      )}
       {amount}
     </span>
   );
@@ -55,11 +59,13 @@ export default function AttendeeRegisterPage() {
             <div className="mt-5 inline-flex flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-full border border-[#E59200]/20 bg-[#11152F]/60 px-4 py-2">
               <span className="h-2 w-2 shrink-0 rounded-full bg-[#E59200]" />
               <p className="text-sm font-medium text-[#F5EFE6]/80">
-                <Price label="1-Day Pass" amount="10,000" />
+                <Price label="General" amount="Free" />
                 {" · "}
-                <Price label="2-Day Pass" amount="15,000" />
+                <Price label="VIP" amount="50,000" />
                 {" · "}
-                <Price label="Masterclass" amount="50,000" />
+                <Price label="Masterclass" amount="100,000" />
+                {" · "}
+                <Price label="VVIP" amount="150,000" />
               </p>
             </div>
 

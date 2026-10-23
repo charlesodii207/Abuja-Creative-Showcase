@@ -3,12 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 
-// The values below are what the backend stores (general / vip / masterclass).
-// Only the names people see changed:
-//   general     -> 1-Day Pass
-//   vip         -> 2-Day Pass
-//   masterclass -> Masterclass Pass
-type TicketType = "general" | "vip" | "masterclass";
+// The values below are what the backend stores (general / vip / masterclass /
+// vvip). The names people see:
+//   general -> General (free)   vip -> VIP   masterclass -> Masterclass   vvip -> VVIP
+type TicketType = "general" | "vip" | "masterclass" | "vvip";
 
 const TIERS: {
   value: TicketType;
@@ -18,24 +16,31 @@ const TIERS: {
 }[] = [
   {
     value: "general",
-    label: "1-Day Pass",
-    price: "₦10,000",
+    label: "General",
+    price: "Free",
     blurb:
-      "Entry for one day of the Showcase, on either day you choose — screenings, performances, and the Creative Market.",
+      "Free entry on both days, 4 and 5 December: fashion runway, film screenings and art, the Creative Market, and the live concert. General seating.",
   },
   {
     value: "vip",
-    label: "2-Day Pass",
-    price: "₦15,000",
+    label: "VIP",
+    price: "₦50,000",
     blurb:
-      "Entry on both days, 4 and 5 December — screenings, performances, and the Creative Market.",
+      "Everything in General, with priority seating at the runway and the concert.",
   },
   {
     value: "masterclass",
-    label: "Masterclass Pass",
-    price: "₦50,000",
+    label: "Masterclass",
+    price: "₦100,000",
     blurb:
-      "Both days, plus the main masterclasses and workshops on Day 2.",
+      "Everything in General, plus the masterclasses on both days. General seating.",
+  },
+  {
+    value: "vvip",
+    label: "VVIP",
+    price: "₦150,000",
+    blurb:
+      "Everything included: front reserved seating, a reserved table at the concert and dinner, meet and greet, masterclasses on both days, and Pitch and Deal Room access.",
   },
 ];
 
@@ -49,6 +54,9 @@ export default function AttendeeNewRegistrationPage() {
 
   // Must be ticked before the form can be submitted.
   const [accepted, setAccepted] = useState(false);
+
+  // The reason the server gave when registration fails (if it gave one).
+  const [errorMessage, setErrorMessage] = useState("");
 
   const [status, setStatus] = useState<
     "idle" | "submitting" | "success" | "error"
@@ -79,7 +87,9 @@ export default function AttendeeNewRegistrationPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data?.detail || "Registration failed");
+        throw new Error(
+          typeof data?.detail === "string" ? data.detail : "Registration failed"
+        );
       }
 
       setConfirmation({
@@ -88,13 +98,20 @@ export default function AttendeeNewRegistrationPage() {
       });
 
       setStatus("success");
-    } catch {
+    } catch (err) {
+      setErrorMessage(
+        err instanceof Error && err.message !== "Failed to fetch"
+          ? err.message
+          : ""
+      );
       setStatus("error");
     }
   }
 
   if (status === "success" && confirmation) {
     const amountNaira = (confirmation.amount_kobo / 100).toLocaleString();
+    // A free ticket has nothing to pay: it is confirmed and emailed at once.
+    const isFree = confirmation.amount_kobo === 0;
 
     return (
       <main className="relative min-h-screen overflow-hidden bg-[#11152F]">
@@ -129,16 +146,17 @@ export default function AttendeeNewRegistrationPage() {
                 </div>
 
                 <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#00A5A8]">
-                  Registration Received
+                  {isFree ? "You're registered" : "Registration Received"}
                 </p>
 
                 <h1 className="mt-4 font-display text-4xl leading-[1.05] text-[#F5EFE6] sm:text-5xl">
-                  Finish Your Registration
+                  {isFree ? "Your Free Ticket Is on Its Way" : "Finish Your Registration"}
                 </h1>
 
                 <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-[#B8B3AA]/75 sm:text-lg">
-                  Your registration has been received and your place has been
-                  reserved.
+                  {isFree
+                    ? "Your registration is confirmed. We have emailed your free ticket."
+                    : "Your registration has been received and your place has been reserved."}
                 </p>
 
                 <div className="mt-10 grid gap-4 sm:grid-cols-2">
@@ -154,11 +172,11 @@ export default function AttendeeNewRegistrationPage() {
 
                   <div className="rounded-[1.5rem] border border-[#00A5A8]/20 bg-[#11152F]/60 px-6 py-6 text-left">
                     <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#B8B3AA]/45">
-                      Amount Due
+                      {isFree ? "Price" : "Amount Due"}
                     </p>
 
                     <p className="mt-2 font-display text-2xl text-[#E59200]">
-                      ₦{amountNaira}
+                      {isFree ? "Free" : `₦${amountNaira}`}
                     </p>
                   </div>
                 </div>
@@ -173,13 +191,21 @@ export default function AttendeeNewRegistrationPage() {
                   </p>
 
                   <p className="mt-3 text-sm leading-relaxed text-[#B8B3AA]/65">
-                    Check your email for your reference number. Keep it safe —
-                    you&apos;ll need it to finish your registration and
-                    complete payment.
+                    {isFree
+                      ? "Your ticket is attached to the email we sent. Show it at check-in on either day."
+                      : "Check your email for your reference number. Keep it safe — you'll need it to finish your registration and complete payment."}
                   </p>
                 </div>
 
                 <div className="mt-8">
+                  {isFree ? (
+                    <Link
+                      href="/"
+                      className="inline-flex items-center justify-center rounded-full bg-[#00A5A8] px-8 py-3.5 text-sm font-semibold text-[#11152F] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_30px_rgba(0,165,168,0.18)]"
+                    >
+                      Back to homepage
+                    </Link>
+                  ) : (
                   <Link
                     href="/verify"
                     className="inline-flex items-center justify-center rounded-full bg-[#00A5A8] px-8 py-3.5 text-sm font-semibold text-[#11152F] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_30px_rgba(0,165,168,0.18)]"
@@ -187,6 +213,7 @@ export default function AttendeeNewRegistrationPage() {
                     Finish Registration
                     <span className="ml-3">→</span>
                   </Link>
+                  )}
                 </div>
 
                 <div className="mt-10 flex items-center justify-center gap-3">
@@ -449,8 +476,8 @@ export default function AttendeeNewRegistrationPage() {
                 {status === "error" && (
                   <div className="rounded-xl border border-[#B80319]/30 bg-[#B80319]/10 px-4 py-3">
                     <p className="text-sm leading-relaxed text-[#F5EFE6]/80">
-                      Something went wrong — please check your details and try
-                      again.
+                      {errorMessage ||
+                        "Something went wrong — please check your details and try again."}
                     </p>
                   </div>
                 )}
@@ -462,6 +489,8 @@ export default function AttendeeNewRegistrationPage() {
                 >
                   {status === "submitting"
                     ? "Registering..."
+                    : selectedTier.value === "general"
+                    ? "Get my free ticket →"
                     : "Complete Registration →"}
                 </button>
 
