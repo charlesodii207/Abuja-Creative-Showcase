@@ -10,13 +10,8 @@ from app.routes.payments import _confirm_payment
 
 router = APIRouter(prefix="/upgrade", tags=["upgrade"])
 
-# The stored ticket types are unchanged (general / vip / masterclass); only
-# the names people see changed, including in the payment email.
-TICKET_LABELS = {
-    models.TicketType.general: "1-Day Pass",
-    models.TicketType.vip: "2-Day Pass",
-    models.TicketType.masterclass: "Masterclass Pass",
-}
+# Ticket names live in one place (utils.TICKET_LABELS).
+TICKET_LABELS = utils.TICKET_LABELS
 
 
 @router.post("", response_model=schemas.UpgradeResponse)

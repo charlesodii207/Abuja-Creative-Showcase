@@ -71,17 +71,19 @@ def get_ticket_tag(registrant: "models.Registrant") -> str:
 
     The stored enum values are unchanged (general / vip / masterclass,
     small / big) — only the labels shown to people were renamed:
-      general     -> 1-Day Pass   (₦10,000)
-      vip         -> 2-Day Pass   (₦15,000)
-      masterclass -> Masterclass  (₦50,000, both days)
+      general     -> General      (free, both days)
+      vip         -> VIP          (₦50,000, both days)
+      masterclass -> Masterclass  (₦100,000, both days)
+      vvip        -> VVIP         (₦150,000, both days)
       small       -> Normal booth (₦200,000)
       big         -> Double booth (₦300,000)
     """
     if registrant.category == models.RegistrantCategory.attendee:
         tier_display = {
-            models.TicketType.general: "1-Day Pass",
-            models.TicketType.vip: "2-Day Pass",
+            models.TicketType.general: "General",
+            models.TicketType.vip: "VIP",
             models.TicketType.masterclass: "Masterclass",
+            models.TicketType.vvip: "VVIP",
         }
         return f"Attendee - {tier_display[registrant.attendee_detail.ticket_type]}"
 
@@ -121,9 +123,20 @@ AUCTION_PRICE_KOBO = 10_000 * 100
 PITCHER_FEE_KOBO = 100_000 * 100      # ₦100,000
 
 TICKET_PRICES_KOBO = {
-    TicketType.general: 10_000 * 100,       # ₦10,000 — 1-Day Pass (admitted once, see tickets.py)
-    TicketType.vip: 15_000 * 100,           # ₦15,000 — 2-Day Pass, both days
-    TicketType.masterclass: 50_000 * 100,   # ₦50,000 — both days, includes the main masterclasses on day 2
+    TicketType.general: 0,                   # Free. No payment is taken (see routes/attendee.py)
+    TicketType.vip: 50_000 * 100,            # ₦50,000, both days, priority seating
+    TicketType.masterclass: 100_000 * 100,   # ₦100,000, both days, masterclasses on both days
+    TicketType.vvip: 150_000 * 100,          # ₦150,000, both days, everything included
+}
+
+# The names people see for each ticket in emails and payment messages. This is
+# the single place to rename a ticket; attendee, upgrade and group-order code
+# all read from here.
+TICKET_LABELS = {
+    TicketType.general: "General Pass",
+    TicketType.vip: "VIP Pass",
+    TicketType.masterclass: "Masterclass Pass",
+    TicketType.vvip: "VVIP Pass",
 }
 
 
@@ -165,7 +178,7 @@ def get_upgrade_amount_kobo(current_tier: TicketType, new_tier: TicketType) -> i
     higher one — just the price difference, not the full new-tier price.
     Raises if the "upgrade" isn't actually to a higher tier.
     """
-    tier_order = [TicketType.general, TicketType.vip, TicketType.masterclass]
+    tier_order = [TicketType.general, TicketType.vip, TicketType.masterclass, TicketType.vvip]
     if tier_order.index(new_tier) <= tier_order.index(current_tier):
         raise ValueError(f"{new_tier} is not an upgrade from {current_tier}")
     return TICKET_PRICES_KOBO[new_tier] - TICKET_PRICES_KOBO[current_tier]

@@ -26,16 +26,13 @@ def _event_day_wat(moment: datetime) -> date:
 
 def _is_day_pass(registrant: models.Registrant) -> bool:
     """
-    True for the single-day (₦10,000) attendee ticket, which is admitted
-    once and then blocked for the following calendar day. Read live from
-    the attendee's current ticket type, so an upgraded ticket stops being
-    treated as a day pass straight away.
-
-    NOTE: this assumes TicketType.general is the ₦10,000 day pass. If that
-    enum value is renamed in the pricing migration, update it here.
+    Always False now. Every ticket (General, VIP, Masterclass, VVIP) is valid
+    on both event days, with one accepted entry per ticket per day, which the
+    "already arrived today" check above already enforces. The old single-day
+    pass rule further down is kept switched off rather than deleted, so it can
+    be removed in a later clean-up.
     """
-    detail = registrant.attendee_detail
-    return detail is not None and detail.ticket_type == models.TicketType.general
+    return False
 
 
 @router.post("/checkin", response_model=schemas.CheckinResponse)

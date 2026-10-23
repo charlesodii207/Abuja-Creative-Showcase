@@ -83,7 +83,7 @@ def send_upgraded_ticket_email(registrant: models.Registrant) -> bool:
     sent = send_ticket_upgraded_email(
         to=registrant.email,
         full_name=registrant.full_name,
-        new_tier_label=ticket_label.title(),
+        new_tier_label=ticket_pdf.ACCESS_DISPLAY.get(ticket_label.upper(), ticket_label.title()),
         pdf_base64=pdf_base64,
         pdf_filename=filename,
     )
@@ -123,8 +123,6 @@ def _send_ticket_pdf_email(registrant: models.Registrant, ticket_number: str) ->
         full_name=registrant.full_name,
         pdf_base64=pdf_base64,
         pdf_filename=filename,
-        # The 1-Day Pass admits once, so its email says so (and how to upgrade).
-        one_day_pass=(ticket_label.upper() == ticket_pdf.ONE_DAY_LABEL),
     )
 
     if not sent:

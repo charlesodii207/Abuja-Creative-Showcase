@@ -6,16 +6,12 @@ from app.database import get_db
 from app import models, schemas, utils
 from app.emailer import send_payment_required_email
 from app.kora import initialize_transaction, KoraError
+from app.tickets import issue_ticket_and_email
 
 router = APIRouter(prefix="/register/attendee", tags=["attendee"])
 
-# The stored ticket types are unchanged (general / vip / masterclass); only
-# the names people see changed, including in the payment email.
-TICKET_LABELS = {
-    models.TicketType.general: "1-Day Pass",
-    models.TicketType.vip: "2-Day Pass",
-    models.TicketType.masterclass: "Masterclass Pass",
-}
+# Ticket names live in one place (utils.TICKET_LABELS).
+TICKET_LABELS = utils.TICKET_LABELS
 
 
 @router.post("", response_model=schemas.RegistrationResponse)
@@ -43,6 +39,25 @@ def register_attendee(
         amount_kobo=amount_kobo,
     )
     db.add(attendee_detail)
+
+    # Free ticket (General): there is nothing to pay, so skip Kora and the
+    # "payment required" email. The person is confirmed straight away, marked
+    # as paid (so the door scanner and the upgrade page treat it like any
+    # other ticket), and their ticket is emailed immediately.
+    if amount_kobo == 0:
+        registrant.status = models.RegistrantStatus.confirmed
+        attendee_detail.is_paid = True
+        db.commit()
+        db.refresh(registrant)
+
+        issue_ticket_and_email(db, registrant)
+
+        return schemas.RegistrationResponse(
+            reference_number=reference_number,
+            message="You're registered. Your free ticket has been sent to your email.",
+            amount_kobo=0,
+            paystack_authorization_url=None,
+        )
 
     callback_url = (
         f"{settings.frontend_url.rstrip('/')}/verify"
@@ -73,7 +88,7 @@ def register_attendee(
         to=payload.email,
         full_name=payload.full_name,
         reference_number=reference_number,
-        description=f"{TICKET_LABELS[payload.ticket_type]} ticket",
+        description=f"{TICKET_LABELS[payload.ticket_type]}",
         amount_naira=amount_naira,
         payment_url=transaction["authorization_url"],
     )

@@ -42,7 +42,7 @@ def attendee_status(payload: schemas.AttendeeStatusRequest, db: Session = Depend
             else "Your registration was not approved for this edition."
         )
     elif detail.is_paid:
-        message = "Payment confirmed. Your ticket has been sent to your email."
+        message = "Your registration is confirmed. Your ticket has been sent to your email."
     else:
         message = "Payment still pending."
 
@@ -87,6 +87,14 @@ def resume_payment(payload: schemas.ResumePaymentRequest, db: Session = Depends(
         raise HTTPException(
             status_code=400,
             detail="This ticket is already paid for.",
+        )
+
+    # Free tickets are confirmed at sign-up and never need payment; this also
+    # stops an empty or zero amount from ever being sent to Kora.
+    if detail.amount_kobo is None or detail.amount_kobo <= 0:
+        raise HTTPException(
+            status_code=400,
+            detail="No payment is needed for this registration.",
         )
 
     resume_reference = utils.generate_resume_reference(

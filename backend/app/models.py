@@ -29,12 +29,14 @@ class RegistrantStatus(str, enum.Enum):
 
 class TicketType(str, enum.Enum):
     # Stored values are unchanged; only the labels people see were renamed:
-    #   general     = 1-Day Pass   (₦10,000)
-    #   vip         = 2-Day Pass   (₦15,000)
-    #   masterclass = Masterclass  (₦50,000, both days)
+    #   general     = General      (free, both days)
+    #   vip         = VIP          (₦50,000, both days)
+    #   masterclass = Masterclass  (₦100,000, both days)
+    #   vvip        = VVIP         (₦150,000, both days)
     general = "general"
     vip = "vip"
     masterclass = "masterclass"
+    vvip = "vvip"
 
 
 class BoothSize(str, enum.Enum):

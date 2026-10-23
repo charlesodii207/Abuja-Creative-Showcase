@@ -3,7 +3,7 @@ Group (bulk) ticket orders.
 
 One buyer pays once on Kora. When the payment is confirmed, one real ticket
 (Registrant + AttendeeDetail + Ticket) is created per seat, so the gate
-scanner, scan log and 1-Day Pass rule work for every ticket unchanged.
+scanner and scan log work for every ticket unchanged.
 
 Put this file at: backend/app/routes/group_orders.py
 Needs `pypdf` in requirements.txt.
@@ -35,11 +35,7 @@ MAX_SENDS_PER_TICKET = 5
 # Raw PDF bytes allowed per email (base64 adds about a third on top).
 EMAIL_ATTACHMENT_LIMIT_BYTES = 20 * 1024 * 1024
 
-TYPE_LABELS = {
-    models.TicketType.general: "1-Day Pass",
-    models.TicketType.vip: "2-Day Pass",
-    models.TicketType.masterclass: "Masterclass Pass",
-}
+TYPE_LABELS = utils.TICKET_LABELS
 
 
 # ---------------------------------------------------------------------------
@@ -154,13 +150,6 @@ def send_all_tickets_email(order: models.GroupOrder) -> bool:
         batches = [pdfs[i:i + per_email] for i in range(0, len(pdfs), per_email)]
 
         label = TYPE_LABELS[models.TicketType(order.ticket_type)]
-        one_day_note = ""
-        if order.ticket_type == models.TicketType.general.value:
-            one_day_note = (
-                "<p><strong>About 1-Day Passes:</strong> each pass admits one "
-                "person once, on the day they choose to attend.</p>"
-            )
-
         all_sent = True
         for idx, batch in enumerate(batches, start=1):
             multi = len(batches) > 1
@@ -181,7 +170,6 @@ def send_all_tickets_email(order: models.GroupOrder) -> bool:
                 <strong>Each page is one ticket</strong> with its own ticket
                 number and QR code.
             </p>
-            {one_day_note}
             <p>
                 You can also send each ticket straight to the person it is
                 for, or download single tickets, from your ticket page:
@@ -317,7 +305,7 @@ def group_options():
                 "label": TYPE_LABELS[t],
                 "price_kobo": utils.get_attendee_amount_kobo(t),
             }
-            for t in (models.TicketType.general, models.TicketType.vip, models.TicketType.masterclass)
+            for t in (models.TicketType.vip, models.TicketType.masterclass, models.TicketType.vvip)
         ],
     }
 
@@ -333,6 +321,18 @@ def create_group_order(payload: GroupOrderCreate, db: Session = Depends(get_db))
         raise HTTPException(
             status_code=400,
             detail=f"Quantity must be between {MIN_QUANTITY} and {MAX_QUANTITY}.",
+        )
+
+    # General tickets are free, so there is nothing to pay for. Group orders
+    # are for paid tickets only; each person can register a free ticket on the
+    # attendee page.
+    if payload.ticket_type == models.TicketType.general:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "General tickets are free, so they can't be bought as a group. "
+                "Each person can register for a free ticket on the attendee page."
+            ),
         )
 
     unit = utils.get_attendee_amount_kobo(payload.ticket_type)
@@ -482,7 +482,6 @@ def send_one_ticket(
         full_name=name,
         pdf_base64=base64.b64encode(pdf).decode("utf-8"),
         pdf_filename=ticket_pdf.ticket_pdf_filename(registrant.reference_number),
-        one_day_pass=(order.ticket_type == models.TicketType.general.value),
     )
 
     if not sent:
