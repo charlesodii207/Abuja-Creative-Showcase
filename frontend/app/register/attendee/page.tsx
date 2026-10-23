@@ -1,5 +1,14 @@
 import Link from "next/link";
 
+const TICKETS = {
+  general: { name: "General", amount: "Free" },
+  vip: { name: "VIP", amount: "50,000" },
+  masterclass: { name: "Masterclass", amount: "100,000" },
+  vvip: { name: "VVIP", amount: "150,000" },
+} as const;
+
+type TicketKey = keyof typeof TICKETS;
+
 function Price({ label, amount }: { label: string; amount: string }) {
   const isFree = amount === "Free";
 
@@ -16,7 +25,20 @@ function Price({ label, amount }: { label: string; amount: string }) {
   );
 }
 
-export default function AttendeeRegisterPage() {
+export default async function AttendeeRegisterPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ ticket?: string | string[] }>;
+}) {
+  // A pass picked on /register arrives as ?ticket=vip. No pass (returning visitor) is fine.
+  const sp = (await searchParams) ?? {};
+  const raw = Array.isArray(sp.ticket) ? sp.ticket[0] : sp.ticket;
+  const picked: TicketKey | null =
+    raw && Object.keys(TICKETS).includes(raw) ? (raw as TicketKey) : null;
+  const newHref = picked
+    ? `/register/attendee/new?ticket=${picked}`
+    : "/register/attendee/new";
+
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#11152F]">
       <div
@@ -56,22 +78,38 @@ export default function AttendeeRegisterPage() {
               creative market, and more.
             </p>
 
-            <div className="mt-5 inline-flex flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-full border border-[#E59200]/20 bg-[#11152F]/60 px-4 py-2">
-              <span className="h-2 w-2 shrink-0 rounded-full bg-[#E59200]" />
-              <p className="text-sm font-medium text-[#F5EFE6]/80">
-                <Price label="General" amount="Free" />
-                {" · "}
-                <Price label="VIP" amount="50,000" />
-                {" · "}
-                <Price label="Masterclass" amount="100,000" />
-                {" · "}
-                <Price label="VVIP" amount="150,000" />
-              </p>
-            </div>
+            {picked ? (
+              <div className="mt-5 inline-flex flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-full border border-[#E59200]/30 bg-[#11152F]/60 px-4 py-2">
+                <span className="h-2 w-2 shrink-0 rounded-full bg-[#E59200]" />
+                <p className="text-sm font-medium text-[#F5EFE6]/90">
+                  Your pass:{" "}
+                  <Price label={TICKETS[picked].name} amount={TICKETS[picked].amount} />
+                </p>
+                <Link
+                  href="/register#passes"
+                  className="text-xs text-[#F5EFE6]/60 underline underline-offset-4 hover:text-[#F5EFE6]"
+                >
+                  Change
+                </Link>
+              </div>
+            ) : (
+              <div className="mt-5 inline-flex flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-full border border-[#E59200]/20 bg-[#11152F]/60 px-4 py-2">
+                <span className="h-2 w-2 shrink-0 rounded-full bg-[#E59200]" />
+                <p className="text-sm font-medium text-[#F5EFE6]/80">
+                  <Price label="General" amount="Free" />
+                  {" · "}
+                  <Price label="VIP" amount="50,000" />
+                  {" · "}
+                  <Price label="Masterclass" amount="100,000" />
+                  {" · "}
+                  <Price label="VVIP" amount="150,000" />
+                </p>
+              </div>
+            )}
 
             <div className="mx-auto mt-10 flex max-w-sm flex-col gap-4">
               <Link
-                href="/register/attendee/new"
+                href={newHref}
                 className="rounded-full bg-[#B80319] px-7 py-3.5 text-sm font-medium text-[#F5EFE6] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_30px_rgba(184,3,25,0.2)]"
               >
                 New Registration

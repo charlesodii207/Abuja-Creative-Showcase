@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 
 // The values below are what the backend stores (general / vip / masterclass /
 // vvip). The names people see:
@@ -44,12 +45,18 @@ const TIERS: {
   },
 ];
 
-export default function AttendeeNewRegistrationPage() {
+function AttendeeNewRegistrationForm() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // The pass chosen on /register arrives as ?ticket=vip (general, vip, masterclass, vvip).
+  const picked = TIERS.find((t) => t.value === searchParams.get("ticket")) ?? null;
+
   const [form, setForm] = useState({
     full_name: "",
     email: "",
     phone: "",
-    ticket_type: "general" as TicketType,
+    ticket_type: (picked?.value ?? "general") as TicketType,
   });
 
   // Must be ticked before the form can be submitted.
@@ -66,6 +73,11 @@ export default function AttendeeNewRegistrationPage() {
     amount_kobo: number;
     email: string;
   } | null>(null);
+
+  // No pass chosen (or an unknown one): send them to pick one first.
+  useEffect(() => {
+    if (!picked) router.replace("/register#passes");
+  }, [picked, router]);
 
   const selectedTier = TIERS.find((t) => t.value === form.ticket_type)!;
 
@@ -106,6 +118,14 @@ export default function AttendeeNewRegistrationPage() {
       );
       setStatus("error");
     }
+  }
+
+  if (!picked) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#11152F] px-6">
+        <p className="text-sm text-[#B8B3AA]/75">Taking you to the passes…</p>
+      </main>
+    );
   }
 
   if (status === "success" && confirmation) {
@@ -262,7 +282,7 @@ export default function AttendeeNewRegistrationPage() {
           </h1>
 
           <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-[#B8B3AA]/75 sm:text-lg">
-            Choose your experience, then tell us who you are. After
+            Check your pass, then tell us who you are. After
             registration, you&apos;ll receive your reference number by email.
           </p>
         </div>
@@ -278,83 +298,42 @@ export default function AttendeeNewRegistrationPage() {
 
           <div className="grid lg:grid-cols-[1.05fr_0.95fr]">
             <div className="p-6 sm:p-8 lg:p-10">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-[#00A5A8]">
-                    Step 01
-                  </p>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-[#00A5A8]">
+                  Step 01
+                </p>
 
-                  <h2 className="mt-2 font-display text-2xl text-[#F5EFE6] sm:text-3xl">
-                    Choose your ticket
-                  </h2>
-                </div>
-
-                <span className="hidden text-[10px] uppercase tracking-[0.2em] text-[#F5EFE6]/25 sm:block">
-                  Your experience
-                </span>
+                <h2 className="mt-2 font-display text-2xl text-[#F5EFE6] sm:text-3xl">
+                  Your ticket
+                </h2>
               </div>
 
-              <div className="mt-7 space-y-3">
-                {TIERS.map((tier, index) => {
-                  const isSelected = form.ticket_type === tier.value;
+              <div className="relative mt-7 overflow-hidden rounded-[1.25rem] border border-[#00A5A8]/50 bg-[#00A5A8]/10 p-5 shadow-[0_15px_40px_rgba(0,165,168,0.07)]">
+                <span
+                  aria-hidden="true"
+                  className="absolute left-0 top-0 h-full w-1 bg-[#00A5A8]"
+                />
 
-                  return (
-                    <button
-                      key={tier.value}
-                      type="button"
-                      onClick={() =>
-                        setForm({ ...form, ticket_type: tier.value })
-                      }
-                      className={`group relative flex w-full flex-col items-start overflow-hidden rounded-[1.25rem] border p-5 text-left transition-all duration-300 ${
-                        isSelected
-                          ? "border-[#00A5A8]/50 bg-[#00A5A8]/10 shadow-[0_15px_40px_rgba(0,165,168,0.07)]"
-                          : "border-white/10 bg-[#11152F]/40 hover:border-white/20 hover:bg-[#11152F]/65"
-                      }`}
-                    >
-                      {isSelected && (
-                        <span className="absolute left-0 top-0 h-full w-1 bg-[#00A5A8]" />
-                      )}
+                <div className="flex w-full items-center justify-between gap-4">
+                  <span className="text-base font-medium text-[#F5EFE6]">
+                    {selectedTier.label}
+                  </span>
 
-                      <div className="flex w-full items-center justify-between gap-4">
-                        <div className="flex items-center gap-3">
-                          <span
-                            className={`flex h-8 w-8 items-center justify-center rounded-full border text-[10px] font-semibold ${
-                              isSelected
-                                ? "border-[#00A5A8]/40 text-[#00A5A8]"
-                                : "border-white/10 text-[#F5EFE6]/25"
-                            }`}
-                          >
-                            0{index + 1}
-                          </span>
+                  <span className="font-display text-xl text-[#E59200]">
+                    {selectedTier.price}
+                  </span>
+                </div>
 
-                          <span
-                            className={`text-base font-medium ${
-                              isSelected
-                                ? "text-[#F5EFE6]"
-                                : "text-[#F5EFE6]/80"
-                            }`}
-                          >
-                            {tier.label}
-                          </span>
-                        </div>
+                <p className="mt-4 text-sm leading-relaxed text-[#B8B3AA]/70">
+                  {selectedTier.blurb}
+                </p>
 
-                        <span
-                          className={`font-display text-xl ${
-                            isSelected
-                              ? "text-[#E59200]"
-                              : "text-[#B8B3AA]/65"
-                          }`}
-                        >
-                          {tier.price}
-                        </span>
-                      </div>
-
-                      <span className="mt-4 pl-11 text-sm leading-relaxed text-[#B8B3AA]/60">
-                        {tier.blurb}
-                      </span>
-                    </button>
-                  );
-                })}
+                <Link
+                  href="/register#passes"
+                  className="mt-4 inline-block text-xs text-[#F5EFE6]/60 underline underline-offset-4 hover:text-[#F5EFE6]"
+                >
+                  Change pass
+                </Link>
               </div>
 
               <div className="mt-6 flex items-center justify-between rounded-xl border border-[#E59200]/20 bg-[#11152F]/60 px-5 py-4">
@@ -527,5 +506,14 @@ export default function AttendeeNewRegistrationPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+// useSearchParams needs a Suspense boundary so the page can still be built.
+export default function AttendeeNewRegistrationPage() {
+  return (
+    <Suspense fallback={null}>
+      <AttendeeNewRegistrationForm />
+    </Suspense>
   );
 }
