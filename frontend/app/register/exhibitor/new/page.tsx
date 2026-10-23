@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 
 // The backend still stores booth sizes as "small" / "big".
 // Only the names people see changed:
@@ -22,8 +23,19 @@ const BOOTH_LABELS: Record<BoothSize, string> = {
 
 const FASHION_RUNWAY_PRICE = "₦300,000";
 
-export default function ExhibitorRegistrationPage() {
-  const [exhibitType, setExhibitType] = useState<ExhibitType | null>(null);
+function ExhibitorRegistrationForm() {
+  // A choice made on /register arrives as ?type=booth&size=small (or ?type=fashion_runway).
+  const searchParams = useSearchParams();
+  const typeParam = searchParams.get("type");
+  const sizeParam = searchParams.get("size");
+  const startType: ExhibitType | null =
+    typeParam === "booth" || typeParam === "fashion_runway" ? typeParam : null;
+  const startSize: BoothSize | "" =
+    startType === "booth" && (sizeParam === "small" || sizeParam === "big")
+      ? sizeParam
+      : "";
+
+  const [exhibitType, setExhibitType] = useState<ExhibitType | null>(startType);
 
   const [form, setForm] = useState({
     full_name: "",
@@ -34,7 +46,7 @@ export default function ExhibitorRegistrationPage() {
     what_bringing: "",
     portfolio_url: "",
     goal: "",
-    booth_size: "" as BoothSize | "",
+    booth_size: startSize as BoothSize | "",
   });
 
   // Must be ticked before the form can be submitted.
@@ -723,5 +735,14 @@ export default function ExhibitorRegistrationPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+// useSearchParams needs a Suspense boundary so the page can still be built.
+export default function ExhibitorRegistrationPage() {
+  return (
+    <Suspense fallback={null}>
+      <ExhibitorRegistrationForm />
+    </Suspense>
   );
 }

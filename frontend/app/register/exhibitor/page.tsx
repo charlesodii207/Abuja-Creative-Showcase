@@ -1,6 +1,22 @@
 import Link from "next/link";
 
-export default function ExhibitorRegisterPage() {
+export default async function ExhibitorRegisterPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ type?: string | string[]; size?: string | string[] }>;
+}) {
+  // A choice made on /register arrives as ?type=booth&size=small (or ?type=fashion_runway).
+  const sp = (await searchParams) ?? {};
+  const one = (v?: string | string[]) => (Array.isArray(v) ? v[0] : v);
+  const type = one(sp.type);
+  const size = one(sp.size);
+  const qs = new URLSearchParams();
+  if (type === "booth" || type === "fashion_runway") qs.set("type", type);
+  if (type === "booth" && (size === "small" || size === "big")) qs.set("size", size);
+  const newHref = qs.toString()
+    ? `/register/exhibitor/new?${qs.toString()}`
+    : "/register/exhibitor/new";
+
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#11152F]">
       <div
@@ -97,7 +113,7 @@ export default function ExhibitorRegisterPage() {
 
             <div className="mx-auto mt-9 flex max-w-sm flex-col gap-4">
               <Link
-                href="/register/exhibitor/new"
+                href={newHref}
                 className="rounded-full bg-[#B80319] px-7 py-3.5 text-sm font-medium text-[#F5EFE6] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_30px_rgba(184,3,25,0.2)]"
               >
                 New Registration
