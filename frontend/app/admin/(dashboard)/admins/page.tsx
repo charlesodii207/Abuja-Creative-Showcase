@@ -10,6 +10,7 @@ import {
   updateAdminDepartments,
   updateAdminMailboxes,
   changeAdminRole,
+  resetAdminPassword,
   getAdminProfile,
   ApiError,
   type AdminSummary,
@@ -151,7 +152,7 @@ function MailboxSummary({ admin }: { admin: AdminSummary }) {
 }
 
 type PendingAction = {
-  kind: "upgrade" | "downgrade" | "deactivate" | "delete";
+  kind: "upgrade" | "downgrade" | "deactivate" | "delete" | "reset";
   admin: AdminSummary;
 };
 
@@ -184,6 +185,13 @@ function dialogFor({ kind, admin }: PendingAction) {
         message: `This can't be undone. The username "${admin.username}" becomes available for reuse, and ${admin.full_name}'s name will still appear in past admin logs.`,
         confirmText: "Delete",
         variant: "danger" as const,
+      };
+    case "reset":
+      return {
+        title: "Reset this admin's password?",
+        message: `${admin.full_name}'s current password will stop working straight away. You'll get a temporary password to give them, and they'll be asked to choose a new one when they sign in.`,
+        confirmText: "Reset password",
+        variant: "warning" as const,
       };
   }
 }
@@ -221,6 +229,15 @@ export default function AdminsPage() {
   const [pending, setPending] = useState<PendingAction | null>(null);
   const [pendingLoading, setPendingLoading] = useState(false);
 
+  // Shown once after a password reset (system owner only). The temporary
+  // password is never stored, so closing this dialog loses it for good.
+  const [resetResult, setResetResult] = useState<{
+    admin: AdminSummary;
+    tempPassword: string;
+    message: string;
+  } | null>(null);
+  const [copied, setCopied] = useState(false);
+
   const myProfile = getAdminProfile();
   const isOwner = myProfile?.role === "system_owner";
   const isSenior = isOwner || myProfile?.role === "super_admin";
@@ -239,6 +256,8 @@ export default function AdminsPage() {
   const canEditAccess = (a: AdminSummary) => isSenior && a.role === "admin";
   // Only the system owner assigns mailboxes, to anyone except themselves.
   const canEditMailboxes = (a: AdminSummary) => isOwner && a.role !== "system_owner";
+  // Only the system owner resets passwords, for anyone except system owners.
+  const canResetPassword = (a: AdminSummary) => isOwner && a.role !== "system_owner";
 
   function loadAdmins(currentSort: SortOrder = sort) {
     setLoading(true);
@@ -295,6 +314,7 @@ export default function AdminsPage() {
   const handleDowngrade = (admin: AdminSummary) => setPending({ kind: "downgrade", admin });
   const handleDeactivate = (admin: AdminSummary) => setPending({ kind: "deactivate", admin });
   const handleDelete = (admin: AdminSummary) => setPending({ kind: "delete", admin });
+  const handleReset = (admin: AdminSummary) => setPending({ kind: "reset", admin });
 
   async function runPending() {
     if (!pending) return;
@@ -307,6 +327,16 @@ export default function AdminsPage() {
       if (kind === "deactivate") await deactivateAdmin(admin.id);
       if (kind === "delete") await deleteAdmin(admin.id);
 
+      if (kind === "reset") {
+        const res = await resetAdminPassword(admin.id);
+        setCopied(false);
+        setResetResult({
+          admin,
+          tempPassword: res.temp_password,
+          message: res.message,
+        });
+      }
+
       setPending(null);
       loadAdmins();
     } catch (err) {
@@ -315,6 +345,22 @@ export default function AdminsPage() {
     } finally {
       setPendingLoading(false);
     }
+  }
+
+  async function copyTempPassword() {
+    if (!resetResult) return;
+    try {
+      await navigator.clipboard.writeText(resetResult.tempPassword);
+      setCopied(true);
+    } catch {
+      // Clipboard can be blocked; the password is still on screen to copy by hand.
+      setCopied(false);
+    }
+  }
+
+  function closeResetResult() {
+    setResetResult(null);
+    setCopied(false);
   }
 
   function startEditing(admin: AdminSummary) {
@@ -449,6 +495,13 @@ export default function AdminsPage() {
       items.push({
         label: "Mailbox access…",
         onClick: () => startEditingMailboxes(a),
+      });
+    }
+    if (canResetPassword(a)) {
+      items.push({
+        label: "Reset password…",
+        tone: "gold",
+        onClick: () => handleReset(a),
       });
     }
     if (canUpgrade(a)) {
@@ -983,6 +1036,68 @@ export default function AdminsPage() {
             if (!pendingLoading) setPending(null);
           }}
         />
+      )}
+
+      {/* Temporary password, shown once after a reset. It can only be closed
+          with the button, so a stray click outside doesn't lose it. */}
+      {resetResult && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center px-4">
+          <div className="absolute inset-0 bg-ink/80" aria-hidden="true" />
+
+          <div
+            className="relative w-full max-w-md rounded-sm border border-ink-raised bg-ink p-6"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Temporary password"
+          >
+            <p className="mb-1 font-body text-xs uppercase tracking-wide text-muted">
+              Password reset
+            </p>
+            <h2 className="font-display text-2xl text-cream break-words">
+              {resetResult.admin.full_name}
+            </h2>
+            <p className="mb-5 font-body text-sm text-muted break-all">
+              Username: <span className="text-cream">{resetResult.admin.username}</span>
+            </p>
+
+            <label className={labelClass}>Temporary password</label>
+            <div className="flex gap-2">
+              <input
+                readOnly
+                value={resetResult.tempPassword}
+                onFocus={(e) => e.currentTarget.select()}
+                className={`${inputClass} font-mono tracking-wide`}
+              />
+              <button
+                type="button"
+                onClick={copyTempPassword}
+                className="shrink-0 rounded-sm border border-ink-raised px-4 py-2 font-body text-sm text-cream hover:border-gold hover:text-gold"
+              >
+                {copied ? "Copied" : "Copy"}
+              </button>
+            </div>
+
+            <p className="mt-4 rounded-sm border border-gold/50 bg-gold/10 px-3 py-2 font-body text-xs text-gold">
+              This is the only time it will be shown. Give it to{" "}
+              {resetResult.admin.full_name} directly. They'll be asked to choose
+              their own password when they sign in.
+            </p>
+
+            {!resetResult.admin.is_active && (
+              <p className="mt-3 font-body text-xs text-red">
+                This account is deactivated, so they still can't sign in.
+              </p>
+            )}
+
+            <button
+              type="button"
+              onClick={closeResetResult}
+              className="mt-6 w-full rounded-sm bg-gold py-2.5 font-body text-sm text-ink"
+            >
+              I've saved it, close
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

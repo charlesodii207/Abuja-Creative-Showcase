@@ -1,6 +1,8 @@
+import secrets
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -13,6 +15,29 @@ from app.permissions import (
 )
 
 router = APIRouter(prefix="/admin/auth", tags=["admin-auth"])
+
+
+class ResetPasswordResponse(BaseModel):
+    id: str
+    status: str
+    message: str
+    temp_password: str
+
+
+# No look-alike characters (0/O, 1/l/I) so the password is easy to read out
+# or type from a message.
+_TEMP_PASSWORD_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789"
+
+
+def _generate_temp_password(length: int = 12) -> str:
+    while True:
+        candidate = "".join(secrets.choice(_TEMP_PASSWORD_ALPHABET) for _ in range(length))
+        if (
+            any(c.islower() for c in candidate)
+            and any(c.isupper() for c in candidate)
+            and any(c.isdigit() for c in candidate)
+        ):
+            return candidate
 
 
 def _summary(a: models.Admin) -> schemas.AdminSummary:
@@ -361,6 +386,56 @@ def change_admin_role(
             f"{target.full_name} is now a {new_role.value.replace('_', ' ')}. "
             "They'll see the change next time they sign in."
         ),
+    )
+
+
+@router.post("/admins/{admin_id}/reset-password", response_model=ResetPasswordResponse)
+def reset_admin_password(
+    admin_id: str,
+    db: Session = Depends(get_db),
+    # Only the System Owner can reset another admin's password.
+    current_admin: models.Admin = Depends(require_role("system_owner")),
+):
+    target = _get_admin_or_404(db, admin_id)
+
+    if target.id == current_admin.id:
+        raise HTTPException(
+            status_code=400,
+            detail="Use 'Change password' to update your own password.",
+        )
+
+    if target.role == models.AdminRole.system_owner:
+        raise HTTPException(
+            status_code=403,
+            detail="A System Owner password can't be reset from here.",
+        )
+
+    temp_password = _generate_temp_password()
+
+    target.password_hash = hash_password(temp_password)
+    target.must_change_password = True
+    db.commit()
+
+    # The temporary password itself is never written to the log.
+    log_action(
+        db, current_admin, "reset_admin_password",
+        target_type="admin",
+        target_reference=target.username,
+        detail="Temporary password issued; must change on next login",
+    )
+
+    note = ""
+    if not target.is_active:
+        note = " Note: this account is deactivated, so they still can't sign in."
+
+    return ResetPasswordResponse(
+        id=str(target.id),
+        status="password_reset",
+        message=(
+            f"Password reset for {target.full_name}. Give them the temporary password below; "
+            f"they'll be asked to choose a new one when they sign in.{note}"
+        ),
+        temp_password=temp_password,
     )
 
 

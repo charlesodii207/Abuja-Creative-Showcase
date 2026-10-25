@@ -453,6 +453,21 @@ export async function changeAdminRole(
   );
 }
 
+// System owner only. Gives the admin a new random temporary password and
+// forces them to choose their own at next login. The temporary password is
+// returned ONCE here and is never stored in readable form, so show it to the
+// owner straight away.
+export async function resetAdminPassword(adminId: string) {
+  return adminFetch<{
+    id: string;
+    status: string;
+    message: string;
+    temp_password: string;
+  }>(`/admin/auth/admins/${encodeURIComponent(adminId)}/reset-password`, {
+    method: "POST",
+  });
+}
+
 // --- Ticket check-in ---
 
 export type CheckinResult = {
