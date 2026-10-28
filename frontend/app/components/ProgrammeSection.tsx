@@ -1,37 +1,17 @@
+import { useTranslations } from "next-intl";
 import Reveal from "./Reveal";
 
-const programme = [
-  {
-    day: "DAY ONE",
-    title: "Discover & Connect",
-    time: "09:00am - 07:00pm",
-    sessions: [
-      "Opening Ceremony & Market Opening",
-      "Creative Industry Conversations",
-      "Creative Finance Forum",
-      "Film & Creative Showcase",
-      "All-Day Film Screening",
-      "Music Performances",
-      "Evening Reception & Performances",
-    ],
-  },
-  {
-    day: "DAY TWO",
-    title: "Create, Pitch & Transact",
-    time: "08:00am - 07:00pm",
-    sessions: [
-      "Masterclasses & Workshops",
-      "Pitch & Deal Room",
-      "Knowledge Programme + Market",
-      "Fashion & Art Showcase",
-      "Creative Finance Forum",
-      "Market",
-      "ACS Live Concert & Awards",
-    ],
-  },
-];
 
 export default function ProgrammeSection() {
+  const t = useTranslations("Home.programme");
+
+  const programme = [1, 2].map((n) => ({
+    day: t(`day${n}.label`),
+    title: t(`day${n}.title`),
+    time: t(`day${n}.time`),
+    sessions: [1, 2, 3, 4, 5, 6, 7].map((s) => t(`day${n}.s${s}`)),
+  }));
+
   return (
     <section
       id="programme"
@@ -59,22 +39,21 @@ export default function ProgrammeSection() {
                 </div>
 
                 <span className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#F5EFE6]/45">
-                  Programme
+                  {t("eyebrow")}
                 </span>
               </div>
             </Reveal>
 
             <Reveal delay={80}>
               <h2 className="max-w-xl font-display text-4xl leading-[1.02] text-[#F5EFE6] sm:text-5xl lg:text-6xl">
-                Two days. One creative ecosystem.
+                {t("heading")}
               </h2>
             </Reveal>
           </div>
 
           <Reveal delay={140}>
             <p className="max-w-2xl text-base leading-relaxed text-[#B8B3AA]/75 sm:text-lg">
-              Discover, connect, create, pitch, transact, and celebrate across
-              two days of programming at ACS.
+              {t("intro")}
             </p>
           </Reveal>
         </div>
@@ -153,14 +132,14 @@ export default function ProgrammeSection() {
         <Reveal delay={560}>
           <div className="mt-12 flex flex-col gap-5 border-t border-white/10 pt-8 sm:flex-row sm:items-center sm:justify-between">
             <p className="max-w-2xl font-display text-xl leading-snug text-[#F5EFE6]/80 sm:text-2xl">
-              From discovery and connection to pitches, deals, and celebration.
+              {t("closing")}
             </p>
 
             <div className="flex items-center gap-3">
               <span className="h-2 w-2 rounded-full bg-[#00A5A8]" />
 
               <span className="text-[10px] uppercase tracking-[0.28em] text-[#F5EFE6]/35">
-                04–05 December · Abuja
+                {t("footer")}
               </span>
             </div>
           </div>

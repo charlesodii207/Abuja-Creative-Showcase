@@ -8,68 +8,54 @@ import {
   Globe2,
   Drama,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import Reveal from "./Reveal";
 
 const disciplines = [
   {
-    name: "Film",
-    description:
-      "Stories, production, screen culture, and the people shaping African cinema.",
+    key: "film",
     icon: Film,
     accent: "#B80319",
   },
   {
-    name: "Music",
-    description:
-      "Artists, producers, executives, and new sounds moving across borders.",
+    key: "music",
     icon: Music2,
     accent: "#E59200",
   },
   {
-    name: "Fashion",
-    description:
-      "Designers, brands, stylists, and the creative business behind African fashion.",
+    key: "fashion",
     icon: Shirt,
     accent: "#00A5A8",
   },
   {
-    name: "Art",
-    description:
-      "Visual artists, galleries, collectors, and new ways of seeing Africa.",
+    key: "art",
     icon: Palette,
     accent: "#B80319",
   },
   {
-    name: "Media",
-    description:
-      "Publishers, journalists, platforms, and storytellers amplifying creative voices.",
+    key: "media",
     icon: Newspaper,
     accent: "#00A5A8",
   },
   {
-    name: "Technology",
-    description:
-      "Digital creators, platforms, innovation, and technology enabling creative growth.",
+    key: "technology",
     icon: Cpu,
     accent: "#E59200",
   },
   {
-    name: "Dance & Performance",
-    description:
-      "Movement, live performance, stagecraft, and the artists bringing stories to life.",
+    key: "dance",
     icon: Drama,
     accent: "#B80319",
   },
   {
-    name: "Culture",
-    description:
-      "Ideas, identity, heritage, and the cultural forces connecting the ecosystem.",
+    key: "culture",
     icon: Globe2,
     accent: "#E59200",
   },
 ];
 
 export default function CreativeEcosystem() {
+  const t = useTranslations("Home.ecosystem");
   return (
     <section
       id="ecosystem"
@@ -97,23 +83,21 @@ export default function CreativeEcosystem() {
                 </div>
 
                 <span className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#F5EFE6]/45">
-                  Creative Ecosystem
+                  {t("eyebrow")}
                 </span>
               </div>
             </Reveal>
 
             <Reveal delay={80}>
               <h2 className="max-w-xl font-display text-4xl leading-[1.02] text-[#F5EFE6] sm:text-5xl lg:text-6xl">
-                Where creative worlds meet.
+                {t("heading")}
               </h2>
             </Reveal>
           </div>
 
           <Reveal delay={140}>
             <p className="max-w-2xl text-base leading-relaxed text-[#B8B3AA]/75 sm:text-lg">
-              AFRIQA brings different parts of the creative economy into one
-              connected space — creating room for collaboration, discovery,
-              investment, and new opportunities.
+              {t("intro")}
             </p>
           </Reveal>
         </div>
@@ -123,7 +107,7 @@ export default function CreativeEcosystem() {
             const Icon = discipline.icon;
 
             return (
-              <Reveal key={discipline.name} delay={80 + index * 60}>
+              <Reveal key={discipline.key} delay={80 + index * 60}>
                 <div className="group relative flex h-full min-h-[250px] flex-col bg-[#151A3A] p-7 transition-colors duration-300 hover:bg-[#191F43]">
                   <div
                     aria-hidden="true"
@@ -152,11 +136,11 @@ export default function CreativeEcosystem() {
 
                   <div className="mt-auto pt-10">
                     <h3 className="font-display text-2xl text-[#F5EFE6]">
-                      {discipline.name}
+                      {t(`items.${discipline.key}.name`)}
                     </h3>
 
                     <p className="mt-3 text-sm leading-relaxed text-[#B8B3AA]/65">
-                      {discipline.description}
+                      {t(`items.${discipline.key}.description`)}
                     </p>
                   </div>
                 </div>
@@ -168,13 +152,13 @@ export default function CreativeEcosystem() {
         <Reveal delay={560}>
           <div className="mt-12 flex flex-col gap-5 border-t border-white/10 pt-8 sm:flex-row sm:items-center sm:justify-between">
             <p className="max-w-2xl font-display text-xl leading-snug text-[#F5EFE6]/80 sm:text-2xl">
-              Different disciplines. One connected creative economy.
+              {t("closing")}
             </p>
 
             <div className="flex items-center gap-3">
               <span className="h-2 w-2 rounded-full bg-[#E59200]" />
               <span className="text-[10px] uppercase tracking-[0.28em] text-[#F5EFE6]/35">
-                Abuja · Africa
+                {t("location")}
               </span>
             </div>
           </div>

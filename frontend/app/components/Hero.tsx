@@ -1,44 +1,45 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { event } from "@/lib/content";
 
 const SLIDES = [
   {
     image: "/images/hero-01.webp",
-    text: "Two Days. One Ecosystem.",
+    key: "slide1",
     color: "text-red",
     hex: "#B80319",
   },
   {
     image: "/images/hero-02.webp",
-    text: "Film × Music × Fashion × Tech",
+    key: "slide2",
     color: "text-gold",
     hex: "#E59200",
   },
   {
     image: "/images/hero-03.webp",
-    text: "Creativity. Connection. Capital.",
+    key: "slide3",
     color: "text-teal",
     hex: "#00A5A8",
   },
   {
     image: "/images/hero-04.webp",
-    text: "Where African Creativity Meets Opportunity.",
+    key: "slide4",
     color: "text-red",
     hex: "#B80319",
   },
   {
     image: "/images/hero-05.webp",
-    text: "Abuja. Africa. The Future.",
+    key: "slide5",
     color: "text-gold",
     hex: "#E59200",
   },
   {
     image: "/images/hero-06.webp",
-    text: "Ideas. Talent. Opportunity.",
+    key: "slide6",
     color: "text-teal",
     hex: "#00A5A8",
   },
@@ -111,6 +112,7 @@ function ProgressSegment({
 }
 
 export default function Hero() {
+  const t = useTranslations("Home.hero");
   const [active, setActive] = useState(0);
   const reducedMotion = useReducedMotion();
 
@@ -259,7 +261,7 @@ export default function Hero() {
 
         <div className="hero-intro hero-intro-1">
           <p className="mb-3 text-xs text-white/60 md:mb-5 md:text-sm">
-            Organized by{" "}
+            {t("organizedBy")}{" "}
             <a
               href="https://www.afrigos-academy.com/"
               target="_blank"
@@ -286,7 +288,7 @@ export default function Hero() {
 
           <div className="hero-intro hero-intro-3">
             <p className="mt-3 max-w-2xl font-display text-xl italic text-[#E59200] drop-shadow-lg sm:mt-6 sm:text-3xl md:text-4xl">
-              {event.tagline}
+              {t("tagline")}
             </p>
           </div>
 
@@ -301,11 +303,11 @@ export default function Hero() {
           {/* Event information */}
 
           <div className="hero-intro hero-intro-5 mt-4 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[10px] uppercase tracking-[0.16em] text-white/65 sm:mt-7 sm:gap-x-4 sm:gap-y-2 sm:text-xs sm:tracking-[0.2em]">
-            <span>Abuja, Nigeria</span>
+            <span>{t("location")}</span>
 
             <span className="h-1 w-1 rounded-full bg-[#E59200]" />
 
-            <span>December 4–5, 2026</span>
+            <span>{t("dates")}</span>
           </div>
 
           {/* =================================================
@@ -320,7 +322,7 @@ export default function Hero() {
                   activeSlide.color
                 } ${reducedMotion ? "" : "animate-hero-text-in"} sm:text-3xl`}
               >
-                {activeSlide.text}
+                {t(activeSlide.key)}
               </p>
             </div>
 
@@ -369,8 +371,7 @@ export default function Hero() {
               href="/register"
               className="group rounded-full bg-[#B80319] px-5 py-3 text-xs font-medium text-[#F5EFE6] shadow-[0_10px_35px_rgba(184,3,25,0.25)] transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:bg-[#d00620] hover:shadow-[0_15px_45px_rgba(184,3,25,0.4)] sm:px-7 sm:py-3.5 sm:text-sm"
             >
-              Register
-
+              {t("register")}
               <span className="ml-2 inline-block transition-transform duration-300 group-hover:translate-x-1">
                 →
               </span>
@@ -385,8 +386,7 @@ export default function Hero() {
                   : activeHex,
               }}
             >
-              See the programme
-
+              {t("seeProgramme")}
               <span className="ml-2 inline-block transition-transform duration-300 group-hover:translate-y-1">
                 ↓
               </span>
@@ -405,7 +405,7 @@ export default function Hero() {
             <span className="relative inline-flex h-2 w-2 rounded-full bg-[#00A5A8]" />
           </span>
 
-          <span>Connecting Abuja&apos;s creative ecosystem</span>
+          <span>{t("ecosystem")}</span>
         </div>
       </div>
 
@@ -418,7 +418,7 @@ export default function Hero() {
           <button
             key={slide.image}
             type="button"
-            aria-label={`View slide ${index + 1}`}
+            aria-label={t("viewSlide", { n: index + 1 })}
             aria-current={index === active ? "true" : undefined}
             onClick={() => {
               markReady(index);
@@ -463,43 +463,43 @@ export default function Hero() {
               className="flex items-center whitespace-nowrap"
             >
               <span className="mx-4 text-[10px] uppercase tracking-[0.2em] text-white/55 sm:mx-5 sm:text-xs sm:tracking-[0.25em]">
-                Film
+                {t("film")}
               </span>
 
               <span className="text-[#E59200]">✦</span>
 
               <span className="mx-4 text-[10px] uppercase tracking-[0.2em] text-white/55 sm:mx-5 sm:text-xs sm:tracking-[0.25em]">
-                Music
+                {t("music")}
               </span>
 
               <span className="text-[#B80319]">✦</span>
 
               <span className="mx-4 text-[10px] uppercase tracking-[0.2em] text-white/55 sm:mx-5 sm:text-xs sm:tracking-[0.25em]">
-                Fashion
+                {t("fashion")}
               </span>
 
               <span className="text-[#00A5A8]">✦</span>
 
               <span className="mx-4 text-[10px] uppercase tracking-[0.2em] text-white/55 sm:mx-5 sm:text-xs sm:tracking-[0.25em]">
-                Art
+                {t("art")}
               </span>
 
               <span className="text-[#E59200]">✦</span>
 
               <span className="mx-4 text-[10px] uppercase tracking-[0.2em] text-white/55 sm:mx-5 sm:text-xs sm:tracking-[0.25em]">
-                Technology
+                {t("technology")}
               </span>
 
               <span className="text-[#B80319]">✦</span>
 
               <span className="mx-4 text-[10px] uppercase tracking-[0.2em] text-white/55 sm:mx-5 sm:text-xs sm:tracking-[0.25em]">
-                Media
+                {t("media")}
               </span>
 
               <span className="text-[#00A5A8]">✦</span>
 
               <span className="mx-4 text-[10px] uppercase tracking-[0.2em] text-white/55 sm:mx-5 sm:text-xs sm:tracking-[0.25em]">
-                Culture
+                {t("culture")}
               </span>
 
               <span className="text-[#E59200]">✦</span>

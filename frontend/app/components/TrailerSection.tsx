@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import Reveal from "./Reveal";
 
 const TRAILER_VIDEO_ID = "tntxfedFMpw";
@@ -43,6 +44,7 @@ function loadYouTubeApi(): Promise<void> {
 }
 
 export default function TrailerSection() {
+  const t = useTranslations("Home.trailer");
   const [playing, setPlaying] = useState(false);
   const [thumbSrc, setThumbSrc] = useState(
     CUSTOM_THUMBNAIL ||
@@ -116,20 +118,19 @@ export default function TrailerSection() {
           </div>
 
           <span className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#F5EFE6]/45">
-            Event Trailer
+            {t("eyebrow")}
           </span>
         </div>
 
         <Reveal delay={80}>
           <h2 className="max-w-2xl font-display text-4xl leading-[1.05] text-[#F5EFE6] sm:text-5xl lg:text-6xl">
-            Watch the trailer
+            {t("heading")}
           </h2>
         </Reveal>
 
         <Reveal delay={160}>
           <p className="mt-6 max-w-xl text-base leading-relaxed text-white/65 sm:text-lg">
-            Get a first look at two days of film, music, fashion, art, and
-            technology coming together in Abuja.
+            {t("text")}
           </p>
         </Reveal>
 
@@ -154,13 +155,13 @@ export default function TrailerSection() {
                   <button
                     type="button"
                     onClick={handlePlay}
-                    aria-label="Play the AFRIQA Creative Showcase trailer"
+                    aria-label={t("playAria")}
                     className="group absolute inset-0 z-10 h-full w-full cursor-pointer"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={thumbSrc}
-                      alt="AFRIQA Creative Showcase 2026 trailer thumbnail"
+                      alt={t("thumbAlt")}
                       onError={handleThumbError}
                       className="h-full w-full object-cover"
                     />

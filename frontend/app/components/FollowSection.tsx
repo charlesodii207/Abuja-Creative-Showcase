@@ -6,6 +6,7 @@ import {
   LinkedInIcon,
   YouTubeIcon,
 } from "./SocialIcons";
+import { useTranslations } from "next-intl";
 import Reveal from "./Reveal";
 
 const iconMap = {
@@ -17,6 +18,7 @@ const iconMap = {
 };
 
 export default function FollowSection() {
+  const t = useTranslations("Home.follow");
   return (
     <section className="relative overflow-hidden border-b border-white/10 bg-[#11152F]">
       <div
@@ -40,20 +42,19 @@ export default function FollowSection() {
 
         <Reveal delay={80}>
           <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#00A5A8]">
-            Stay Connected
+            {t("eyebrow")}
           </p>
         </Reveal>
 
         <Reveal delay={140}>
           <h2 className="mt-4 font-display text-3xl leading-tight text-[#F5EFE6] sm:text-4xl md:text-5xl">
-            Follow the journey.
+            {t("heading")}
           </h2>
         </Reveal>
 
         <Reveal delay={200}>
           <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-[#B8B3AA]/70 sm:text-lg">
-            Stay close to the people, ideas, announcements, and experiences
-            shaping ACS.
+            {t("text")}
           </p>
         </Reveal>
 
@@ -73,7 +74,7 @@ export default function FollowSection() {
                   href={social.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label={`Follow ACS on ${social.name}`}
+                  aria-label={t("followOn", { name: social.name })}
                   className="group flex min-w-[70px] flex-col items-center gap-3 text-[#B8B3AA]/60 transition-all duration-300 hover:text-[#F5EFE6]"
                 >
                   <span className="relative flex h-11 w-11 items-center justify-center rounded-full border border-white/15 transition-all duration-300 group-hover:-translate-y-1 group-hover:border-[#00A5A8]/50 group-hover:shadow-[0_0_20px_rgba(0,165,168,0.12)]">
@@ -101,7 +102,7 @@ export default function FollowSection() {
             <span className="h-1.5 w-1.5 rounded-full bg-[#E59200]" />
 
             <span className="text-[9px] font-semibold uppercase tracking-[0.3em] text-[#F5EFE6]/30">
-              Abuja · Africa
+              {t("location")}
             </span>
 
             <span className="h-1.5 w-1.5 rounded-full bg-[#B80319]" />

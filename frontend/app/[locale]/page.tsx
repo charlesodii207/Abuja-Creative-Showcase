@@ -1,3 +1,4 @@
+import { setRequestLocale } from "next-intl/server";
 import CountdownBanner from "@/app/components/CountdownBanner";
 import Hero from "@/app/components/Hero";
 import TrailerSection from "@/app/components/TrailerSection";
@@ -9,7 +10,6 @@ import ProgrammeSection from "@/app/components/ProgrammeSection";
 import HotelBookingSection from "@/app/components/HotelBookingSection";
 import SponsorsSection from "@/app/components/SponsorsSection";
 import InsideAfriqa from "@/app/components/InsideAfriqa";
-import TeamSection from "@/app/components/TeamSection";
 import FAQSection from "@/app/components/FAQSection";
 import ContactSection from "@/app/components/ContactSection";
 import FollowSection from "@/app/components/FollowSection";
@@ -43,7 +43,14 @@ const eventJsonLd = {
   url: "https://africacreativeshowcase.com",
 };
 
-export default function Home() {
+export default async function Home({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  setRequestLocale(locale);
+
   return (
     <main>
       <script
@@ -62,7 +69,6 @@ export default function Home() {
       <HotelBookingSection />
       <SponsorsSection />
       <InsideAfriqa />
-      <TeamSection />
       <FAQSection />
       <ContactSection />
       <FollowSection />

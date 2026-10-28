@@ -1,4 +1,5 @@
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import {
   Ticket,
   Store,
@@ -18,6 +19,7 @@ const categoryIcons = {
 } as const;
 
 export default function ParticipationSection() {
+  const t = useTranslations("Home.participation");
   return (
     <section
       id="participate"
@@ -34,13 +36,13 @@ export default function ParticipationSection() {
 
         <Reveal delay={80}>
           <h2 className="max-w-3xl font-display text-4xl leading-[1.05] text-[#F5EFE6] sm:text-5xl lg:text-6xl">
-            Choose How You Join ACS
+            {t("heading")}
           </h2>
         </Reveal>
 
         <Reveal delay={140}>
           <p className="mt-4 max-w-2xl text-base leading-relaxed text-[#B8B3AA]/75 sm:text-lg">
-            Five ways to be part of the Showcase — pick the one that fits you.
+            {t("sub")}
           </p>
         </Reveal>
 
@@ -68,16 +70,16 @@ export default function ParticipationSection() {
                   </div>
 
                   <p className="mt-6 font-display text-xl text-[#F5EFE6]">
-                    {category.name}
+                    {t(`${category.slug}.name`)}
                   </p>
 
                   <p className="mt-3 flex-1 text-sm leading-relaxed text-[#B8B3AA]/70">
-                    {category.blurb}
+                    {t(`${category.slug}.blurb`)}
                   </p>
 
                   {category.note && (
                     <p className="mt-4 text-xs font-medium uppercase tracking-[0.12em] text-[#00A5A8]/75">
-                      {category.note}
+                      {t(`${category.slug}.note`)}
                     </p>
                   )}
 
@@ -85,7 +87,7 @@ export default function ParticipationSection() {
                     href={`/register/${category.slug}`}
                     className="mt-7 inline-flex items-center justify-center rounded-full bg-[#00A5A8] px-5 py-3 text-sm font-medium text-[#11152F] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_25px_rgba(0,165,168,0.18)]"
                   >
-                    Continue
+                    {t("continue")}
                   </Link>
                 </div>
               </Reveal>
@@ -99,7 +101,7 @@ export default function ParticipationSection() {
               href="/register/lookup"
               className="text-sm text-[#B8B3AA]/60 underline underline-offset-4 transition-colors duration-300 hover:text-[#F5EFE6]"
             >
-              Already registered? Check your status
+              {t("lookup")}
             </Link>
           </div>
         </Reveal>

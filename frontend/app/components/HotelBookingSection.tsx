@@ -1,7 +1,9 @@
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import Reveal from "./Reveal";
 
 export default function HotelBookingSection() {
+  const t = useTranslations("Home.hotel");
   return (
     <section
       id="accommodation"
@@ -19,20 +21,19 @@ export default function HotelBookingSection() {
               </div>
 
               <span className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#F5EFE6]/45">
-                Accommodation
+                {t("eyebrow")}
               </span>
             </div>
 
             <Reveal delay={80}>
               <h2 className="max-w-xl font-display text-4xl leading-[1.05] text-[#F5EFE6] sm:text-5xl lg:text-6xl">
-                Need a place to stay in Abuja?
+                {t("heading")}
               </h2>
             </Reveal>
 
             <Reveal delay={160}>
               <p className="mt-8 max-w-xl text-base leading-relaxed text-white/65 sm:text-lg">
-                Tell us your dates and budget, and our team will match you with
-                a hotel that suits you.
+                {t("text")}
               </p>
             </Reveal>
 
@@ -42,7 +43,7 @@ export default function HotelBookingSection() {
                   href="/accommodation"
                   className="group inline-flex items-center gap-3 rounded-full bg-[#E59200] px-8 py-4 text-sm font-semibold text-[#0D1128] transition-colors duration-300 hover:bg-[#F5EFE6]"
                 >
-                  <span>Book a hotel</span>
+                  <span>{t("button")}</span>
 
                   <span className="transition-transform duration-300 group-hover:translate-x-1">
                     →
@@ -65,24 +66,16 @@ export default function HotelBookingSection() {
 
               <div className="relative rounded-[2.5rem] rounded-br-[5rem] rounded-tl-[1rem] border border-white/10 bg-[#0D1128] p-8 shadow-[0_25px_80px_rgba(0,0,0,0.22)] sm:p-10">
                 <p className="mb-8 text-[10px] font-semibold uppercase tracking-[0.3em] text-[#F5EFE6]/45">
-                  How it works
+                  {t("how")}
                 </p>
 
                 <ul className="space-y-7">
-                  {[
-                    {
-                      title: "Share your details",
-                      text: "Your dates, guests, and contact information.",
-                    },
-                    {
-                      title: "Set your budget",
-                      text: "Pick a price range and preferred area.",
-                    },
-                    {
-                      title: "Get your options",
-                      text: "We confirm availability and reply by email.",
-                    },
-                  ].map((item, i) => (
+                  {[1, 2, 3]
+                    .map((n) => ({
+                      title: t(`step${n}.title`),
+                      text: t(`step${n}.text`),
+                    }))
+                    .map((item, i) => (
                     <li key={item.title} className="flex items-start gap-5">
                       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#E59200]/40 text-sm font-semibold text-[#E59200]">
                         {i + 1}

@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import Reveal from "./Reveal";
 
 export default function ContactSection() {
+  const t = useTranslations("Home.contact");
   const [open, setOpen] = useState(false);
 
   const [form, setForm] = useState({
@@ -77,20 +79,19 @@ export default function ContactSection() {
 
           <Reveal delay={80}>
             <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#00A5A8]">
-              Connect With Us
+              {t("eyebrow")}
             </p>
           </Reveal>
 
           <Reveal delay={140}>
             <h2 className="mt-4 font-display text-4xl leading-[1.05] text-[#F5EFE6] sm:text-5xl">
-              Get in Touch
+              {t("heading")}
             </h2>
           </Reveal>
 
           <Reveal delay={200}>
             <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-[#B8B3AA]/70 sm:text-lg">
-              Whether you have a question, partnership idea, media enquiry, or
-              simply want to connect, we&apos;d love to hear from you.
+              {t("text")}
             </p>
           </Reveal>
         </div>
@@ -103,7 +104,7 @@ export default function ContactSection() {
                 onClick={() => setOpen(true)}
                 className="relative z-20 inline-flex cursor-pointer touch-manipulation items-center justify-center rounded-full bg-[#B80319] px-7 py-3.5 text-sm font-medium text-[#F5EFE6] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(184,3,25,0.18)]"
               >
-                Start a Conversation →
+                {t("start")}
               </button>
             </div>
           </Reveal>
@@ -122,12 +123,11 @@ export default function ContactSection() {
               </div>
 
               <h3 className="mt-5 font-display text-2xl text-[#F5EFE6]">
-                Message Received
+                {t("successTitle")}
               </h3>
 
               <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-[#B8B3AA]/65">
-                Thanks for reaching out. Our team will get back to you shortly
-                — keep an eye on your email for our response.
+                {t("successText")}
               </p>
             </div>
           </Reveal>
@@ -152,7 +152,7 @@ export default function ContactSection() {
                       htmlFor="full_name"
                       className="block text-sm font-medium text-[#F5EFE6]/75"
                     >
-                      Full Name
+                      {t("fullName")}
                     </label>
 
                     <input
@@ -175,7 +175,7 @@ export default function ContactSection() {
                       htmlFor="phone"
                       className="block text-sm font-medium text-[#F5EFE6]/75"
                     >
-                      Phone
+                      {t("phone")}
                     </label>
 
                     <input
@@ -200,7 +200,7 @@ export default function ContactSection() {
                     htmlFor="email"
                     className="block text-sm font-medium text-[#F5EFE6]/75"
                   >
-                    Email
+                    {t("email")}
                   </label>
 
                   <input
@@ -224,14 +224,14 @@ export default function ContactSection() {
                     htmlFor="question"
                     className="block text-sm font-medium text-[#F5EFE6]/75"
                   >
-                    Your Message
+                    {t("message")}
                   </label>
 
                   <textarea
                     id="question"
                     required
                     rows={5}
-                    placeholder="Tell us how we can help or what you'd like to discuss."
+                    placeholder={t("placeholder")}
                     value={form.question}
                     onChange={(e) =>
                       setForm({
@@ -246,7 +246,7 @@ export default function ContactSection() {
                 {status === "error" && (
                   <div className="rounded-xl border border-[#B80319]/30 bg-[#B80319]/10 px-4 py-3">
                     <p className="text-sm text-[#F5EFE6]/80">
-                      Something went wrong — please try again.
+                      {t("error")}
                     </p>
                   </div>
                 )}
@@ -258,8 +258,8 @@ export default function ContactSection() {
                     className="relative z-20 cursor-pointer touch-manipulation rounded-full bg-[#B80319] px-7 py-3.5 text-sm font-medium text-[#F5EFE6] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(184,3,25,0.18)] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {status === "submitting"
-                      ? "Sending..."
-                      : "Send Message →"}
+                      ? t("sending")
+                      : t("send")}
                   </button>
 
                   <button
@@ -267,7 +267,7 @@ export default function ContactSection() {
                     onClick={() => setOpen(false)}
                     className="relative z-20 cursor-pointer touch-manipulation rounded-full border border-white/10 px-6 py-3.5 text-sm text-[#B8B3AA]/60 transition-colors duration-300 hover:border-white/20 hover:text-[#F5EFE6]"
                   >
-                    Cancel
+                    {t("cancel")}
                   </button>
                 </div>
               </div>
@@ -279,7 +279,7 @@ export default function ContactSection() {
           <div className="mt-10 flex items-center justify-center gap-3">
             <span className="h-px w-10 bg-white/10" />
             <span className="text-[10px] uppercase tracking-[0.25em] text-[#F5EFE6]/30">
-              Abuja · Africa
+              {t("location")}
             </span>
             <span className="h-px w-10 bg-white/10" />
           </div>

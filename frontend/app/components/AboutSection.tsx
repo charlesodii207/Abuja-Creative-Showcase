@@ -1,9 +1,11 @@
 import Image from "next/image";
-import Link from "next/link";
-import { about } from "@/lib/content";
+import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import Reveal from "./Reveal";
 
 export default function AboutSection() {
+  const t = useTranslations("Home.about");
+  const body = [t("p1"), t("p2")];
   return (
     <section
       id="about"
@@ -22,7 +24,7 @@ export default function AboutSection() {
               </div>
 
               <span className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#F5EFE6]/45">
-                About AFRIQA
+                {t("eyebrow")}
               </span>
             </div>
 
@@ -43,7 +45,7 @@ export default function AboutSection() {
 
                     <Image
                       src="/images/about.webp"
-                      alt="Creative professionals connecting at AFRIQA Creative Showcase"
+                      alt={t("imageAlt")}
                       width={1536}
                       height={1024}
                       className="h-[360px] w-full object-cover sm:h-[460px]"
@@ -55,7 +57,7 @@ export default function AboutSection() {
                       <span className="h-2 w-2 rounded-full bg-[#E59200]" />
 
                       <span className="text-[10px] font-medium uppercase tracking-[0.28em] text-[#F5EFE6]/80">
-                        One ecosystem
+                        {t("oneEcosystem")}
                       </span>
                     </div>
 
@@ -67,12 +69,12 @@ export default function AboutSection() {
 
             <Reveal delay={80}>
               <h2 className="max-w-xl font-display text-4xl leading-[1.05] text-[#F5EFE6] sm:text-5xl lg:text-6xl">
-                {about.heading}
+                {t("heading")}
               </h2>
             </Reveal>
 
             <div className="mt-8 max-w-xl space-y-5 text-base leading-relaxed text-white/65 sm:text-lg">
-              {about.body.map((paragraph, index) => (
+              {body.map((paragraph, index) => (
                 <Reveal
                   key={paragraph.slice(0, 20)}
                   delay={160 + index * 100}
@@ -88,7 +90,7 @@ export default function AboutSection() {
                   href="/about"
                   className="group inline-flex items-center gap-3 text-sm font-medium text-[#00A5A8] transition-colors duration-300 hover:text-[#F5EFE6]"
                 >
-                  <span>See more about the event</span>
+                  <span>{t("seeMore")}</span>
 
                   <span className="transition-transform duration-300 group-hover:translate-x-1">
                     →
@@ -115,7 +117,7 @@ export default function AboutSection() {
 
                   <Image
                     src="/images/about.webp"
-                    alt="Creative professionals connecting at AFRIQA Creative Showcase"
+                    alt={t("imageAlt")}
                     width={1536}
                     height={1024}
                     className="h-[360px] w-full object-cover sm:h-[460px] lg:h-[560px]"
@@ -127,7 +129,7 @@ export default function AboutSection() {
                     <span className="h-2 w-2 rounded-full bg-[#E59200]" />
 
                     <span className="text-[10px] font-medium uppercase tracking-[0.28em] text-[#F5EFE6]/80">
-                      One ecosystem
+                      {t("oneEcosystem")}
                     </span>
                   </div>
 

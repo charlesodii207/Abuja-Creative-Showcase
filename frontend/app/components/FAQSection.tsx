@@ -1,10 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { faqs } from "@/lib/content";
+import { useTranslations } from "next-intl";
 import Reveal from "./Reveal";
 
 export default function FAQSection() {
+  const t = useTranslations("Home.faq");
+  const faqs = [1, 2, 3, 4].map((n) => ({
+    q: t(`q${n}.q`),
+    a: t(`q${n}.a`),
+  }));
+
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (
@@ -34,20 +40,20 @@ export default function FAQSection() {
                 </div>
 
                 <span className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#F5EFE6]/45">
-                  FAQ
+                  {t("eyebrow")}
                 </span>
               </div>
             </Reveal>
 
             <Reveal delay={80}>
               <h2 className="max-w-sm font-display text-4xl leading-[1.02] text-[#F5EFE6] sm:text-5xl">
-                Questions people ask.
+                {t("heading")}
               </h2>
             </Reveal>
 
             <Reveal delay={140}>
               <p className="mt-5 max-w-sm text-sm leading-relaxed text-[#B8B3AA]/65 sm:text-base">
-                Everything you need to know before joining the Showcase.
+                {t("intro")}
               </p>
             </Reveal>
           </div>

@@ -1,4 +1,5 @@
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { event, socials } from "@/lib/content";
 import {
   TikTokIcon,
@@ -17,6 +18,7 @@ const iconMap = {
 };
 
 export default function Footer() {
+  const t = useTranslations("Home.footer");
   return (
     <footer className="relative overflow-hidden bg-[#0D1128]">
       <div
@@ -43,12 +45,11 @@ export default function Footer() {
             </p>
 
             <p className="mt-3 max-w-md text-sm leading-relaxed text-[#B8B3AA]/65">
-              Creativity Without Borders — connecting Africa&apos;s
-              creative talent with people, markets, capital, and possibility.
+              {t("tagline")}
             </p>
 
             <p className="mt-5 text-sm text-[#B8B3AA]/50">
-              Organized by{" "}
+              {t("organizedBy")}{" "}
               <a
                 href="https://www.afrigos-academy.com/"
                 target="_blank"
@@ -62,7 +63,7 @@ export default function Footer() {
 
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#00A5A8]">
-              Explore
+              {t("explore")}
             </p>
 
             <nav className="mt-5 flex flex-col gap-3">
@@ -70,28 +71,28 @@ export default function Footer() {
                 href="/countdown"
                 className="w-fit text-sm text-[#B8B3AA]/65 transition-colors hover:text-[#F5EFE6]"
               >
-                Countdown to ACS 2026 →
+                {t("countdown")}
               </Link>
 
               <Link
                 href="/creative-finance"
                 className="w-fit text-sm text-[#B8B3AA]/65 transition-colors hover:text-[#F5EFE6]"
               >
-                Investment & pitching opportunities →
+                {t("invest")}
               </Link>
 
               <Link
                 href="/film"
                 className="w-fit text-sm text-[#B8B3AA]/65 transition-colors hover:text-[#F5EFE6]"
               >
-                Film industry & networking →
+                {t("film")}
               </Link>
 
               <Link
                 href="/about"
                 className="w-fit text-sm text-[#B8B3AA]/65 transition-colors hover:text-[#F5EFE6]"
               >
-                About the Showcase →
+                {t("about")}
               </Link>
             </nav>
           </div>
@@ -109,7 +110,7 @@ export default function Footer() {
                     href={social.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    aria-label={`Follow ACS on ${social.name}`}
+                    aria-label={t("followOn", { name: social.name })}
                     className="text-[#B8B3AA]/50 transition-all duration-300 hover:-translate-y-0.5 hover:text-[#00A5A8]"
                   >
                     <Icon className="h-5 w-5" />
@@ -120,12 +121,11 @@ export default function Footer() {
 
             <div className="flex flex-col gap-1 sm:items-end">
               <p className="text-[10px] uppercase tracking-[0.25em] text-[#F5EFE6]/30">
-                Abuja · Africa
+                {t("location")}
               </p>
 
               <p className="text-xs text-[#B8B3AA]/40">
-                &copy; {new Date().getFullYear()} {event.organizer}. All rights
-                reserved.
+                {t("rights", { year: new Date().getFullYear(), organizer: event.organizer })}
               </p>
             </div>
           </div>

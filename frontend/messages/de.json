@@ -16,5 +16,273 @@
     "description": "Die Afriqa Creative Showcase 2026 ist eine zweitägige Veranstaltung der Kreativbranche auf dem Old Parade Ground in Abuja, Nigeria – sie verbindet Film, Musik, Mode, Kunst, Technologie, Talente, Investoren und Chancen.",
     "ogDescription": "Zwei Tage voller Film, Musik, Mode, Kunst, Technologie, Networking, Pitching, Investitionen und kreativer Chancen – live auf dem Old Parade Ground in Abuja, Nigeria.",
     "twitterDescription": "Kreativität ohne Grenzen. Film × Musik × Mode × Tech. Old Parade Ground, Abuja, Nigeria."
+  },
+  "Home": {
+    "countdown": {
+      "days": "{count, plural, one {# Tag} other {# Tage}}",
+      "until": "bis zur ACS 2026",
+      "dates": "4.–5. Dez. · Abuja"
+    },
+    "hero": {
+      "organizedBy": "Veranstaltet von",
+      "tagline": "Kreativität ohne Grenzen",
+      "location": "Abuja, Nigeria",
+      "dates": "4.–5. Dezember 2026",
+      "slide1": "Zwei Tage. Ein Ökosystem.",
+      "slide2": "Film × Musik × Mode × Tech",
+      "slide3": "Kreativität. Vernetzung. Kapital.",
+      "slide4": "Wo afrikanische Kreativität auf Chancen trifft.",
+      "slide5": "Abuja. Afrika. Die Zukunft.",
+      "slide6": "Ideen. Talent. Chancen.",
+      "register": "Registrieren",
+      "seeProgramme": "Programm ansehen",
+      "ecosystem": "Das kreative Ökosystem Abujas vernetzen",
+      "viewSlide": "Folie {n} anzeigen",
+      "film": "Film",
+      "music": "Musik",
+      "fashion": "Mode",
+      "art": "Kunst",
+      "technology": "Technologie",
+      "media": "Medien",
+      "culture": "Kultur"
+    },
+    "trailer": {
+      "eyebrow": "Event-Trailer",
+      "heading": "Trailer ansehen",
+      "text": "Werfen Sie einen ersten Blick auf zwei Tage, an denen Film, Musik, Mode, Kunst und Technologie in Abuja zusammenkommen.",
+      "playAria": "Trailer der AFRIQA Creative Showcase abspielen",
+      "thumbAlt": "Vorschaubild des Trailers der AFRIQA Creative Showcase 2026"
+    },
+    "about": {
+      "eyebrow": "Über AFRIQA",
+      "oneEcosystem": "Ein Ökosystem",
+      "seeMore": "Mehr über die Veranstaltung",
+      "imageAlt": "Kreativprofis vernetzen sich bei der AFRIQA Creative Showcase",
+      "heading": "Ein Treffpunkt für Talente und Chancen",
+      "p1": "Abujas Kreativszene umfasst Film, Musik, Mode, Fotografie, Verlagswesen, Theater, bildende Kunst, Gaming und Technologie — doch das Ökosystem ist zersplittert. Talent gibt es hier. Der Zugang zu Kapital, Märkten und Entscheidungsträgern fehlt oft.",
+      "p2": "Die Afriqa Creative Showcase bringt beides an zwei Tagen zusammen: kreative Märkte, Filmvorführungen, Live-Auftritte, Branchengespräche, Masterclasses, ein Finanzforum und einen Pitch-Raum — alles an einem Ort."
+    },
+    "convener": {
+      "eyebrow": "Ein Wort des Veranstalters",
+      "imageAlt": "Paulgold Olalekan Joseph, Veranstalter der AFRIQA Creative Showcase",
+      "role": "Veranstalter · AFRIQA Creative Showcase",
+      "quote": "Afrika hat es nie an Kreativität gefehlt. Was wir brauchen, sind stärkere Räume, in denen diese Kreativität zusammenfinden, zusammenarbeiten und zur Chance werden kann.",
+      "p1": "Die AFRIQA Creative Showcase entstand aus einer einfachen Überzeugung: Unsere Kreativbranchen werden stärker, wenn Talente, Ideen, Kapital und Chancen am selben Ort aufeinandertreffen.",
+      "p2": "Diese Showcase ist mehr als ein Treffen. Sie ist eine Einladung, neue Stimmen zu entdecken, bedeutungsvolle Kontakte zu knüpfen, Türen zu öffnen und die Partnerschaften zu schaffen, die afrikanische Kreativität voranbringen.",
+      "p3": "Abuja bietet uns den Treffpunkt. Die Kreativen bringen die Energie. Gemeinsam schaffen wir das Ökosystem."
+    },
+    "ecosystem": {
+      "eyebrow": "Kreatives Ökosystem",
+      "heading": "Wo kreative Welten sich treffen.",
+      "intro": "AFRIQA führt verschiedene Teile der Kreativwirtschaft in einem vernetzten Raum zusammen — mit Platz für Zusammenarbeit, Entdeckungen, Investitionen und neue Chancen.",
+      "closing": "Verschiedene Disziplinen. Eine vernetzte Kreativwirtschaft.",
+      "location": "Abuja · Afrika",
+      "items": {
+        "film": {
+          "name": "Film",
+          "description": "Geschichten, Produktion, Filmkultur und die Menschen, die das afrikanische Kino prägen."
+        },
+        "music": {
+          "name": "Musik",
+          "description": "Künstler, Produzenten, Manager und neue Klänge, die Grenzen überschreiten."
+        },
+        "fashion": {
+          "name": "Mode",
+          "description": "Designer, Marken, Stylisten und das kreative Geschäft hinter afrikanischer Mode."
+        },
+        "art": {
+          "name": "Kunst",
+          "description": "Bildende Künstler, Galerien, Sammler und neue Sichtweisen auf Afrika."
+        },
+        "media": {
+          "name": "Medien",
+          "description": "Verlage, Journalisten, Plattformen und Geschichtenerzähler, die kreative Stimmen verstärken."
+        },
+        "technology": {
+          "name": "Technologie",
+          "description": "Digitale Kreative, Plattformen, Innovation und Technologie, die kreatives Wachstum ermöglicht."
+        },
+        "dance": {
+          "name": "Tanz & Performance",
+          "description": "Bewegung, Live-Performance, Bühnenkunst und die Künstler, die Geschichten zum Leben erwecken."
+        },
+        "culture": {
+          "name": "Kultur",
+          "description": "Ideen, Identität, Erbe und die kulturellen Kräfte, die das Ökosystem verbinden."
+        }
+      }
+    },
+    "participation": {
+      "heading": "Wählen Sie, wie Sie an der ACS teilnehmen",
+      "sub": "Fünf Möglichkeiten, Teil der Showcase zu sein — wählen Sie die passende.",
+      "continue": "Weiter",
+      "lookup": "Schon registriert? Status prüfen",
+      "attendee": {
+        "name": "Besucher",
+        "blurb": "Starten Sie mit einem kostenlosen General-Pass oder wählen Sie VIP, den Masterclass-Pass oder VVIP. Jeder Pass gilt für beide Tage."
+      },
+      "exhibitor": {
+        "name": "Aussteller",
+        "blurb": "Präsentieren Sie Ihr kreatives Unternehmen, verkaufen Sie Produkte und treffen Sie auf dem Creative Market Käufer und Marken. Wählen Sie einen normalen oder doppelten Stand oder nehmen Sie an der Fashion Runway teil."
+      },
+      "press": {
+        "name": "Presse",
+        "blurb": "Berichten Sie über die Showcase — Interviews, Einblicke hinter die Kulissen und Pressebriefings.",
+        "note": "Akkreditierung erforderlich — nicht garantiert."
+      },
+      "pitcher": {
+        "name": "Pitch-Teilnehmer",
+        "blurb": "Pitchen Sie Ihr Projekt direkt vor Investoren, Auftraggebern, Marken und Vertrieben im Deal Room."
+      },
+      "investor": {
+        "name": "Investor",
+        "blurb": "Treffen Sie ausgewählte Pitch-Teilnehmer und entdecken Sie investierbare Kreativprojekte im Deal Room."
+      }
+    },
+    "programme": {
+      "eyebrow": "Programm",
+      "heading": "Zwei Tage. Ein kreatives Ökosystem.",
+      "intro": "Entdecken, vernetzen, gestalten, pitchen, Geschäfte abschließen und feiern — zwei Tage Programm bei der ACS.",
+      "closing": "Von Entdeckung und Vernetzung bis zu Pitches, Abschlüssen und Feier.",
+      "footer": "4.–5. Dezember · Abuja",
+      "day1": {
+        "label": "TAG EINS",
+        "title": "Entdecken & Vernetzen",
+        "time": "09:00 - 19:00 Uhr",
+        "s1": "Eröffnungszeremonie & Markteröffnung",
+        "s2": "Gespräche der Kreativbranche",
+        "s3": "Forum für Kreativfinanzierung",
+        "s4": "Film- & Kreativ-Showcase",
+        "s5": "Ganztägige Filmvorführungen",
+        "s6": "Musikauftritte",
+        "s7": "Abendempfang & Auftritte"
+      },
+      "day2": {
+        "label": "TAG ZWEI",
+        "title": "Gestalten, Pitchen & Abschließen",
+        "time": "08:00 - 19:00 Uhr",
+        "s1": "Masterclasses & Workshops",
+        "s2": "Pitch & Deal Room",
+        "s3": "Wissensprogramm + Markt",
+        "s4": "Mode- & Kunst-Showcase",
+        "s5": "Forum für Kreativfinanzierung",
+        "s6": "Markt",
+        "s7": "ACS Live Concert & Preisverleihung"
+      }
+    },
+    "hotel": {
+      "eyebrow": "Unterkunft",
+      "heading": "Sie brauchen eine Unterkunft in Abuja?",
+      "text": "Nennen Sie uns Ihre Reisedaten und Ihr Budget, und unser Team vermittelt Ihnen ein passendes Hotel.",
+      "button": "Hotel buchen",
+      "how": "So funktioniert's",
+      "step1": {
+        "title": "Angaben mitteilen",
+        "text": "Ihre Reisedaten, die Zahl der Gäste und Ihre Kontaktdaten."
+      },
+      "step2": {
+        "title": "Budget festlegen",
+        "text": "Wählen Sie eine Preisspanne und die gewünschte Gegend."
+      },
+      "step3": {
+        "title": "Optionen erhalten",
+        "text": "Wir bestätigen die Verfügbarkeit und antworten per E-Mail."
+      }
+    },
+    "sponsors": {
+      "eyebrow": "Partnerschaften",
+      "heading": "Partner & Sponsoren",
+      "text": "Die ACS ist als Partnerschaftsplattform für Regierung, Privatwirtschaft und Entwicklungsorganisationen angelegt. Von Namensrechten bis zu Branchen-Sponsorings bieten wir Pakete für Organisationen jeder Größe — mit Vorteilen bei Markensichtbarkeit, Aktivierungen und Thought Leadership während der zwei Showcase-Tage.",
+      "buildWith": "Gestalten Sie mit der ACS",
+      "putOrg": "Bringen Sie Ihre Organisation in das wachsende kreative Ökosystem Afrikas.",
+      "viewPackages": "Partnerschaftspakete ansehen",
+      "available": "Partnerschaftsmöglichkeiten gibt es in mehreren Branchen.",
+      "sectors": "Regierung · Privatwirtschaft · Entwicklung"
+    },
+    "inside": {
+      "eyebrow": "Einblick in AFRIQA",
+      "heading": "Wo Kreativität lebendig wird.",
+      "text": "Ein erster Blick auf die Energie, die Menschen, Ideen und Erlebnisse, die bei der AFRIQA Creative Showcase zusammenkommen.",
+      "closing": "Film. Musik. Mode. Kunst. Technologie. Kultur. Ein vernetztes Ökosystem.",
+      "footer": "Abuja · 4.–5. Dezember 2026",
+      "i1": {
+        "alt": "Publikum erlebt die AFRIQA Creative Showcase",
+        "label": "Die Showcase"
+      },
+      "i2": {
+        "alt": "Live-Musikauftritt bei einer Creative Showcase",
+        "label": "Live-Auftritt"
+      },
+      "i3": {
+        "alt": "Creative Market mit Kunst- und Modeausstellern",
+        "label": "Creative Market"
+      },
+      "i4": {
+        "alt": "Kreative vernetzen sich bei einer Branchenveranstaltung",
+        "label": "Vernetzung"
+      },
+      "i5": {
+        "alt": "Skyline von Abuja, dem Zuhause der AFRIQA Creative Showcase",
+        "label": "Abuja · Afrika"
+      }
+    },
+    "faq": {
+      "eyebrow": "FAQ",
+      "heading": "Fragen, die Menschen stellen.",
+      "intro": "Alles, was Sie vor der Teilnahme an der Showcase wissen müssen.",
+      "q1": {
+        "q": "Für wen ist die Afriqa Creative Showcase gedacht?",
+        "a": "Für Kreative aus Film, Musik, Mode, Kunst, Verlagswesen, Gaming und digitalen Medien; für Branchenakteure wie Produktionsfirmen, Labels und Vertriebe; für Investoren und Förderinstitutionen; und für die Allgemeinheit."
+      },
+      "q2": {
+        "q": "Wie kann ich teilnehmen?",
+        "a": "Die Registrierung ist geöffnet. Plätze als Besucher, Aussteller und Pitch-Teilnehmer sind bestätigt, sobald Sie bezahlt haben. Plätze für Presse und Investoren durchlaufen ein Bewerbungs- und Prüfverfahren."
+      },
+      "q3": {
+        "q": "Kostet der Eintritt etwas?",
+        "a": "Der General-Eintritt ist kostenlos und gilt für beide Tage. VIP kostet ₦50.000 mit bevorzugter Platzwahl, der Masterclass-Pass kostet ₦100.000 und umfasst die Masterclasses an beiden Tagen, und VVIP kostet ₦150.000 und beinhaltet alles: reservierte Plätze ganz vorne, einen reservierten Tisch bei Konzert und Dinner, ein Meet & Greet, die Masterclasses sowie Zugang zu Pitch und Deal Room."
+      },
+      "q4": {
+        "q": "Kann meine Organisation ausstellen oder sponsern?",
+        "a": "Ja. Aussteller können einen normalen Stand (₦200.000), einen Doppelstand (₦300.000, mit Platz zur Präsentation Ihrer Kunst) oder die Fashion Runway (₦300.000) wählen. Sponsoring-Pakete sind ebenfalls verfügbar — schauen Sie hier wieder vorbei oder nutzen Sie die Kontaktdaten in der Fußzeile."
+      }
+    },
+    "contact": {
+      "eyebrow": "Kontakt aufnehmen",
+      "heading": "Kontakt",
+      "text": "Ob Frage, Partnerschaftsidee, Medienanfrage oder einfach der Wunsch, in Kontakt zu treten — wir freuen uns auf Ihre Nachricht.",
+      "start": "Gespräch beginnen →",
+      "successTitle": "Nachricht erhalten",
+      "successText": "Danke für Ihre Nachricht. Unser Team meldet sich in Kürze — achten Sie auf Ihr E-Mail-Postfach.",
+      "fullName": "Vollständiger Name",
+      "phone": "Telefon",
+      "email": "E-Mail",
+      "message": "Ihre Nachricht",
+      "placeholder": "Sagen Sie uns, wie wir helfen können oder worüber Sie sprechen möchten.",
+      "error": "Etwas ist schiefgelaufen — bitte versuchen Sie es erneut.",
+      "sending": "Wird gesendet...",
+      "send": "Nachricht senden →",
+      "cancel": "Abbrechen",
+      "location": "Abuja · Afrika"
+    },
+    "follow": {
+      "eyebrow": "Bleiben Sie verbunden",
+      "heading": "Begleiten Sie die Reise.",
+      "text": "Bleiben Sie nah an den Menschen, Ideen, Ankündigungen und Erlebnissen, die die ACS prägen.",
+      "followOn": "ACS auf {name} folgen",
+      "location": "Abuja · Afrika"
+    },
+    "footer": {
+      "tagline": "Kreativität ohne Grenzen — wir verbinden Afrikas kreative Talente mit Menschen, Märkten, Kapital und Möglichkeiten.",
+      "organizedBy": "Veranstaltet von",
+      "explore": "Entdecken",
+      "countdown": "Countdown zur ACS 2026 →",
+      "invest": "Investitions- und Pitch-Möglichkeiten →",
+      "film": "Filmbranche & Networking →",
+      "about": "Über die Showcase →",
+      "rights": "© {year} {organizer}. Alle Rechte vorbehalten.",
+      "location": "Abuja · Afrika",
+      "followOn": "ACS auf {name} folgen"
+    }
   }
 }

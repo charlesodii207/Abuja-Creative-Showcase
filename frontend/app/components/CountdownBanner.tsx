@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 
 const EVENT_DATE = new Date("2026-12-04T09:00:00+01:00").getTime();
 
@@ -11,6 +12,7 @@ function getDaysLeft(): number {
 }
 
 export default function CountdownBanner() {
+  const t = useTranslations("Home.countdown");
   const [daysLeft, setDaysLeft] = useState<number | null>(null);
 
   useEffect(() => {
@@ -39,19 +41,19 @@ export default function CountdownBanner() {
 
       <span className="relative inline-flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs sm:text-sm">
         <span className="font-semibold uppercase tracking-[0.18em] text-[#E59200]">
-          {daysLeft} days
+          {t("days", { count: daysLeft })}
         </span>
 
         <span className="hidden h-1 w-1 rounded-full bg-[#B80319] sm:block" />
 
         <span className="font-medium tracking-wide text-[#F5EFE6]/80">
-          Until ACS 2026
+          {t("until")}
         </span>
 
         <span className="hidden h-px w-5 bg-white/15 sm:block" />
 
         <span className="text-[#B8B3AA]/65">
-          Dec 4–5 · Abuja
+          {t("dates")}
         </span>
 
         <span className="ml-1 text-[#00A5A8] transition-transform duration-300 group-hover:translate-x-1">

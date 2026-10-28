@@ -1,7 +1,9 @@
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 import Reveal from "./Reveal";
 
 export default function ConvenersNote() {
+  const t = useTranslations("Home.convener");
   return (
     <section
       id="conveners-note"
@@ -29,7 +31,7 @@ export default function ConvenersNote() {
                 </div>
 
                 <span className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#C5BFAF]/55">
-                  A Note From The Convener
+                  {t("eyebrow")}
                 </span>
               </div>
             </Reveal>
@@ -53,7 +55,7 @@ export default function ConvenersNote() {
                   <div className="relative overflow-hidden rounded-[2.5rem] rounded-bl-[5rem] rounded-tr-[1rem] border border-white/10 bg-[#11152F] shadow-[0_25px_80px_rgba(0,0,0,0.25)]">
                     <Image
                       src="/images/convener.webp"
-                      alt="Paulgold Olalekan Joseph, Convener of AFRIQA Creative Showcase"
+                      alt={t("imageAlt")}
                       width={1000}
                       height={1200}
                       className="h-[420px] w-full object-cover object-top sm:h-[500px]"
@@ -73,7 +75,7 @@ export default function ConvenersNote() {
                     </p>
 
                     <p className="mt-1 text-[9px] uppercase tracking-[0.25em] text-[#C5BFAF]/55">
-                      Convener · AFRIQA Creative Showcase
+                      {t("role")}
                     </p>
                   </div>
                 </div>
@@ -88,30 +90,22 @@ export default function ConvenersNote() {
 
             <Reveal delay={120}>
               <blockquote className="max-w-2xl font-display text-3xl leading-[1.15] text-[#F5EFE6] sm:text-4xl lg:text-5xl">
-                Africa has never lacked creativity. What we need are stronger
-                spaces where that creativity can connect, collaborate, and
-                become opportunity.
+                {t("quote")}
               </blockquote>
             </Reveal>
 
             <Reveal delay={220}>
               <div className="mt-8 max-w-2xl space-y-5 text-base leading-relaxed text-[#B8B3AA]/75 sm:text-[17px]">
                 <p>
-                  AFRIQA Creative Showcase was created from a simple belief:
-                  our creative industries become stronger when talent, ideas,
-                  capital, and opportunity meet in the same space.
+                  {t("p1")}
                 </p>
 
                 <p>
-                  This showcase is more than a gathering. It is an invitation
-                  to discover new voices, build meaningful connections, open
-                  doors, and create the partnerships that move African
-                  creativity forward.
+                  {t("p2")}
                 </p>
 
                 <p>
-                  Abuja gives us the meeting point. The creatives bring the
-                  energy. Together, we create the ecosystem.
+                  {t("p3")}
                 </p>
               </div>
             </Reveal>
@@ -126,7 +120,7 @@ export default function ConvenersNote() {
                   </p>
 
                   <p className="mt-1 text-xs uppercase tracking-[0.2em] text-[#C5BFAF]/50">
-                    Convener · AFRIQA Creative Showcase
+                    {t("role")}
                   </p>
                 </div>
 
@@ -154,7 +148,7 @@ export default function ConvenersNote() {
                 <div className="relative overflow-hidden rounded-[2.5rem] rounded-bl-[5rem] rounded-tr-[1rem] border border-white/10 bg-[#11152F] shadow-[0_25px_80px_rgba(0,0,0,0.25)]">
                   <Image
                     src="/images/convener.webp"
-                    alt="Paulgold Olalekan Joseph, Convener of AFRIQA Creative Showcase"
+                    alt={t("imageAlt")}
                     width={1000}
                     height={1200}
                     className="h-[420px] w-full object-cover object-top sm:h-[500px]"
@@ -174,7 +168,7 @@ export default function ConvenersNote() {
                   </p>
 
                   <p className="mt-1 text-[9px] uppercase tracking-[0.25em] text-[#C5BFAF]/55">
-                    Convener · AFRIQA Creative Showcase
+                    {t("role")}
                   </p>
                 </div>
               </div>

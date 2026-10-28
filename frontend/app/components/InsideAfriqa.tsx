@@ -1,40 +1,37 @@
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 import Reveal from "./Reveal";
 
 const images = [
   {
     src: "/images/inside-afriqa-01.webp",
-    alt: "Audience experiencing the AFRIQA creative showcase",
-    label: "The Showcase",
+    id: 1,
     className: "md:col-span-2 md:row-span-2",
   },
   {
     src: "/images/inside-afriqa-02.webp",
-    alt: "Live music performance at a creative showcase",
-    label: "Live Performance",
+    id: 2,
     className: "",
   },
   {
     src: "/images/inside-afriqa-03.webp",
-    alt: "Creative market with art and fashion exhibitors",
-    label: "Creative Market",
+    id: 3,
     className: "",
   },
   {
     src: "/images/inside-afriqa-04.webp",
-    alt: "Creatives networking and connecting at an industry event",
-    label: "Connection",
+    id: 4,
     className: "",
   },
   {
     src: "/images/inside-afriqa-05.webp",
-    alt: "Abuja skyline representing the home of AFRIQA Creative Showcase",
-    label: "Abuja · Africa",
+    id: 5,
     className: "",
   },
 ];
 
 export default function InsideAfriqa() {
+  const t = useTranslations("Home.inside");
   return (
     <section
       id="inside-afriqa"
@@ -62,22 +59,21 @@ export default function InsideAfriqa() {
                 </div>
 
                 <span className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#F5EFE6]/45">
-                  Inside AFRIQA
+                  {t("eyebrow")}
                 </span>
               </div>
             </Reveal>
 
             <Reveal delay={80}>
               <h2 className="max-w-xl font-display text-4xl leading-[1.02] text-[#F5EFE6] sm:text-5xl lg:text-6xl">
-                Where creativity comes alive.
+                {t("heading")}
               </h2>
             </Reveal>
           </div>
 
           <Reveal delay={140}>
             <p className="max-w-2xl text-base leading-relaxed text-[#B8B3AA]/75 sm:text-lg">
-              A first look at the energy, people, ideas, and experiences that
-              will come together at AFRIQA Creative Showcase.
+              {t("text")}
             </p>
           </Reveal>
         </div>
@@ -93,7 +89,7 @@ export default function InsideAfriqa() {
               <div className="group relative h-full overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#151A3A]">
                 <Image
                   src={image.src}
-                  alt={image.alt}
+                  alt={t(`i${image.id}.alt`)}
                   fill
                   sizes={
                     index === 0
@@ -119,7 +115,7 @@ export default function InsideAfriqa() {
                     />
 
                     <span className="text-[10px] font-semibold uppercase tracking-[0.25em] text-[#F5EFE6]/75">
-                      {image.label}
+                      {t(`i${image.id}.label`)}
                     </span>
                   </div>
                 </div>
@@ -133,15 +129,14 @@ export default function InsideAfriqa() {
         <Reveal delay={620}>
           <div className="mt-12 flex flex-col gap-5 border-t border-white/10 pt-8 sm:flex-row sm:items-center sm:justify-between">
             <p className="max-w-2xl font-display text-xl leading-snug text-[#F5EFE6]/80 sm:text-2xl">
-              Film. Music. Fashion. Art. Technology. Culture. One connected
-              ecosystem.
+              {t("closing")}
             </p>
 
             <div className="flex items-center gap-3">
               <span className="h-2 w-2 rounded-full bg-[#00A5A8]" />
 
               <span className="text-[10px] uppercase tracking-[0.28em] text-[#F5EFE6]/35">
-                Abuja · 04–05 December 2026
+                {t("footer")}
               </span>
             </div>
           </div>
