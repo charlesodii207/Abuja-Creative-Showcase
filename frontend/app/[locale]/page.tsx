@@ -9,6 +9,7 @@ import ProgrammeSection from "@/app/components/ProgrammeSection";
 import HotelBookingSection from "@/app/components/HotelBookingSection";
 import SponsorsSection from "@/app/components/SponsorsSection";
 import InsideAfriqa from "@/app/components/InsideAfriqa";
+import TeamSection from "@/app/components/TeamSection";
 import FAQSection from "@/app/components/FAQSection";
 import ContactSection from "@/app/components/ContactSection";
 import FollowSection from "@/app/components/FollowSection";
@@ -61,6 +62,7 @@ export default function Home() {
       <HotelBookingSection />
       <SponsorsSection />
       <InsideAfriqa />
+      <TeamSection />
       <FAQSection />
       <ContactSection />
       <FollowSection />
