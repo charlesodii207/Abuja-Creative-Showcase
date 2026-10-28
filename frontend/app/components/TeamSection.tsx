@@ -79,7 +79,8 @@ function TeamCard({ member }: { member: TeamMember }) {
   const [failed, setFailed] = useState(false);
 
   return (
-    <div className="group relative mx-auto w-full max-w-[18rem]">
+    <div className="group mx-auto w-full max-w-[18rem]">
+      <div className="relative">
       <div
         aria-hidden="true"
         className="absolute -bottom-3 -left-3 h-full w-full rounded-[2rem] rounded-bl-[3.5rem] border border-[#E59200]/25 transition-transform duration-500 group-hover:-translate-x-1 group-hover:translate-y-1"
@@ -118,8 +119,9 @@ function TeamCard({ member }: { member: TeamMember }) {
 
         <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-[#11152F]/70 to-transparent" />
       </div>
+      </div>
 
-      <div className="relative mt-6 text-center">
+      <div className="relative mt-8 text-center">
         <div className="mx-auto h-px w-10 bg-[#E59200]/60" />
 
         <h3 className="mt-3 text-[13px] font-semibold uppercase tracking-[0.16em] text-[#F5EFE6]">
@@ -167,7 +169,7 @@ export default function TeamSection() {
               </div>
 
               <span className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#C5BFAF]/55">
-                The People Behind The Showcase
+                The Core Team
               </span>
             </div>
           </Reveal>
@@ -180,8 +182,9 @@ export default function TeamSection() {
 
           <Reveal delay={160}>
             <p className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-[#B8B3AA]/75 sm:text-[17px]">
-              The people working behind the scenes to bring AFRIQA Creative
-              Showcase to life.
+              These are the leads coordinating AFRIQA Creative Showcase, but
+              they are only part of the story. Many more people are
+              contributing behind the scenes to make it happen.
             </p>
           </Reveal>
         </div>
@@ -193,6 +196,24 @@ export default function TeamSection() {
             </Reveal>
           ))}
         </div>
+
+        <Reveal delay={120}>
+          <div className="mx-auto mt-20 max-w-2xl text-center">
+            <div className="mx-auto mb-6 flex justify-center">
+              <div className="tricolor-rule">
+                <span />
+                <span />
+                <span />
+              </div>
+            </div>
+
+            <p className="text-base leading-relaxed text-[#B8B3AA]/75 sm:text-[17px]">
+              Behind every name here is a wider circle of people, and everyone
+              else who gives their time, skills and energy to this showcase.
+              Every contribution counts, and we are grateful for each one.
+            </p>
+          </div>
+        </Reveal>
       </div>
     </section>
   );
