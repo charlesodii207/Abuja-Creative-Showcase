@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import LegalLayout from "../components/LegalLayout";
+import LegalLayout from "@/app/components/LegalLayout";
 import { legal, registrationNote, type LegalSection } from "@/lib/legal";
 
 export const metadata: Metadata = {

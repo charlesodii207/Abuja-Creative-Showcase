@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import Reveal from "../components/Reveal";
+import Reveal from "@/app/components/Reveal";
 import BookingForm from "./BookingForm";
 
 export const metadata: Metadata = {

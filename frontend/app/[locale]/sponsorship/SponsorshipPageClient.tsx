@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import AlertDialog from "../components/AlertDialog";
+import AlertDialog from "@/app/components/AlertDialog";
 
 type Tier = {
   name: string;

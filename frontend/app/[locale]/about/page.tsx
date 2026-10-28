@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { aboutExtended } from "@/lib/content";
-import Reveal from "../components/Reveal";
+import Reveal from "@/app/components/Reveal";
 
 export const metadata: Metadata = {
   title: "About the Event",

@@ -1,0 +1,20 @@
+{
+  "Nav": {
+    "home": "首页",
+    "about": "关于",
+    "programme": "日程",
+    "countdown": "倒计时",
+    "invest": "投资与路演",
+    "sponsors": "赞助商",
+    "contact": "联系我们",
+    "register": "注册",
+    "language": "语言"
+  },
+  "Meta": {
+    "siteName": "Afriqa Creative Showcase",
+    "title": "Afriqa Creative Showcase 2026 | 阿布贾创意活动",
+    "description": "Afriqa Creative Showcase 2026 是一场为期两天的创意产业盛会，在尼日利亚阿布贾的 Old Parade Ground 举行，汇聚电影、音乐、时尚、艺术、科技、人才、投资人与各类机遇。",
+    "ogDescription": "两天的电影、音乐、时尚、艺术、科技、人脉交流、项目路演、投资与创意机遇——现场汇聚于尼日利亚阿布贾的 Old Parade Ground。",
+    "twitterDescription": "无界创意。电影 × 音乐 × 时尚 × 科技。尼日利亚阿布贾 Old Parade Ground。"
+  }
+}

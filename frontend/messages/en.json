@@ -1,0 +1,20 @@
+{
+  "Nav": {
+    "home": "Home",
+    "about": "About",
+    "programme": "Programme",
+    "countdown": "Countdown",
+    "invest": "Invest & Pitch",
+    "sponsors": "Sponsors",
+    "contact": "Get in Touch",
+    "register": "Register",
+    "language": "Language"
+  },
+  "Meta": {
+    "siteName": "Afriqa Creative Showcase",
+    "title": "Afriqa Creative Showcase 2026 | Creative Events in Abuja",
+    "description": "Afriqa Creative Showcase 2026 is a two-day creative industry event at the Old Parade Ground, Abuja, Nigeria — connecting film, music, fashion, art, technology, talent, investors, and opportunities.",
+    "ogDescription": "Two days of film, music, fashion, art, technology, networking, pitching, investment, and creative opportunities — live at the Old Parade Ground, Abuja, Nigeria.",
+    "twitterDescription": "Creativity Without Borders. Film × Music × Fashion × Tech. Old Parade Ground, Abuja, Nigeria."
+  }
+}
