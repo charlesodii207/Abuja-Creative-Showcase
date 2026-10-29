@@ -3,7 +3,7 @@ import os
 import re
 from datetime import datetime, timezone
 from html import escape
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
 from pydantic import EmailStr, TypeAdapter, ValidationError
@@ -11,6 +11,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session, selectinload
 
 from app import models, schemas
+from app import storage
 from app.audit import log_action
 from app.database import get_db
 from app.dependencies import require_mailbox, require_permission, require_role
@@ -37,6 +38,9 @@ router = APIRouter(
 MESSAGES_PERMISSION = "messages"
 
 DEFAULT_MAILBOX = "info"   # website-form messages
+
+# How long a download link from /attachment/... stays valid.
+ATTACHMENT_LINK_SECONDS = 60
 
 
 # ---------------------------------------------------------------------------
@@ -102,20 +106,17 @@ def _safe_filename(name: str) -> str:
     return f"{stem}{ext}"
 
 
-def _prepare_attachments(
-    files: list[UploadFile] | None,
-) -> tuple[list[dict], list[dict]]:
+def _prepare_attachments(files: list[UploadFile] | None) -> list[dict]:
     """
-    Validate uploaded files.
+    Validate uploaded files and read them into memory.
 
-    Returns (resend_attachments, metadata):
-      - resend_attachments: [{"filename", "content" (base64)}] for Resend
-      - metadata: [{"filename", "size", "content_type"}] saved on the message
+    Returns one dict per file:
+      {"id", "filename", "size", "content_type", "ext", "data"}
     """
     uploads = [f for f in (files or []) if f is not None and f.filename]
 
     if not uploads:
-        return [], []
+        return []
 
     if len(uploads) > MAX_ATTACHMENTS:
         raise HTTPException(
@@ -123,8 +124,7 @@ def _prepare_attachments(
             detail=f"You can attach up to {MAX_ATTACHMENTS} files per email.",
         )
 
-    resend_attachments: list[dict] = []
-    metadata: list[dict] = []
+    prepared: list[dict] = []
     total = 0
 
     for upload in uploads:
@@ -169,17 +169,67 @@ def _prepare_attachments(
                 ),
             )
 
-        resend_attachments.append({
-            "filename": filename,
-            "content": base64.b64encode(data).decode("ascii"),
-        })
-        metadata.append({
+        prepared.append({
+            "id": uuid4().hex,
             "filename": filename,
             "size": len(data),
             "content_type": ALLOWED_ATTACHMENT_TYPES[ext],
+            "ext": ext,
+            "data": data,
         })
 
-    return resend_attachments, metadata
+    return prepared
+
+
+def _store_attachments(
+    prepared: list[dict],
+    mailbox: str,
+) -> tuple[list[dict], list[str]]:
+    """
+    Save every prepared file in the private storage bucket.
+
+    Returns (metadata, stored_keys):
+      - metadata: what is saved on the message row (id, filename, size,
+        content_type, key). The key is never sent to the browser.
+      - stored_keys: so the files can be removed if the email then fails.
+
+    If any upload fails, files already saved are removed and the request stops
+    BEFORE the email is sent, so nothing goes out without a saved copy.
+    """
+    metadata: list[dict] = []
+    stored_keys: list[str] = []
+
+    try:
+        for item in prepared:
+            key = f"{mailbox}/{uuid4().hex}{item['ext']}"
+            storage.upload_file(key, item["data"], item["content_type"])
+            stored_keys.append(key)
+            metadata.append({
+                "id": item["id"],
+                "filename": item["filename"],
+                "size": item["size"],
+                "content_type": item["content_type"],
+                "key": key,
+            })
+    except storage.StorageError:
+        storage.delete_files(stored_keys)
+        raise HTTPException(
+            status_code=500,
+            detail="We couldn't save the attachments, so the email was not sent. Please try again.",
+        )
+
+    return metadata, stored_keys
+
+
+def _resend_payload(prepared: list[dict]) -> list[dict]:
+    """The shape Resend expects: filename plus base64 content."""
+    return [
+        {
+            "filename": item["filename"],
+            "content": base64.b64encode(item["data"]).decode("ascii"),
+        }
+        for item in prepared
+    ]
 
 
 def _clean_emails(values: list[str]) -> list[str]:
@@ -234,6 +284,28 @@ def _get_thread(
     return thread
 
 
+def _serialize_attachments(raw: list[dict] | None) -> list[schemas.AttachmentInfo]:
+    """
+    Public view of a message's attachments. The storage key stays on the
+    server. `available` is False for old messages sent before files were
+    saved: only their names were kept, so there is nothing to open.
+    """
+    result: list[schemas.AttachmentInfo] = []
+
+    for a in raw or []:
+        result.append(
+            schemas.AttachmentInfo(
+                id=a.get("id"),
+                filename=a.get("filename", "attachment"),
+                size=a.get("size", 0),
+                content_type=a.get("content_type"),
+                available=bool(a.get("id") and a.get("key")),
+            )
+        )
+
+    return result
+
+
 def _serialize_message(message: models.ContactMessage) -> schemas.ContactMessageSummary:
     return schemas.ContactMessageSummary(
         id=str(message.id),
@@ -250,9 +322,7 @@ def _serialize_message(message: models.ContactMessage) -> schemas.ContactMessage
         to_addresses=message.to_addresses,
         cc_addresses=message.cc_addresses,
         has_html=bool(message.body_html),
-        attachments=[
-            schemas.AttachmentInfo(**a) for a in (message.attachments or [])
-        ],
+        attachments=_serialize_attachments(message.attachments),
     )
 
 
@@ -460,6 +530,67 @@ def get_message_html(
 
 
 # ---------------------------------------------------------------------------
+# Open / download an attachment
+# ---------------------------------------------------------------------------
+
+@router.get("/attachment/{message_id}/{attachment_id}")
+def get_attachment_link(
+    message_id: str,
+    attachment_id: str,
+    download: bool = Query(default=False),
+    db: Session = Depends(get_db),
+    current_admin: models.Admin = Depends(require_permission(MESSAGES_PERMISSION)),
+):
+    """
+    Returns a short-lived link to one attachment. The admin needs READ access
+    to the mailbox the message belongs to. The bucket is private, so the link
+    stops working after about a minute; ask for a new one each time.
+
+    download=true makes the browser save the file instead of opening it.
+    """
+    try:
+        msg_uuid = UUID(message_id)
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Attachment not found.")
+
+    message = db.get(models.ContactMessage, msg_uuid)
+    if not message:
+        raise HTTPException(status_code=404, detail="Attachment not found.")
+
+    require_mailbox(current_admin, message.mailbox or DEFAULT_MAILBOX, "read")
+
+    attachment = next(
+        (a for a in (message.attachments or []) if a.get("id") == attachment_id),
+        None,
+    )
+
+    if not attachment or not attachment.get("key"):
+        raise HTTPException(
+            status_code=404,
+            detail="This file isn't available. It was sent before attachments were saved.",
+        )
+
+    try:
+        url = storage.create_signed_url(
+            attachment["key"],
+            expires_in=ATTACHMENT_LINK_SECONDS,
+            download_name=attachment.get("filename") if download else None,
+        )
+    except storage.StorageError:
+        raise HTTPException(
+            status_code=502,
+            detail="We couldn't open that file right now. Please try again.",
+        )
+
+    return {
+        "url": url,
+        "filename": attachment.get("filename"),
+        "content_type": attachment.get("content_type"),
+        "expires_in": ATTACHMENT_LINK_SECONDS,
+    }
+
+
+# ---------------------------------------------------------------------------
 # Compose a brand-new email
 # ---------------------------------------------------------------------------
 
@@ -493,7 +624,10 @@ def compose_message(
         raise HTTPException(status_code=400, detail="Message cannot be empty.")
     subject = subject[:200]
 
-    resend_attachments, attachment_meta = _prepare_attachments(files)
+    prepared = _prepare_attachments(files)
+
+    # Save the files first. If this fails, nothing has been emailed yet.
+    attachment_meta, stored_keys = _store_attachments(prepared, mailbox)
 
     message_id = new_message_id()
 
@@ -504,9 +638,10 @@ def compose_message(
         _wrap_body(body),
         cc=cc_list or None,
         message_id=message_id,
-        attachments=resend_attachments or None,
+        attachments=_resend_payload(prepared) or None,
     )
     if not sent:
+        storage.delete_files(stored_keys)
         raise HTTPException(status_code=500, detail="We couldn't send the email. Please try again.")
 
     from_address = mailbox_address(mailbox)
@@ -654,7 +789,10 @@ def reply_to_message_thread(
     if not body:
         raise HTTPException(status_code=400, detail="Reply message cannot be empty.")
 
-    resend_attachments, attachment_meta = _prepare_attachments(files)
+    prepared = _prepare_attachments(files)
+
+    # Save the files first. If this fails, nothing has been emailed yet.
+    attachment_meta, stored_keys = _store_attachments(prepared, mailbox)
 
     reply_subject = _reply_subject(thread.subject)
 
@@ -674,10 +812,11 @@ def reply_to_message_thread(
         in_reply_to=in_reply_to,
         references=references,
         message_id=message_id,
-        attachments=resend_attachments or None,
+        attachments=_resend_payload(prepared) or None,
     )
 
     if not sent:
+        storage.delete_files(stored_keys)
         raise HTTPException(
             status_code=500,
             detail="We couldn't send the reply. Please try again.",

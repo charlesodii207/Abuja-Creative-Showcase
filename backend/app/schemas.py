@@ -217,9 +217,14 @@ class ContactInquiryResponse(BaseModel):
 # ---------------------------------------------------------------------------
 
 class AttachmentInfo(BaseModel):
+    # id is what the dashboard sends to /admin/messages/attachment/{message_id}/{id}.
+    # It is None (and available is False) for old messages sent before files
+    # were saved: only their names were kept.
+    id: str | None = None
     filename: str
     size: int
     content_type: str | None = None
+    available: bool = False
 
 
 class ContactMessageSummary(BaseModel):
