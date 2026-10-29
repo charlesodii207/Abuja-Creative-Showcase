@@ -83,16 +83,35 @@ const takePart: Card[] = [
 ];
 
 /* ---------- Call for Creatives ---------- */
-// TODO: add the real application links. A card with no href shows as "Opening soon".
+// A card with no href shows as "Opening soon". External links open in a new tab.
+const CREATIVES_FORM_HREF =
+  "https://docs.google.com/forms/d/e/1FAIpQLScRIwzwA-551I-C_rLLvZQLwIojNowkJzQZ8fSQW1GeKOhG6Q/viewform?usp=dialog";
+const FILM_HREF = "https://filmfreeway.com/ACS2026";
+
 const calls: Card[] = [
-  { name: "Music and Performing Arts", text: "Musicians, singers, performers and DJs.", cta: "Apply now", href: undefined },
-  { name: "Fashion and Design", text: "Fashion designers, brands and textile creatives.", cta: "Apply now", href: undefined },
-  { name: "Visual Arts and Photography", text: "Artists, photographers, illustrators and digital creatives.", cta: "Apply now", href: undefined },
+  {
+    name: "Music and Performing Arts",
+    text: "Musicians, singers, performers and DJs.",
+    cta: "Apply now",
+    href: CREATIVES_FORM_HREF,
+  },
+  {
+    name: "Fashion and Design",
+    text: "Fashion designers, brands and textile creatives.",
+    cta: "Apply now",
+    href: CREATIVES_FORM_HREF,
+  },
+  {
+    name: "Visual Arts and Photography",
+    text: "Artists, photographers, illustrators and digital creatives.",
+    cta: "Apply now",
+    href: CREATIVES_FORM_HREF,
+  },
   {
     name: "Film and Screen",
-    text: "Filmmakers, directors, producers and screen creatives. Applications run through FilmFreeway and open soon.",
-    cta: "Apply now",
-    href: undefined,
+    text: "Filmmakers, directors, producers and screen creatives. Applications run through FilmFreeway.",
+    cta: "Apply on FilmFreeway",
+    href: FILM_HREF,
   },
 ];
 
@@ -102,6 +121,8 @@ const btnOff =
   "inline-block cursor-not-allowed rounded-full bg-white/15 px-5 py-3 text-center text-sm font-medium text-cream";
 
 function CardView({ c }: { c: Card }) {
+  const isExternal = c.href?.startsWith("http");
+
   return (
     <div className="flex flex-col rounded-2xl border border-white/10 bg-ink-raised px-6 py-7">
       <div className="flex items-baseline justify-between gap-4">
@@ -111,9 +132,21 @@ function CardView({ c }: { c: Card }) {
       <p className="mt-3 flex-1 text-sm text-muted">{c.text}</p>
       <div className="mt-6">
         {c.href ? (
-          <Link href={c.href} className={btn}>
-            {c.cta}
-          </Link>
+          isExternal ? (
+            <a
+              href={c.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={btn}
+            >
+              {c.cta}
+              <span className="sr-only"> (opens in a new tab)</span>
+            </a>
+          ) : (
+            <Link href={c.href} className={btn}>
+              {c.cta}
+            </Link>
+          )
         ) : (
           <span className={btnOff} aria-disabled="true">
             Opening soon
