@@ -210,12 +210,18 @@ export default function TeamSection() {
           </Reveal>
         </div>
 
-        {/* Desktop layout: 2 / 4 / 4. The first card starts in column 2 so the top row is centred. */}
+        {/* Desktop layout: 2 / 4 / 4. Card 0 starts in column 2 so the top row is centred; card 2 is forced back to column 1 so it starts the second row. */}
         <div className="mt-16 grid gap-x-8 gap-y-16 sm:grid-cols-2 lg:grid-cols-4">
           {TEAM.map((member, index) => (
             <div
               key={member.name}
-              className={index === 0 ? "lg:col-start-2" : ""}
+              className={
+                index === 0
+                  ? "lg:col-start-2"
+                  : index === 2
+                    ? "lg:col-start-1"
+                    : ""
+              }
             >
               <Reveal delay={(index % 4) * 90}>
                 <TeamCard member={member} />
