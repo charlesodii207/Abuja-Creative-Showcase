@@ -37,8 +37,8 @@ const TEAM: TeamMember[] = [
   // Row 2 (4)
   {
     name: "Desmond Utomwen",
-    role: "Head of Media and Publication",
-    bio: "Leads media and publicity for the showcase, shaping the story we tell and getting it in front of the right audiences.",
+    role: "Head of Publicity and Communications",
+    bio: "Leads publicity and communications for the showcase, handling press, announcements and outreach that put the story in front of the right audiences.",
     photo: "desmond.webp",
   },
   {
@@ -81,8 +81,8 @@ const TEAM: TeamMember[] = [
   },
   {
     name: "Jhilblanket Oluwaobafemi",
-    role: "Head of Production",
-    bio: "Leads production for the showcase, bringing the stage, sound, visuals and programme to life on event day.",
+    role: "Head of Media Production",
+    bio: "Leads media production for the showcase, creating the video, photo and visual content that tells its story before, during and after the event.",
     photo: "jhilblanket.webp",
   },
 ];
