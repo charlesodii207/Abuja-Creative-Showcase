@@ -13,11 +13,13 @@ import {
   composeMessage,
   getMessageHtml,
   getMailboxUnreadCounts,
+  openAttachment,
   addAttachments,
   formatFileSize,
   ATTACHMENT_ACCEPT,
   ApiError,
   type Message,
+  type MessageAttachment,
   type MailboxOption,
   type MessageThreadSummary,
   type MessageThreadDetail,
@@ -213,6 +215,10 @@ export default function MessagesPage() {
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
 
+  // Attachment chips: which file is being opened, and any error opening one
+  const [openingAttachmentId, setOpeningAttachmentId] = useState<string | null>(null);
+  const [attachmentError, setAttachmentError] = useState<string | null>(null);
+
   // Which messages have their quoted history expanded
   const [quotedOpen, setQuotedOpen] = useState<Record<string, boolean>>({});
 
@@ -298,6 +304,7 @@ export default function MessagesPage() {
     setReplySuggest(false);
     setReplyFiles([]);
     setQuotedOpen({});
+    setAttachmentError(null);
     resetHtmlViewer();
 
     getMessageThread(id)
@@ -402,6 +409,27 @@ export default function MessagesPage() {
       loadThreads();
     } catch (err) {
       setThreadError(err instanceof ApiError ? err.message : "Couldn't update the status.");
+    }
+  }
+
+  // Opens an attachment in a new tab (or downloads it). The file sits in a
+  // private bucket, so a fresh short-lived link is requested on every click.
+  async function handleOpenAttachment(
+    messageId: string,
+    attachment: MessageAttachment,
+    download = false
+  ) {
+    if (!attachment.id) return;
+    setAttachmentError(null);
+    setOpeningAttachmentId(attachment.id);
+    try {
+      await openAttachment(messageId, attachment, download);
+    } catch (err) {
+      setAttachmentError(
+        err instanceof ApiError ? err.message : "Couldn't open that file."
+      );
+    } finally {
+      setOpeningAttachmentId(null);
     }
   }
 
@@ -708,6 +736,9 @@ export default function MessagesPage() {
               </div>
 
               <div className="flex-1 overflow-y-auto px-4 sm:px-5 py-4 space-y-3">
+                {attachmentError && (
+                  <p className="font-body text-xs text-red">{attachmentError}</p>
+                )}
                 {selectedThread.messages.map((m) => {
                   const admin = isAdminMessage(m);
                   const { main, quoted } = splitQuoted(m.body);
@@ -728,18 +759,54 @@ export default function MessagesPage() {
                         <ul
                           className={`mt-1 flex flex-wrap gap-1.5 ${admin ? "justify-end" : ""}`}
                         >
-                          {m.attachments.map((a, i) => (
-                            <li
-                              key={`${a.filename}-${i}`}
-                              className="flex items-center gap-1.5 max-w-full border border-ink-raised rounded-sm px-2 py-1 font-body text-xs text-muted"
-                            >
-                              <span aria-hidden>📎</span>
-                              <span className="truncate max-w-[14rem] text-cream/80">
-                                {a.filename}
-                              </span>
-                              <span className="shrink-0">{formatFileSize(a.size)}</span>
-                            </li>
-                          ))}
+                          {m.attachments.map((a, i) => {
+                            const opening = openingAttachmentId === a.id;
+                            return (
+                              <li
+                                key={`${a.id ?? a.filename}-${i}`}
+                                className="flex items-center gap-1.5 max-w-full border border-ink-raised rounded-sm px-2 py-1 font-body text-xs text-muted"
+                              >
+                                <span aria-hidden>📎</span>
+                                {a.available && a.id ? (
+                                  <>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleOpenAttachment(m.id, a)}
+                                      disabled={opening}
+                                      title="Open in a new tab"
+                                      className="truncate max-w-[14rem] text-teal hover:underline text-left disabled:opacity-60"
+                                    >
+                                      {opening ? "Opening…" : a.filename}
+                                    </button>
+                                    <span className="shrink-0">{formatFileSize(a.size)}</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleOpenAttachment(m.id, a, true)}
+                                      disabled={opening}
+                                      aria-label={`Download ${a.filename}`}
+                                      title="Download"
+                                      className="shrink-0 text-muted hover:text-cream disabled:opacity-60"
+                                    >
+                                      ⬇
+                                    </button>
+                                  </>
+                                ) : (
+                                  <>
+                                    <span className="truncate max-w-[14rem] text-cream/80">
+                                      {a.filename}
+                                    </span>
+                                    <span className="shrink-0">{formatFileSize(a.size)}</span>
+                                    <span
+                                      className="shrink-0 italic"
+                                      title="Sent before attachments were saved"
+                                    >
+                                      (not saved)
+                                    </span>
+                                  </>
+                                )}
+                              </li>
+                            );
+                          })}
                         </ul>
                       )}
 

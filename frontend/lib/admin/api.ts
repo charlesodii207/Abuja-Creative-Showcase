@@ -555,9 +555,13 @@ export type MessageSenderType = "visitor" | "admin";
 // the real gatekeeper; checking here just gives a faster, friendlier error.
 
 export type MessageAttachment = {
+  // id is used to fetch a temporary link to the file. available is false for
+  // old messages sent before files were saved (only the name was kept).
+  id?: string | null;
   filename: string;
   size: number;
   content_type?: string | null;
+  available?: boolean;
 };
 
 export const MAX_ATTACHMENTS = 10;
@@ -639,7 +643,7 @@ export type Message = {
   // True when the original HTML of an inbound email exists. Fetch it with
   // getMessageHtml() and show it ONLY inside <iframe sandbox="" srcDoc=...>.
   has_html?: boolean;
-  // Files that were sent with this email (details only, not the files).
+  // Files sent with this email. Open one with openAttachment(message.id, file).
   attachments?: MessageAttachment[];
 };
 
@@ -779,6 +783,60 @@ export async function composeMessage(payload: {
       body: form,
     }
   );
+}
+
+// A temporary (about 60 seconds) link to one attachment. The file lives in a
+// private bucket, so ask for a fresh link every time it is clicked.
+export async function getAttachmentLink(
+  messageId: string,
+  attachmentId: string,
+  download = false
+) {
+  return adminFetch<{
+    url: string;
+    filename: string | null;
+    content_type: string | null;
+    expires_in: number;
+  }>(
+    `/admin/messages/attachment/${encodeURIComponent(messageId)}/${encodeURIComponent(attachmentId)}${
+      download ? "?download=true" : ""
+    }`
+  );
+}
+
+// Opens (or downloads) an attachment. Call it from a click handler.
+// The blank tab is opened first, synchronously, so popup blockers allow it,
+// then pointed at the link once the server has returned it.
+export async function openAttachment(
+  messageId: string,
+  attachment: MessageAttachment,
+  download = false
+) {
+  if (!attachment.id) {
+    throw new ApiError("This file isn't available.", 404);
+  }
+
+  const tab = download ? null : window.open("", "_blank");
+
+  try {
+    const { url } = await getAttachmentLink(messageId, attachment.id, download);
+
+    if (download) {
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = attachment.filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } else if (tab) {
+      tab.location.href = url;
+    } else {
+      window.location.href = url;
+    }
+  } catch (err) {
+    tab?.close();
+    throw err;
+  }
 }
 
 // Original HTML of an inbound email. UNTRUSTED: render only inside
