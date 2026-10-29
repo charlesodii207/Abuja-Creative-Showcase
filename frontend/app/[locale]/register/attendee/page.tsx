@@ -1,4 +1,5 @@
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
+import { getTranslations } from "next-intl/server";
 
 const TICKETS = {
   general: { name: "General", amount: "Free" },
@@ -9,7 +10,15 @@ const TICKETS = {
 
 type TicketKey = keyof typeof TICKETS;
 
-function Price({ label, amount }: { label: string; amount: string }) {
+function Price({
+  label,
+  amount,
+  freeLabel,
+}: {
+  label: string;
+  amount: string;
+  freeLabel: string;
+}) {
   const isFree = amount === "Free";
 
   return (
@@ -20,7 +29,7 @@ function Price({ label, amount }: { label: string; amount: string }) {
           ₦
         </span>
       )}
-      {amount}
+      {isFree ? freeLabel : amount}
     </span>
   );
 }
@@ -32,6 +41,7 @@ export default async function AttendeeRegisterPage({
 }) {
   // A pass picked on /register arrives as ?ticket=vip. No pass (returning visitor) is fine.
   const sp = (await searchParams) ?? {};
+  const t = await getTranslations("Register");
   const raw = Array.isArray(sp.ticket) ? sp.ticket[0] : sp.ticket;
   const picked: TicketKey | null =
     raw && Object.keys(TICKETS).includes(raw) ? (raw as TicketKey) : null;
@@ -66,43 +76,46 @@ export default async function AttendeeRegisterPage({
             </div>
 
             <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#00A5A8]">
-              Join the Showcase
+              {t("attendee.eyebrow")}
             </p>
 
             <h1 className="mt-4 font-display text-4xl leading-[1.05] text-[#F5EFE6] sm:text-5xl">
-              Attendee Registration
+              {t("attendee.heading")}
             </h1>
 
             <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-[#B8B3AA]/75 sm:text-lg">
-              Come experience the Showcase — screenings, performances, the
-              creative market, and more.
+              {t("attendee.intro")}
             </p>
 
             {picked ? (
               <div className="mt-5 inline-flex flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-full border border-[#E59200]/30 bg-[#11152F]/60 px-4 py-2">
                 <span className="h-2 w-2 shrink-0 rounded-full bg-[#E59200]" />
                 <p className="text-sm font-medium text-[#F5EFE6]/90">
-                  Your pass:{" "}
-                  <Price label={TICKETS[picked].name} amount={TICKETS[picked].amount} />
+                  {t("attendee.yourPass")}{" "}
+                  <Price
+                    label={t(`passes.${picked}.name`)}
+                    amount={TICKETS[picked].amount}
+                    freeLabel={t("free")}
+                  />
                 </p>
                 <Link
                   href="/register#passes"
                   className="text-xs text-[#F5EFE6]/60 underline underline-offset-4 hover:text-[#F5EFE6]"
                 >
-                  Change
+                  {t("attendee.change")}
                 </Link>
               </div>
             ) : (
               <div className="mt-5 inline-flex flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-full border border-[#E59200]/20 bg-[#11152F]/60 px-4 py-2">
                 <span className="h-2 w-2 shrink-0 rounded-full bg-[#E59200]" />
                 <p className="text-sm font-medium text-[#F5EFE6]/80">
-                  <Price label="General" amount="Free" />
+                  <Price label={t("passes.general.name")} amount="Free" freeLabel={t("free")} />
                   {" · "}
-                  <Price label="VIP" amount="20,000" />
+                  <Price label={t("passes.vip.name")} amount="20,000" freeLabel={t("free")} />
                   {" · "}
-                  <Price label="Masterclass" amount="50,000" />
+                  <Price label={t("passes.masterclass.name")} amount="50,000" freeLabel={t("free")} />
                   {" · "}
-                  <Price label="VVIP" amount="150,000" />
+                  <Price label={t("passes.vvip.name")} amount="150,000" freeLabel={t("free")} />
                 </p>
               </div>
             )}
@@ -112,21 +125,21 @@ export default async function AttendeeRegisterPage({
                 href={newHref}
                 className="rounded-full bg-[#B80319] px-7 py-3.5 text-sm font-medium text-[#F5EFE6] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_30px_rgba(184,3,25,0.2)]"
               >
-                New Registration
+                {t("attendee.newReg")}
               </Link>
 
               <Link
                 href="/register/attendee/finish"
                 className="rounded-full border border-white/15 bg-[#11152F]/40 px-7 py-3.5 text-sm font-medium text-[#F5EFE6]/80 transition-all duration-300 hover:border-[#00A5A8]/40 hover:text-[#F5EFE6]"
               >
-                Check Status, Pay, or Upgrade
+                {t("attendee.checkStatus")}
               </Link>
             </div>
 
             <div className="mt-10 flex items-center justify-center gap-3">
               <span className="h-px w-10 bg-white/10" />
               <span className="text-[10px] uppercase tracking-[0.25em] text-[#F5EFE6]/30">
-                Abuja · 04–05 December 2026
+                {t("attendee.footer")}
               </span>
               <span className="h-px w-10 bg-white/10" />
             </div>

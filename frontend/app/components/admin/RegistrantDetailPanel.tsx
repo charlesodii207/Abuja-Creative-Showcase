@@ -9,6 +9,7 @@ import {
   rejectRegistrant,
   markRegistrantPaid,
   resendRegistrantEmail,
+  deleteRegistrant,
   getAdminProfile,
   ApiError,
   type RegistrantDetail,
@@ -86,6 +87,7 @@ type ConfirmAction =
   | "approve"
   | "reject"
   | "mark-paid"
+  | "delete"
   | null;
 
 export default function RegistrantDetailPanel({
@@ -119,9 +121,14 @@ export default function RegistrantDetailPanel({
   // hides the buttons: the API refuses these actions for them as well.
   const [canAct, setCanAct] = useState(false);
 
+  // Only the system owner can delete a registrant. Again, this only hides
+  // the button: the API returns 403 for anyone else.
+  const [isOwner, setIsOwner] = useState(false);
+
   useEffect(() => {
     const role = getAdminProfile()?.role;
     setCanAct(role === "system_owner" || role === "super_admin");
+    setIsOwner(role === "system_owner");
   }, []);
 
   const isOpen = referenceNumber !== null;
@@ -185,6 +192,30 @@ export default function RegistrantDetailPanel({
     }
   }
 
+  // Delete is separate from runAction: after a delete there is nothing
+  // left to refresh, so the panel closes and the list reloads instead.
+  async function runDelete(ref: string) {
+    setActionLoading("delete");
+    setActionMessage(null);
+    setError(null);
+
+    try {
+      await deleteRegistrant(ref);
+
+      setRegistrant(null);
+      onClose();
+      onChanged();
+    } catch (err) {
+      setError(
+        err instanceof ApiError
+          ? err.message
+          : "Something went wrong."
+      );
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
   async function handleSaveEdit() {
     if (!referenceNumber) return;
 
@@ -224,6 +255,11 @@ export default function RegistrantDetailPanel({
       await runAction("mark-paid", () =>
         markRegistrantPaid(registrant.reference_number)
       );
+      return;
+    }
+
+    if (action === "delete") {
+      await runDelete(registrant.reference_number);
     }
   }
 
@@ -255,6 +291,23 @@ export default function RegistrantDetailPanel({
           "This will manually mark the registration as paid. Use this only when the payment has been verified outside the normal payment flow.",
         confirmText: "Mark as Paid",
         variant: "warning" as const,
+      };
+    }
+
+    if (confirmAction === "delete") {
+      const wasPaid = registrant?.details?.is_paid === true;
+
+      return {
+        title: "Delete Registrant?",
+        message:
+          `This permanently deletes ${registrant?.full_name ?? "this registrant"} ` +
+          `(${registrant?.reference_number ?? ""}), including their ticket and ` +
+          `check-in history. This cannot be undone.` +
+          (wasPaid
+            ? " They have already paid, so deleting them also removes their payment from the revenue figures."
+            : ""),
+        confirmText: "Delete permanently",
+        variant: "danger" as const,
       };
     }
 
@@ -559,6 +612,24 @@ export default function RegistrantDetailPanel({
                     ? "Sending…"
                     : "Resend status email"}
                 </button>
+
+                {/* System owner only. Super admins never see this. */}
+                {isOwner && (
+                  <div className="mt-3 border-t border-ink-raised pt-4">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setConfirmAction("delete")
+                      }
+                      disabled={actionLoading !== null}
+                      className="w-full rounded-sm bg-red py-2 font-body text-sm text-cream disabled:opacity-60"
+                    >
+                      {actionLoading === "delete"
+                        ? "Deleting…"
+                        : "Delete registrant"}
+                    </button>
+                  </div>
+                )}
               </section>
             ) : (
               <p className="border-t border-ink-raised pt-5 font-body text-xs text-muted">

@@ -530,6 +530,84 @@ def reject_registrant(
 
 
 # ---------------------------------------------------------------------------
+# Delete registrant (System Owner only)
+# ---------------------------------------------------------------------------
+
+@router.delete(
+    "/registrants/{reference_number}",
+    response_model=schemas.AdminActionResponse,
+)
+def delete_registrant(
+    reference_number: str,
+    db: Session = Depends(get_db),
+    # Owner only. Super admins get a 403 even if they call the API directly.
+    admin: models.Admin = Depends(require_role("system_owner")),
+):
+    registrant = _get_registrant_or_404(db, reference_number)
+
+    # Capture these now: the row is gone after the delete.
+    registrant_id = registrant.id
+    ref = registrant.reference_number
+    name = registrant.full_name
+    category = registrant.category.value
+    status = registrant.status.value
+
+    relation_name = DETAIL_RELATION_BY_CATEGORY.get(registrant.category)
+    detail_obj = getattr(registrant, relation_name, None) if relation_name else None
+    was_paid = bool(getattr(detail_obj, "is_paid", False))
+
+    try:
+        # Ticket and its door scan history
+        ticket = registrant.ticket
+        if ticket:
+            db.query(models.ScanLog).filter(
+                models.ScanLog.ticket_id == ticket.id
+            ).delete(synchronize_session=False)
+            db.delete(ticket)
+
+        # Category detail rows (only one exists, but this is harmless)
+        for rel in DETAIL_RELATION_BY_CATEGORY.values():
+            obj = getattr(registrant, rel, None)
+            if obj is not None:
+                db.delete(obj)
+
+        # Group-order seat link and bank-transfer notices
+        db.query(models.GroupTicket).filter(
+            models.GroupTicket.registrant_id == registrant_id
+        ).delete(synchronize_session=False)
+        db.query(models.ManualPayment).filter(
+            models.ManualPayment.registrant_id == registrant_id
+        ).delete(synchronize_session=False)
+
+        db.delete(registrant)
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail="Could not delete this registrant. Nothing was changed.",
+        )
+
+    log_action(
+        db,
+        admin,
+        "delete_registrant",
+        target_type="registrant",
+        target_reference=ref,
+        detail=(
+            f"Deleted {name} ({category}, {status})"
+            + (" — had already paid" if was_paid else "")
+        ),
+    )
+
+    return schemas.AdminActionResponse(
+        id=str(registrant_id),
+        status="deleted",
+        message=f"{name} ({ref}) has been deleted.",
+    )
+
+
+# ---------------------------------------------------------------------------
 # Stats
 # ---------------------------------------------------------------------------
 

@@ -343,6 +343,15 @@ export async function resendRegistrantEmail(referenceNumber: string) {
   );
 }
 
+// System owner only. Permanently deletes the registrant, their ticket and
+// check-in history. The backend returns 403 for anyone else.
+export async function deleteRegistrant(referenceNumber: string) {
+  return adminFetch<{ id: string; status: string; message: string }>(
+    `/admin/registrants/${encodeURIComponent(referenceNumber)}`,
+    { method: "DELETE" }
+  );
+}
+
 // --- Admin management ---
 
 export type AdminSummary = {

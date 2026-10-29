@@ -240,7 +240,7 @@
       },
       "q3": {
         "q": "L'entrée est-elle payante ?",
-        "a": "L'entrée Générale est gratuite et couvre les deux jours. Le VIP coûte 50 000 ₦ avec placement prioritaire, le Pass Masterclass coûte 100 000 ₦ et inclut les masterclasses des deux jours, et le VVIP coûte 150 000 ₦ et comprend tout : places réservées au premier rang, table réservée au concert et au dîner, rencontre avec les artistes, masterclasses et accès au Pitch et à la Deal Room."
+        "a": "L'entrée Générale est gratuite et couvre les deux jours. Le VIP coûte 20 000 ₦ avec placement prioritaire, le Pass Masterclass coûte 50 000 ₦ et inclut les masterclasses des deux jours, et le VVIP coûte 150 000 ₦ et comprend tout : places réservées au premier rang, table réservée au concert et au dîner, rencontre avec les artistes, masterclasses et accès au Pitch et à la Deal Room."
       },
       "q4": {
         "q": "Mon organisation peut-elle exposer ou parrainer ?",
@@ -332,6 +332,135 @@
           "bio": "Dirige la production média du showcase et crée les contenus vidéo, photo et visuels qui racontent son histoire avant, pendant et après l'événement."
         }
       }
+    }
+  },
+  "Register": {
+    "meta": {
+      "title": "S'inscrire à l'Afriqa Creative Showcase 2026",
+      "description": "Comparez tous les pass, consultez les prix et inscrivez-vous à l'Afriqa Creative Showcase, les 4 et 5 décembre 2026 à Abuja."
+    },
+    "title": "S'inscrire à l'Afriqa Creative Showcase 2026",
+    "intro": "Deux jours de mode, de cinéma, de musique, d'art, un marché créatif, des masterclasses de l'industrie et une salle de Pitch et Deal Room. Comparez ci-dessous chaque pass et son prix.",
+    "dates": "4 et 5 décembre 2026",
+    "venue": "Old Parade Ground, Abuja",
+    "freeEntry": "L'entrée Générale est gratuite",
+    "passesHeading": "Choisissez votre pass",
+    "passesIntro": "Les pass statut déterminent votre place au défilé, au concert et au dîner. Le Pass Masterclass est destiné à l'apprentissage. Le VVIP combine les deux.",
+    "free": "Gratuit",
+    "included": "Inclus",
+    "notIncluded": "Non inclus",
+    "comparison": "Comparaison des pass",
+    "benefit": "Avantage",
+    "passes": {
+      "general": {
+        "name": "Général",
+        "note": "Les deux jours",
+        "cta": "Obtenir le pass gratuit"
+      },
+      "vip": {
+        "name": "VIP",
+        "note": "Pass statut",
+        "cta": "Obtenir le VIP"
+      },
+      "masterclass": {
+        "name": "Masterclass",
+        "note": "Pass d'apprentissage",
+        "cta": "Obtenir le Masterclass"
+      },
+      "vvip": {
+        "name": "VVIP",
+        "note": "Tout est inclus",
+        "cta": "Obtenir le VVIP"
+      }
+    },
+    "rows": {
+      "r1": "Défilé de mode",
+      "r2": "Projections de films et expositions d'art",
+      "r3": "Marché créatif et réseautage",
+      "r4": "Concert en direct",
+      "r5": "Placement au défilé et au concert",
+      "r6": "Table réservée au concert et au dîner",
+      "r7": "Rencontre avec les artistes",
+      "r8": "Masterclasses, les deux jours",
+      "r9": "Accès au Pitch et à la Deal Room"
+    },
+    "seat": {
+      "general": "Général",
+      "priority": "Prioritaire",
+      "front": "Premier rang, réservé"
+    },
+    "seatingNote": "Les places VIP et VVIP sont limitées et attribuées dans l'ordre : d'abord les places réservées au premier rang pour le VVIP, puis le VIP, puis tous les autres. Le Pass Masterclass inclut un placement général.",
+    "takePartHeading": "Participer",
+    "takePartIntro": "Pour les exposants, les créateurs, les porteurs de projet, les investisseurs et la presse. Chacun dispose de sa propre réservation.",
+    "cards": {
+      "boothNormal": {
+        "name": "Stand Normal",
+        "text": "Un stand de marque au Marché créatif pendant les deux jours. Vendez aux acheteurs, aux marques et au public. Confirmé dès le paiement.",
+        "cta": "Réserver mon stand"
+      },
+      "boothDouble": {
+        "name": "Stand Double",
+        "text": "Deux fois plus d'espace, avec de la place pour exposer des œuvres. Confirmé dès le paiement.",
+        "cta": "Réserver mon stand"
+      },
+      "runway": {
+        "name": "Défilé de mode",
+        "text": "Présentez votre collection lors du showcase de mode devant un public professionnel.",
+        "cta": "Réserver mon passage"
+      },
+      "pitcher": {
+        "name": "Participant au pitch",
+        "text": "Des projets sélectionnés présentent leur pitch à des investisseurs, commanditaires, distributeurs et marques dans la Deal Room. Sélection requise.",
+        "cta": "Candidater au pitch"
+      },
+      "investor": {
+        "name": "Investisseur",
+        "text": "Rencontrez des participants au pitch sélectionnés et trouvez des projets créatifs qui méritent d'être soutenus. Inscription soumise à examen.",
+        "cta": "S'inscrire comme investisseur"
+      },
+      "press": {
+        "name": "Presse",
+        "text": "Interviews, accès aux coulisses et points presse. Accréditation requise.",
+        "cta": "Demander une accréditation"
+      }
+    },
+    "callHeading": "Appel aux créatifs",
+    "deadline": "Date limite : 15 novembre 2026",
+    "callIntro": "L'Afriqa Creative Showcase invite les créatifs nigérians et africains à présenter leur travail, à rencontrer des professionnels du secteur et à explorer de nouvelles opportunités.",
+    "calls": {
+      "music": {
+        "name": "Musique et arts de la scène",
+        "text": "Musiciens, chanteurs, artistes de scène et DJ.",
+        "cta": "Postuler maintenant"
+      },
+      "fashion": {
+        "name": "Mode et design",
+        "text": "Créateurs de mode, marques et créatifs du textile.",
+        "cta": "Postuler maintenant"
+      },
+      "visual": {
+        "name": "Arts visuels et photographie",
+        "text": "Artistes, photographes, illustrateurs et créatifs numériques.",
+        "cta": "Postuler maintenant"
+      },
+      "film": {
+        "name": "Cinéma et audiovisuel",
+        "text": "Cinéastes, réalisateurs, producteurs et créatifs de l'écran. Les candidatures se font via FilmFreeway.",
+        "cta": "Postuler sur FilmFreeway"
+      }
+    },
+    "opensNewTab": "(s'ouvre dans un nouvel onglet)",
+    "openingSoon": "Bientôt ouvert",
+    "lookup": "Déjà inscrit ? Vérifiez votre statut",
+    "attendee": {
+      "eyebrow": "Rejoignez le Showcase",
+      "heading": "Inscription des participants",
+      "intro": "Venez vivre le Showcase — projections, spectacles, marché créatif et bien plus encore.",
+      "yourPass": "Votre pass :",
+      "change": "Modifier",
+      "newReg": "Nouvelle inscription",
+      "checkStatus": "Vérifier le statut, payer ou améliorer",
+      "footer": "Abuja · 4–5 décembre 2026"
     }
   }
 }

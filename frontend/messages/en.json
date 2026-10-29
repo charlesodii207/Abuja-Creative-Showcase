@@ -240,7 +240,7 @@
       },
       "q3": {
         "q": "Is there a fee to attend?",
-        "a": "General entry is free and covers both days. VIP is ₦50,000 with priority seating, the Masterclass Pass is ₦100,000 and includes the masterclasses on both days, and VVIP is ₦150,000 and includes everything: front reserved seating, a reserved table at the concert and dinner, a meet and greet, the masterclasses, and Pitch and Deal Room access."
+        "a": "General entry is free and covers both days. VIP is ₦20,000 with priority seating, the Masterclass Pass is ₦50,000 and includes the masterclasses on both days, and VVIP is ₦150,000 and includes everything: front reserved seating, a reserved table at the concert and dinner, a meet and greet, the masterclasses, and Pitch and Deal Room access."
       },
       "q4": {
         "q": "Can my organization exhibit or sponsor?",
@@ -332,6 +332,135 @@
           "bio": "Leads media production for the showcase, creating the video, photo and visual content that tells its story before, during and after the event."
         }
       }
+    }
+  },
+  "Register": {
+    "meta": {
+      "title": "Register for Afriqa Creative Showcase 2026",
+      "description": "Compare every pass, see the prices and register for Afriqa Creative Showcase, 4 and 5 December 2026, Abuja."
+    },
+    "title": "Register for Afriqa Creative Showcase 2026",
+    "intro": "Two days of fashion, film, music, art, a creative market, industry masterclasses and a Pitch and Deal Room. Compare every pass and its price below.",
+    "dates": "4 and 5 December 2026",
+    "venue": "Old Parade Ground, Abuja",
+    "freeEntry": "General entry is free",
+    "passesHeading": "Choose your pass",
+    "passesIntro": "Status passes decide where you sit at the runway and the concert and dinner. The Masterclass Pass is for learning. VVIP combines both.",
+    "free": "Free",
+    "included": "Included",
+    "notIncluded": "Not included",
+    "comparison": "Pass comparison",
+    "benefit": "Benefit",
+    "passes": {
+      "general": {
+        "name": "General",
+        "note": "Both days",
+        "cta": "Get free pass"
+      },
+      "vip": {
+        "name": "VIP",
+        "note": "Status pass",
+        "cta": "Get VIP"
+      },
+      "masterclass": {
+        "name": "Masterclass",
+        "note": "Learning pass",
+        "cta": "Get Masterclass"
+      },
+      "vvip": {
+        "name": "VVIP",
+        "note": "Everything included",
+        "cta": "Get VVIP"
+      }
+    },
+    "rows": {
+      "r1": "Fashion runway",
+      "r2": "Film screenings and art exhibitions",
+      "r3": "Creative Market and networking",
+      "r4": "Live concert",
+      "r5": "Seating at runway and concert",
+      "r6": "Reserved table at concert and dinner",
+      "r7": "Meet and greet",
+      "r8": "Masterclasses, both days",
+      "r9": "Pitch and Deal Room access"
+    },
+    "seat": {
+      "general": "General",
+      "priority": "Priority",
+      "front": "Front, reserved"
+    },
+    "seatingNote": "VIP and VVIP seating is limited and given in order: VVIP in the front reserved seats first, then VIP, then everyone else. The Masterclass Pass includes general seating.",
+    "takePartHeading": "Take part",
+    "takePartIntro": "For exhibitors, designers, project owners, investors and the press. Each has its own booking.",
+    "cards": {
+      "boothNormal": {
+        "name": "Normal Booth",
+        "text": "A branded Creative Market stand across both days. Sell to buyers, brands and the public. Confirmed as soon as you pay.",
+        "cta": "Book my booth"
+      },
+      "boothDouble": {
+        "name": "Double Booth",
+        "text": "Twice the space, with room to display art. Confirmed as soon as you pay.",
+        "cta": "Book my booth"
+      },
+      "runway": {
+        "name": "Fashion Runway",
+        "text": "Present your collection at the fashion showcase to an industry audience.",
+        "cta": "Book my runway slot"
+      },
+      "pitcher": {
+        "name": "Pitching Participant",
+        "text": "Selected projects pitch to investors, commissioners, distributors and brands in the Deal Room. Selection required.",
+        "cta": "Apply to pitch"
+      },
+      "investor": {
+        "name": "Investor",
+        "text": "Meet curated pitching participants and find creative projects worth backing. Registration reviewed.",
+        "cta": "Register as investor"
+      },
+      "press": {
+        "name": "Press",
+        "text": "Interviews, behind-the-scenes access and press briefings. Accreditation required.",
+        "cta": "Apply for accreditation"
+      }
+    },
+    "callHeading": "Call for Creatives",
+    "deadline": "Deadline: 15 November 2026",
+    "callIntro": "Afriqa Creative Showcase invites Nigerian and African creatives to present their work, connect with industry professionals and explore new opportunities.",
+    "calls": {
+      "music": {
+        "name": "Music and Performing Arts",
+        "text": "Musicians, singers, performers and DJs.",
+        "cta": "Apply now"
+      },
+      "fashion": {
+        "name": "Fashion and Design",
+        "text": "Fashion designers, brands and textile creatives.",
+        "cta": "Apply now"
+      },
+      "visual": {
+        "name": "Visual Arts and Photography",
+        "text": "Artists, photographers, illustrators and digital creatives.",
+        "cta": "Apply now"
+      },
+      "film": {
+        "name": "Film and Screen",
+        "text": "Filmmakers, directors, producers and screen creatives. Applications run through FilmFreeway.",
+        "cta": "Apply on FilmFreeway"
+      }
+    },
+    "opensNewTab": "(opens in a new tab)",
+    "openingSoon": "Opening soon",
+    "lookup": "Already registered? Check your status",
+    "attendee": {
+      "eyebrow": "Join the Showcase",
+      "heading": "Attendee Registration",
+      "intro": "Come experience the Showcase — screenings, performances, the creative market, and more.",
+      "yourPass": "Your pass:",
+      "change": "Change",
+      "newReg": "New Registration",
+      "checkStatus": "Check Status, Pay, or Upgrade",
+      "footer": "Abuja · 04–05 December 2026"
     }
   }
 }
