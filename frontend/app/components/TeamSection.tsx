@@ -37,8 +37,8 @@ const TEAM: TeamMember[] = [
   // Row 2 (4)
   {
     name: "Desmond Utomwen",
-    role: "Head of Publicity and Communications",
-    bio: "Leads publicity and communications for the showcase, handling press, announcements and outreach that put the story in front of the right audiences.",
+    role: "Head of Media Publicity",
+    bio: "Leads media publicity for the showcase, handling press, announcements and outreach that put the story in front of the right audiences.",
     photo: "desmond.webp",
   },
   {
