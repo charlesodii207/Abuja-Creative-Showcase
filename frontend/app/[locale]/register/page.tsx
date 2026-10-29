@@ -190,7 +190,68 @@ export default function RegisterPage() {
           Pass is for learning. VVIP combines both.
         </p>
 
-        <div className="mt-8 overflow-x-auto rounded-2xl border border-white/10 bg-ink-raised">
+        {/* Mobile: one card per pass, no sideways scrolling */}
+        <div className="mt-8 grid gap-5 md:hidden">
+          {passes.map((p, pi) => (
+            <div
+              key={p.slug}
+              className="rounded-2xl border border-white/10 bg-ink-raised px-5 py-6"
+            >
+              <div className="flex items-baseline justify-between gap-4">
+                <div>
+                  <p className="font-display text-xl text-cream">{p.name}</p>
+                  <p className="text-xs text-muted">{p.note}</p>
+                </div>
+                <p className="text-xl font-semibold text-gold">{p.price}</p>
+              </div>
+
+              <ul className="mt-5 divide-y divide-white/5 text-sm">
+                {rows.map((r) => {
+                  const v = r.values[pi];
+                  return (
+                    <li
+                      key={r.label}
+                      className="flex items-start justify-between gap-4 py-2.5"
+                    >
+                      <span className={v === false ? "text-muted" : "text-cream"}>
+                        {r.label}
+                      </span>
+                      <span className="shrink-0 text-right">
+                        {v === true ? (
+                          <>
+                            <span aria-hidden="true" className="font-semibold text-gold">
+                              ✓
+                            </span>
+                            <span className="sr-only">Included</span>
+                          </>
+                        ) : v === false ? (
+                          <>
+                            <span aria-hidden="true" className="text-muted">
+                              –
+                            </span>
+                            <span className="sr-only">Not included</span>
+                          </>
+                        ) : (
+                          <span className="text-cream">{v}</span>
+                        )}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+
+              <Link
+                href={`${ATTENDEE_HREF}?ticket=${p.slug}`}
+                className={`${btn} mt-6 block w-full`}
+              >
+                {p.cta}
+              </Link>
+            </div>
+          ))}
+        </div>
+
+        {/* Tablet and desktop: comparison table */}
+        <div className="mt-8 hidden overflow-x-auto rounded-2xl border border-white/10 bg-ink-raised md:block">
           <table className="w-full min-w-[760px] border-collapse text-sm">
             <caption className="sr-only">Pass comparison</caption>
             <thead>
