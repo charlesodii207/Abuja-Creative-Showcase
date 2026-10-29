@@ -20,8 +20,8 @@ const TICKET_LABELS: Record<string, string> = {
 // Ticket prices in naira (General is free). Used to show what an upgrade costs.
 const PRICES: Record<string, number> = {
   general: 0,
-  vip: 50000,
-  masterclass: 100000,
+  vip: 20000,
+  masterclass: 50000,
   vvip: 150000,
 };
 

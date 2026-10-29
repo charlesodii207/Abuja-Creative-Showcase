@@ -135,7 +135,7 @@ export const faqs = [
   },
   {
     q: "Is there a fee to attend?",
-    a: "General entry is free and covers both days. VIP is ₦50,000 with priority seating, the Masterclass Pass is ₦100,000 and includes the masterclasses on both days, and VVIP is ₦150,000 and includes everything: front reserved seating, a reserved table at the concert and dinner, a meet and greet, the masterclasses, and Pitch and Deal Room access.",
+    a: "General entry is free and covers both days. VIP is ₦20,000 with priority seating, the Masterclass Pass is ₦50,000 and includes the masterclasses on both days, and VVIP is ₦150,000 and includes everything: front reserved seating, a reserved table at the concert and dinner, a meet and greet, the masterclasses, and Pitch and Deal Room access.",
   },
   {
     q: "Can my organization exhibit or sponsor?",

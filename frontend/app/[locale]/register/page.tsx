@@ -16,8 +16,8 @@ const ATTENDEE_HREF = "/register/attendee";
 
 const passes = [
   { slug: "general", name: "General", price: "Free", note: "Both days", cta: "Get free pass" },
-  { slug: "vip", name: "VIP", price: "₦50,000", note: "Status pass", cta: "Get VIP" },
-  { slug: "masterclass", name: "Masterclass", price: "₦100,000", note: "Learning pass", cta: "Get Masterclass" },
+  { slug: "vip", name: "VIP", price: "₦20,000", note: "Status pass", cta: "Get VIP" },
+  { slug: "masterclass", name: "Masterclass", price: "₦50,000", note: "Learning pass", cta: "Get Masterclass" },
   { slug: "vvip", name: "VVIP", price: "₦150,000", note: "Everything included", cta: "Get VVIP" },
 ];
 

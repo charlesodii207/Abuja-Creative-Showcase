@@ -72,8 +72,8 @@ def get_ticket_tag(registrant: "models.Registrant") -> str:
     The stored enum values are unchanged (general / vip / masterclass,
     small / big) — only the labels shown to people were renamed:
       general     -> General      (free, both days)
-      vip         -> VIP          (₦50,000, both days)
-      masterclass -> Masterclass  (₦100,000, both days)
+      vip         -> VIP          (₦20,000, both days)
+      masterclass -> Masterclass  (₦50,000, both days)
       vvip        -> VVIP         (₦150,000, both days)
       small       -> Normal booth (₦200,000)
       big         -> Double booth (₦300,000)
@@ -124,8 +124,8 @@ PITCHER_FEE_KOBO = 100_000 * 100      # ₦100,000
 
 TICKET_PRICES_KOBO = {
     TicketType.general: 0,                   # Free. No payment is taken (see routes/attendee.py)
-    TicketType.vip: 50_000 * 100,            # ₦50,000, both days, priority seating
-    TicketType.masterclass: 100_000 * 100,   # ₦100,000, both days, masterclasses on both days
+    TicketType.vip: 20_000 * 100,            # ₦20,000, both days, priority seating
+    TicketType.masterclass: 50_000 * 100,    # ₦50,000, both days, masterclasses on both days
     TicketType.vvip: 150_000 * 100,          # ₦150,000, both days, everything included
 }
 

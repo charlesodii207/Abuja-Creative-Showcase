@@ -2,8 +2,8 @@ import Link from "next/link";
 
 const TICKETS = {
   general: { name: "General", amount: "Free" },
-  vip: { name: "VIP", amount: "50,000" },
-  masterclass: { name: "Masterclass", amount: "100,000" },
+  vip: { name: "VIP", amount: "20,000" },
+  masterclass: { name: "Masterclass", amount: "50,000" },
   vvip: { name: "VVIP", amount: "150,000" },
 } as const;
 
@@ -98,9 +98,9 @@ export default async function AttendeeRegisterPage({
                 <p className="text-sm font-medium text-[#F5EFE6]/80">
                   <Price label="General" amount="Free" />
                   {" · "}
-                  <Price label="VIP" amount="50,000" />
+                  <Price label="VIP" amount="20,000" />
                   {" · "}
-                  <Price label="Masterclass" amount="100,000" />
+                  <Price label="Masterclass" amount="50,000" />
                   {" · "}
                   <Price label="VVIP" amount="150,000" />
                 </p>

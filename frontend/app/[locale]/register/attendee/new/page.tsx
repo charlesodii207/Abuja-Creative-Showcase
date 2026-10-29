@@ -25,14 +25,14 @@ const TIERS: {
   {
     value: "vip",
     label: "VIP",
-    price: "₦50,000",
+    price: "₦20,000",
     blurb:
       "Everything in General, with priority seating at the runway and the concert.",
   },
   {
     value: "masterclass",
     label: "Masterclass",
-    price: "₦100,000",
+    price: "₦50,000",
     blurb:
       "Everything in General, plus the masterclasses on both days. General seating.",
   },
