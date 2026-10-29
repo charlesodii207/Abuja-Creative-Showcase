@@ -15,7 +15,12 @@ type TeamMember = {
 
 const PHOTO_DIR = "/images/team";
 
+/**
+ * Order matters. On desktop the grid reads left to right:
+ * Row 1 (2 people, centred), Row 2 (4 people), Row 3 (4 people).
+ */
 const TEAM: TeamMember[] = [
+  // Row 1 (2)
   {
     name: "Paulgold Olalekan Joseph",
     role: "Convener",
@@ -28,17 +33,19 @@ const TEAM: TeamMember[] = [
     bio: "Directs the planning and delivery of the showcase, keeping every team and programme aligned with the event's vision.",
     photo: "ebere.webp",
   },
+
+  // Row 2 (4)
+  {
+    name: "Desmond Utomwen",
+    role: "Head of Media and Publication",
+    bio: "Leads media and publicity for the showcase, shaping the story we tell and getting it in front of the right audiences.",
+    photo: "desmond.webp",
+  },
   {
     name: "Happiness Edesiri Obrudu",
     role: "Head of Operations",
     bio: "Oversees day-to-day operations, making sure every part of the showcase runs smoothly from planning to event day.",
     photo: "happiness.webp",
-  },
-  {
-    name: "Susan Sechivir Umah",
-    role: "Programmes Coordinator",
-    bio: "Coordinates the showcase programme, from masterclasses and sessions to the schedule of activities across both days.",
-    photo: "susan.webp",
   },
   {
     name: "Favour Efe Orobosa",
@@ -47,22 +54,36 @@ const TEAM: TeamMember[] = [
     photo: "favour.webp",
   },
   {
-    name: "David Onyekwe Giant",
-    role: "Head of Logistics",
-    bio: "Heads logistics, coordinating venue setup, the movement of people and materials, and everything needed on the ground.",
-    photo: "david.webp",
+    name: "Susan Sechivir Umah",
+    role: "Head of Protocol",
+    bio: "Handles protocol for the showcase, looking after guests, speakers and dignitaries from arrival to departure.",
+    photo: "susan.webp",
   },
+
+  // Row 3 (4)
   {
     name: "Charles Odii Okechukwu",
-    role: "Chief Technology Officer",
+    role: "Head of Technology",
     bio: "Leads technology for the showcase, building and maintaining the website, registration and ticketing systems.",
     photo: "charles.webp",
   },
   {
     name: "Caroline Okoh",
-    role: "Administrative Manager",
-    bio: "Manages administrative support for the team, handling coordination, communication and day-to-day paperwork.",
+    role: "Head of Secretariat",
+    bio: "Runs the secretariat, handling coordination, communication and day-to-day paperwork for the team.",
     photo: "caroline.webp",
+  },
+  {
+    name: "David Onyekwe Ebuka",
+    role: "Head of Logistics",
+    bio: "Heads logistics, coordinating venue setup, the movement of people and materials, and everything needed on the ground.",
+    photo: "david.webp",
+  },
+  {
+    name: "Jhilblanket Oluwaobafemi",
+    role: "Head of Production",
+    bio: "Leads production for the showcase, bringing the stage, sound, visuals and programme to life on event day.",
+    photo: "jhilblanket.webp",
   },
 ];
 
@@ -81,44 +102,44 @@ function TeamCard({ member }: { member: TeamMember }) {
   return (
     <div className="group mx-auto w-full max-w-[18rem]">
       <div className="relative">
-      <div
-        aria-hidden="true"
-        className="absolute -bottom-3 -left-3 h-full w-full rounded-[2rem] rounded-bl-[3.5rem] border border-[#E59200]/25 transition-transform duration-500 group-hover:-translate-x-1 group-hover:translate-y-1"
-      />
-
-      <div
-        aria-hidden="true"
-        className="absolute -right-3 -top-3 z-20 h-9 w-9 rounded-full border border-[#00A5A8]/40 bg-[#11152F]"
-      >
-        <span className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#00A5A8]" />
-      </div>
-
-      <div className="relative aspect-[4/5] overflow-hidden rounded-[2rem] rounded-bl-[3.5rem] rounded-tr-[0.75rem] border border-white/10 bg-[#151A3A] shadow-[0_25px_80px_rgba(0,0,0,0.25)]">
-        {failed ? (
-          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#151A3A] to-[#1B2150]">
-            <span className="font-display text-5xl text-[#E59200]/70">
-              {initials(member.name)}
-            </span>
-          </div>
-        ) : (
-          <Image
-            src={`${PHOTO_DIR}/${member.photo}`}
-            alt={`${member.name}, ${member.role} of AFRIQA Creative Showcase`}
-            fill
-            sizes="(max-width: 640px) 80vw, (max-width: 1024px) 40vw, 22vw"
-            quality={75}
-            className="object-cover object-top transition-transform duration-700 group-hover:scale-105"
-            onError={() => setFailed(true)}
-          />
-        )}
+        <div
+          aria-hidden="true"
+          className="absolute -bottom-3 -left-3 h-full w-full rounded-[2rem] rounded-bl-[3.5rem] border border-[#E59200]/25 transition-transform duration-500 group-hover:-translate-x-1 group-hover:translate-y-1"
+        />
 
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-2.5 rounded-[1.5rem] rounded-bl-[3rem] rounded-tr-[0.5rem] border border-white/10"
-        />
+          className="absolute -right-3 -top-3 z-20 h-9 w-9 rounded-full border border-[#00A5A8]/40 bg-[#11152F]"
+        >
+          <span className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#00A5A8]" />
+        </div>
 
-        <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-[#11152F]/70 to-transparent" />
-      </div>
+        <div className="relative aspect-[4/5] overflow-hidden rounded-[2rem] rounded-bl-[3.5rem] rounded-tr-[0.75rem] border border-white/10 bg-[#151A3A] shadow-[0_25px_80px_rgba(0,0,0,0.25)]">
+          {failed ? (
+            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#151A3A] to-[#1B2150]">
+              <span className="font-display text-5xl text-[#E59200]/70">
+                {initials(member.name)}
+              </span>
+            </div>
+          ) : (
+            <Image
+              src={`${PHOTO_DIR}/${member.photo}`}
+              alt={`${member.name}, ${member.role} of AFRIQA Creative Showcase`}
+              fill
+              sizes="(max-width: 640px) 80vw, (max-width: 1024px) 40vw, 22vw"
+              quality={75}
+              className="object-cover object-top transition-transform duration-700 group-hover:scale-105"
+              onError={() => setFailed(true)}
+            />
+          )}
+
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-2.5 rounded-[1.5rem] rounded-bl-[3rem] rounded-tr-[0.5rem] border border-white/10"
+          />
+
+          <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-[#11152F]/70 to-transparent" />
+        </div>
       </div>
 
       <div className="relative mt-8 text-center">
@@ -189,11 +210,17 @@ export default function TeamSection() {
           </Reveal>
         </div>
 
+        {/* Desktop layout: 2 / 4 / 4. The first card starts in column 2 so the top row is centred. */}
         <div className="mt-16 grid gap-x-8 gap-y-16 sm:grid-cols-2 lg:grid-cols-4">
           {TEAM.map((member, index) => (
-            <Reveal key={member.name} delay={(index % 4) * 90}>
-              <TeamCard member={member} />
-            </Reveal>
+            <div
+              key={member.name}
+              className={index === 0 ? "lg:col-start-2" : ""}
+            >
+              <Reveal delay={(index % 4) * 90}>
+                <TeamCard member={member} />
+              </Reveal>
+            </div>
           ))}
         </div>
 
