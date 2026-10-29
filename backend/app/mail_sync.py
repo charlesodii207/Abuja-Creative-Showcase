@@ -12,6 +12,7 @@ Postgres advisory lock, so only one process syncs it at a time.
 
 import asyncio
 import logging
+import os
 import re
 import time
 from datetime import datetime, timedelta, timezone
@@ -19,11 +20,12 @@ from email import message_from_string
 from email.utils import getaddresses, parseaddr
 from html import unescape
 from html.parser import HTMLParser
+from uuid import uuid4
 
 import requests
 from sqlalchemy import func, text
 
-from app import models
+from app import models, storage
 from app.config import settings
 from app.database import SessionLocal
 from app.emailer import MAILBOXES, mailbox_address
@@ -37,6 +39,27 @@ BACKFILL_PAGE = 100
 BACKFILL_MAX_PAGES = 5
 MAX_BODY_CHARS = 200_000
 THREAD_MATCH_DAYS = 45
+
+# Incoming attachments. Senders are strangers, so the rules are stricter about
+# what can be OPENED in a browser, and looser about what is kept.
+MAX_INBOUND_FILES = 10                       # per email
+MAX_INBOUND_FILE_BYTES = 10 * 1024 * 1024    # per file
+MAX_INBOUND_TOTAL_BYTES = 25 * 1024 * 1024   # per email
+
+# Only these are stored with their real type (so they open in the browser).
+# Everything else is stored as a generic download, so a file like .html or
+# .svg can never be run or rendered from the storage address.
+OPENABLE_TYPES = {
+    ".pdf": "application/pdf",
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".gif": "image/gif",
+    ".webp": "image/webp",
+    ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    ".txt": "text/plain",
+}
 
 _SUBJECT_PREFIX = re.compile(r"^\s*((re|fwd?|aw)\s*:\s*)+", re.I)
 
@@ -200,11 +223,14 @@ def _load_message(key: str, summary: dict) -> dict:
     cc = _addresses(summary.get("ccAddress"))
 
     plain = _html_to_text(html or "") or unescape(str(summary.get("summary") or "")).strip()
-    if str(summary.get("hasAttachment")) in ("1", "true", "True"):
-        plain += "\n\n[This email has attachments, which are not imported. Open it in Zoho to see them.]"
+    # Attachments are fetched later, in _store(), and only for messages that
+    # are actually going to be imported (not ignored senders or duplicates).
+    has_attachments = str(summary.get("hasAttachment")) in ("1", "true", "True")
 
     return {
         "uid": int(message_id),
+        "folder_id": folder_id,
+        "has_attachments": has_attachments,
         "message_id": hdr_message_id,
         "in_reply_to": hdr_in_reply_to,
         "references": hdr_references,
@@ -218,6 +244,150 @@ def _load_message(key: str, summary: dict) -> dict:
         "html": (html or None) and html[:MAX_BODY_CHARS * 2],
         "received_at": _ms_to_dt(summary.get("receivedTime")),
     }
+
+
+# ---------------------------------------------------------------------------
+# Attachments
+# ---------------------------------------------------------------------------
+
+def _safe_filename(name: str) -> str:
+    """Drop any path, keep letters/digits/spaces/dots/dashes, cap the length."""
+    base = os.path.basename((name or "").replace("\\", "/")).strip()
+    base = re.sub(r"[^\w.\- ()]", "_", base)
+    stem, ext = os.path.splitext(base)
+    stem = stem[:100].strip(" .") or "attachment"
+    return f"{stem}{ext[:10]}"
+
+
+def _storage_extension(filename: str) -> str:
+    """The extension used in the bucket key. Only the openable types keep
+    theirs; everything else becomes .bin so nothing like .html or .svg can
+    ever be served as a web page from the storage address."""
+    ext = os.path.splitext(filename)[1].lower()
+    return ext if ext in OPENABLE_TYPES else ".bin"
+
+
+def _download_attachment(key: str, folder_id: str, message_id: str, attachment_id: str) -> bytes:
+    """Downloads one attachment, giving up as soon as it grows past the size cap."""
+    url = (
+        f"{settings.zoho_mail_host}/api/accounts/{settings.zoho_account_id(key)}"
+        f"/folders/{folder_id}/messages/{message_id}/attachments/{attachment_id}"
+    )
+
+    for attempt in (1, 2):
+        resp = requests.get(
+            url,
+            headers={
+                "Authorization": f"Zoho-oauthtoken {_access_token(key, force=attempt == 2)}",
+                "Accept": "application/octet-stream",
+            },
+            timeout=60,
+            stream=True,
+        )
+        try:
+            if resp.status_code == 401 and attempt == 1:
+                continue   # token expired: refresh once and retry
+            resp.raise_for_status()
+
+            data = bytearray()
+            for chunk in resp.iter_content(65536):
+                data.extend(chunk)
+                if len(data) > MAX_INBOUND_FILE_BYTES:
+                    raise ValueError("file is too large")
+            return bytes(data)
+        finally:
+            resp.close()
+
+    raise RuntimeError("Zoho refused the attachment download")
+
+
+def _import_attachments(polled_key: str, mailbox: str, item: dict) -> tuple[list[dict] | None, str]:
+    """
+    Saves an incoming email's attachments in the private bucket.
+
+    Returns (metadata, note):
+      - metadata: what is stored on the message row (same shape as outgoing
+        attachments), or None when there are none.
+      - note: text to add to the message body when something could not be
+        saved, so nobody thinks a file is missing from the dashboard by chance.
+
+    Never raises: the email is imported either way. Inline images (signature
+    logos and similar) are not listed by Zoho here, so they are skipped.
+    """
+    if not item.get("has_attachments"):
+        return None, ""
+
+    fallback = "\n\n[This email has attachments that could not be imported. Open it in Zoho to see them.]"
+
+    try:
+        info = _api_get(
+            polled_key,
+            f"/folders/{item['folder_id']}/messages/{item['uid']}/attachmentinfo",
+        )
+        listed = (info or {}).get("attachments") if isinstance(info, dict) else None
+    except Exception:
+        log.warning("Could not list attachments of message %s in %s", item["uid"], polled_key)
+        return None, fallback
+
+    if not listed:
+        return None, ""
+
+    saved: list[dict] = []
+    skipped: list[str] = []
+    total = 0
+
+    for att in listed:
+        name = _safe_filename(unescape(str(att.get("attachmentName") or "attachment")))
+        att_id = str(att.get("attachmentId") or "")
+
+        try:
+            declared = int(att.get("attachmentSize") or 0)
+        except (TypeError, ValueError):
+            declared = 0
+
+        if (
+            not att_id
+            or len(saved) >= MAX_INBOUND_FILES
+            or declared > MAX_INBOUND_FILE_BYTES
+            or total + declared > MAX_INBOUND_TOTAL_BYTES
+        ):
+            skipped.append(name)
+            continue
+
+        try:
+            data = _download_attachment(polled_key, item["folder_id"], str(item["uid"]), att_id)
+            if not data or total + len(data) > MAX_INBOUND_TOTAL_BYTES:
+                skipped.append(name)
+                continue
+
+            ext = os.path.splitext(name)[1].lower()
+            content_type = OPENABLE_TYPES.get(ext, "application/octet-stream")
+            storage_key = f"{mailbox}/{uuid4().hex}{_storage_extension(name)}"
+
+            storage.upload_file(storage_key, data, content_type)
+        except Exception:
+            log.warning("Could not save attachment %r of message %s", name, item["uid"], exc_info=True)
+            skipped.append(name)
+            continue
+
+        total += len(data)
+        saved.append({
+            "id": uuid4().hex,
+            "filename": name,
+            "size": len(data),
+            "content_type": content_type,
+            "key": storage_key,
+        })
+
+    note = ""
+    if skipped:
+        note = (
+            f"\n\n[{len(skipped)} attachment(s) could not be saved here "
+            f"(too large, too many, or a download problem): {', '.join(skipped)}. "
+            "Open the email in Zoho to get them.]"
+        )
+
+    return saved or None, note
 
 
 # ---------------------------------------------------------------------------
@@ -312,6 +482,9 @@ def _store(db, polled_key: str, item: dict) -> bool:
     if already:
         return False
 
+    # Only now (not ignored, not a duplicate) are the files downloaded and saved.
+    attachment_meta, attachment_note = _import_attachments(polled_key, mailbox, item)
+
     thread = _find_thread(db, mailbox, item)
     now = datetime.now(timezone.utc)
 
@@ -342,7 +515,7 @@ def _store(db, polled_key: str, item: dict) -> bool:
         sender_name=item["from_name"] or item["from_address"],
         sender_email=item["from_address"],
         subject=item["subject"],
-        body=item["body"],
+        body=item["body"] + attachment_note,
         is_read=False,
         mailbox=mailbox,
         direction="inbound",
@@ -353,6 +526,7 @@ def _store(db, polled_key: str, item: dict) -> bool:
         cc_addresses=", ".join(item["cc"]) or None,
         body_html=item["html"],
         imap_uid=item["uid"],
+        attachments=attachment_meta,
         **kwargs,
     ))
     db.flush()
