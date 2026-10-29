@@ -283,6 +283,55 @@
       "rights": "© {year} {organizer}. Todos los derechos reservados.",
       "location": "Abuja · África",
       "followOn": "Sigue a la ACS en {name}"
+    },
+    "team": {
+      "eyebrow": "El equipo principal",
+      "heading": "Conoce al equipo",
+      "intro": "Estos son los responsables que coordinan AFRIQA Creative Showcase, pero son solo una parte de la historia. Muchas más personas contribuyen entre bastidores para que todo sea posible.",
+      "outro": "Detrás de cada nombre hay un círculo más amplio de personas, y todos los demás que dedican su tiempo, sus habilidades y su energía a este showcase. Cada aportación cuenta, y estamos agradecidos por cada una de ellas.",
+      "photoAlt": "{name}, {role} de AFRIQA Creative Showcase",
+      "members": {
+        "paulgold": {
+          "role": "Convocante",
+          "bio": "La visión detrás de Afriqa Creative Showcase, que reúne en Abuja a creativos, inversores y líderes del sector de África."
+        },
+        "ebere": {
+          "role": "Dirección",
+          "bio": "Dirige la planificación y la ejecución del showcase, y mantiene a cada equipo y programa alineado con la visión del evento."
+        },
+        "desmond": {
+          "role": "Responsable de Publicidad en Medios",
+          "bio": "Lidera la publicidad en medios del showcase: prensa, anuncios y acciones de difusión que llevan la historia a las audiencias adecuadas."
+        },
+        "happiness": {
+          "role": "Responsable de Operaciones",
+          "bio": "Supervisa las operaciones del día a día y se asegura de que cada parte del showcase funcione sin problemas, desde la planificación hasta el día del evento."
+        },
+        "favour": {
+          "role": "Responsable de Administración",
+          "bio": "Lidera la administración del showcase y mantiene los registros, la documentación y los procesos internos ordenados y al día."
+        },
+        "susan": {
+          "role": "Responsable de Protocolo",
+          "bio": "Se encarga del protocolo del showcase y atiende a invitados, ponentes y autoridades desde su llegada hasta su partida."
+        },
+        "charles": {
+          "role": "Responsable de Tecnología",
+          "bio": "Lidera la tecnología del showcase: crea y mantiene el sitio web y los sistemas de inscripción y de venta de entradas."
+        },
+        "caroline": {
+          "role": "Responsable de Secretaría",
+          "bio": "Dirige la secretaría y se ocupa de la coordinación, la comunicación y el trabajo administrativo diario del equipo."
+        },
+        "david": {
+          "role": "Responsable de Logística",
+          "bio": "Dirige la logística: el montaje del recinto, el traslado de personas y materiales y todo lo necesario sobre el terreno."
+        },
+        "jhilblanket": {
+          "role": "Responsable de Producción de Medios",
+          "bio": "Lidera la producción de medios del showcase y crea el contenido de vídeo, foto y visual que cuenta su historia antes, durante y después del evento."
+        }
+      }
     }
   }
 }

@@ -283,6 +283,55 @@
       "rights": "© {year} {organizer}. All rights reserved.",
       "location": "Abuja · Africa",
       "followOn": "Follow ACS on {name}"
+    },
+    "team": {
+      "eyebrow": "The Core Team",
+      "heading": "Meet the Team",
+      "intro": "These are the leads coordinating AFRIQA Creative Showcase, but they are only part of the story. Many more people are contributing behind the scenes to make it happen.",
+      "outro": "Behind every name here is a wider circle of people, and everyone else who gives their time, skills and energy to this showcase. Every contribution counts, and we are grateful for each one.",
+      "photoAlt": "{name}, {role} of AFRIQA Creative Showcase",
+      "members": {
+        "paulgold": {
+          "role": "Convener",
+          "bio": "The vision behind Afriqa Creative Showcase, bringing Africa's creatives, investors and industry leaders together in Abuja."
+        },
+        "ebere": {
+          "role": "Director",
+          "bio": "Directs the planning and delivery of the showcase, keeping every team and programme aligned with the event's vision."
+        },
+        "desmond": {
+          "role": "Head of Media Publicity",
+          "bio": "Leads media publicity for the showcase, handling press, announcements and outreach that put the story in front of the right audiences."
+        },
+        "happiness": {
+          "role": "Head of Operations",
+          "bio": "Oversees day-to-day operations, making sure every part of the showcase runs smoothly from planning to event day."
+        },
+        "favour": {
+          "role": "Head of Administration",
+          "bio": "Leads administration for the showcase, keeping records, documentation and internal processes organised and on track."
+        },
+        "susan": {
+          "role": "Head of Protocol",
+          "bio": "Handles protocol for the showcase, looking after guests, speakers and dignitaries from arrival to departure."
+        },
+        "charles": {
+          "role": "Head of Technology",
+          "bio": "Leads technology for the showcase, building and maintaining the website, registration and ticketing systems."
+        },
+        "caroline": {
+          "role": "Head of Secretariat",
+          "bio": "Runs the secretariat, handling coordination, communication and day-to-day paperwork for the team."
+        },
+        "david": {
+          "role": "Head of Logistics",
+          "bio": "Heads logistics, coordinating venue setup, the movement of people and materials, and everything needed on the ground."
+        },
+        "jhilblanket": {
+          "role": "Head of Media Production",
+          "bio": "Leads media production for the showcase, creating the video, photo and visual content that tells its story before, during and after the event."
+        }
+      }
     }
   }
 }

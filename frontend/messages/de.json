@@ -283,6 +283,55 @@
       "rights": "© {year} {organizer}. Alle Rechte vorbehalten.",
       "location": "Abuja · Afrika",
       "followOn": "ACS auf {name} folgen"
+    },
+    "team": {
+      "eyebrow": "Das Kernteam",
+      "heading": "Lernen Sie das Team kennen",
+      "intro": "Das sind die Verantwortlichen, die die AFRIQA Creative Showcase koordinieren – doch sie sind nur ein Teil der Geschichte. Viele weitere Menschen tragen hinter den Kulissen dazu bei, dass sie stattfindet.",
+      "outro": "Hinter jedem Namen steht ein größerer Kreis von Menschen, dazu alle, die dieser Showcase ihre Zeit, ihre Fähigkeiten und ihre Energie schenken. Jeder Beitrag zählt, und wir sind für jeden dankbar.",
+      "photoAlt": "{name}, {role} der AFRIQA Creative Showcase",
+      "members": {
+        "paulgold": {
+          "role": "Veranstalter",
+          "bio": "Die Vision hinter der Afriqa Creative Showcase, die Afrikas Kreative, Investoren und Branchenführer in Abuja zusammenbringt."
+        },
+        "ebere": {
+          "role": "Leitung",
+          "bio": "Leitet Planung und Durchführung der Showcase und sorgt dafür, dass jedes Team und jedes Programm auf die Vision der Veranstaltung ausgerichtet bleibt."
+        },
+        "desmond": {
+          "role": "Leitung Medien-PR",
+          "bio": "Verantwortet die Medien-PR der Showcase – Presse, Ankündigungen und Öffentlichkeitsarbeit, die die Geschichte zum richtigen Publikum bringen."
+        },
+        "happiness": {
+          "role": "Leitung Betrieb",
+          "bio": "Überwacht den laufenden Betrieb und sorgt dafür, dass jeder Teil der Showcase von der Planung bis zum Veranstaltungstag reibungslos läuft."
+        },
+        "favour": {
+          "role": "Leitung Verwaltung",
+          "bio": "Leitet die Verwaltung der Showcase und hält Unterlagen, Dokumentation und interne Abläufe geordnet und auf Kurs."
+        },
+        "susan": {
+          "role": "Leitung Protokoll",
+          "bio": "Verantwortet das Protokoll der Showcase und betreut Gäste, Redner und Ehrengäste von der Ankunft bis zur Abreise."
+        },
+        "charles": {
+          "role": "Leitung Technologie",
+          "bio": "Leitet die Technologie der Showcase und baut und betreut die Website sowie die Registrierungs- und Ticketsysteme."
+        },
+        "caroline": {
+          "role": "Leitung Sekretariat",
+          "bio": "Führt das Sekretariat und übernimmt Koordination, Kommunikation und den täglichen Schriftverkehr für das Team."
+        },
+        "david": {
+          "role": "Leitung Logistik",
+          "bio": "Leitet die Logistik – Aufbau des Veranstaltungsorts, Transport von Menschen und Material und alles, was vor Ort gebraucht wird."
+        },
+        "jhilblanket": {
+          "role": "Leitung Medienproduktion",
+          "bio": "Leitet die Medienproduktion der Showcase und erstellt die Video-, Foto- und Bildinhalte, die ihre Geschichte vor, während und nach der Veranstaltung erzählen."
+        }
+      }
     }
   }
 }
