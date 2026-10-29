@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 import Reveal from "./Reveal";
 
 type TeamMember = {
+  /** Key used to look up the translated role and bio in messages/*.json */
+  id: string;
   name: string;
-  role: string;
-  /** Short one or two sentence bio. Optional: remove the line to hide it. */
-  bio?: string;
   /** File name inside /public/images/team/, named after the first name */
   photo: string;
 };
@@ -18,73 +18,25 @@ const PHOTO_DIR = "/images/team";
 /**
  * Order matters. On desktop the grid reads left to right:
  * Row 1 (2 people, centred), Row 2 (4 people), Row 3 (4 people).
+ * Roles and bios are translated: edit them in messages/*.json under
+ * Home.team.members.<id>.
  */
 const TEAM: TeamMember[] = [
   // Row 1 (2)
-  {
-    name: "Paulgold Olalekan Joseph",
-    role: "Convener",
-    bio: "The vision behind Afriqa Creative Showcase, bringing Africa's creatives, investors and industry leaders together in Abuja.",
-    photo: "paulgold.webp",
-  },
-  {
-    name: "Ebere Ojadua",
-    role: "Director",
-    bio: "Directs the planning and delivery of the showcase, keeping every team and programme aligned with the event's vision.",
-    photo: "ebere.webp",
-  },
+  { id: "paulgold", name: "Paulgold Olalekan Joseph", photo: "paulgold.webp" },
+  { id: "ebere", name: "Ebere Ojadua", photo: "ebere.webp" },
 
   // Row 2 (4)
-  {
-    name: "Desmond Utomwen",
-    role: "Head of Media Publicity",
-    bio: "Leads media publicity for the showcase, handling press, announcements and outreach that put the story in front of the right audiences.",
-    photo: "desmond.webp",
-  },
-  {
-    name: "Happiness Edesiri Obrudu",
-    role: "Head of Operations",
-    bio: "Oversees day-to-day operations, making sure every part of the showcase runs smoothly from planning to event day.",
-    photo: "happiness.webp",
-  },
-  {
-    name: "Favour Efe Orobosa",
-    role: "Head of Administration",
-    bio: "Leads administration for the showcase, keeping records, documentation and internal processes organised and on track.",
-    photo: "favour.webp",
-  },
-  {
-    name: "Susan Sechivir Umah",
-    role: "Head of Protocol",
-    bio: "Handles protocol for the showcase, looking after guests, speakers and dignitaries from arrival to departure.",
-    photo: "susan.webp",
-  },
+  { id: "desmond", name: "Desmond Utomwen", photo: "desmond.webp" },
+  { id: "happiness", name: "Happiness Edesiri Obrudu", photo: "happiness.webp" },
+  { id: "favour", name: "Favour Efe Orobosa", photo: "favour.webp" },
+  { id: "susan", name: "Susan Sechivir Umah", photo: "susan.webp" },
 
   // Row 3 (4)
-  {
-    name: "Charles Odii Okechukwu",
-    role: "Head of Technology",
-    bio: "Leads technology for the showcase, building and maintaining the website, registration and ticketing systems.",
-    photo: "charles.webp",
-  },
-  {
-    name: "Caroline Okoh",
-    role: "Head of Secretariat",
-    bio: "Runs the secretariat, handling coordination, communication and day-to-day paperwork for the team.",
-    photo: "caroline.webp",
-  },
-  {
-    name: "David Onyekwe Ebuka",
-    role: "Head of Logistics",
-    bio: "Heads logistics, coordinating venue setup, the movement of people and materials, and everything needed on the ground.",
-    photo: "david.webp",
-  },
-  {
-    name: "Jhilblanket Oluwaobafemi",
-    role: "Head of Media Production",
-    bio: "Leads media production for the showcase, creating the video, photo and visual content that tells its story before, during and after the event.",
-    photo: "jhilblanket.webp",
-  },
+  { id: "charles", name: "Charles Odii Okechukwu", photo: "charles.webp" },
+  { id: "caroline", name: "Caroline Okoh", photo: "caroline.webp" },
+  { id: "david", name: "David Onyekwe Ebuka", photo: "david.webp" },
+  { id: "jhilblanket", name: "Jhilblanket Oluwaobafemi", photo: "jhilblanket.webp" },
 ];
 
 function initials(name: string) {
@@ -97,7 +49,10 @@ function initials(name: string) {
 }
 
 function TeamCard({ member }: { member: TeamMember }) {
+  const t = useTranslations("Home.team");
   const [failed, setFailed] = useState(false);
+  const role = t(`members.${member.id}.role`);
+  const bio = t(`members.${member.id}.bio`);
 
   return (
     <div className="group mx-auto w-full max-w-[18rem]">
@@ -124,7 +79,7 @@ function TeamCard({ member }: { member: TeamMember }) {
           ) : (
             <Image
               src={`${PHOTO_DIR}/${member.photo}`}
-              alt={`${member.name}, ${member.role} of AFRIQA Creative Showcase`}
+              alt={t("photoAlt", { name: member.name, role })}
               fill
               sizes="(max-width: 640px) 80vw, (max-width: 1024px) 40vw, 22vw"
               quality={75}
@@ -150,20 +105,18 @@ function TeamCard({ member }: { member: TeamMember }) {
         </h3>
 
         <p className="mt-1.5 text-[10px] uppercase tracking-[0.25em] text-[#C5BFAF]/55">
-          {member.role}
+          {role}
         </p>
 
-        {member.bio && (
-          <p className="mt-4 text-sm leading-relaxed text-[#B8B3AA]/70">
-            {member.bio}
-          </p>
-        )}
+        <p className="mt-4 text-sm leading-relaxed text-[#B8B3AA]/70">{bio}</p>
       </div>
     </div>
   );
 }
 
 export default function TeamSection() {
+  const t = useTranslations("Home.team");
+
   return (
     <section
       id="team"
@@ -190,22 +143,20 @@ export default function TeamSection() {
               </div>
 
               <span className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#C5BFAF]/55">
-                The Core Team
+                {t("eyebrow")}
               </span>
             </div>
           </Reveal>
 
           <Reveal delay={80}>
             <h2 className="font-display text-4xl leading-[1.1] text-[#F5EFE6] sm:text-5xl">
-              Meet the Team
+              {t("heading")}
             </h2>
           </Reveal>
 
           <Reveal delay={160}>
             <p className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-[#B8B3AA]/75 sm:text-[17px]">
-              These are the leads coordinating AFRIQA Creative Showcase, but
-              they are only part of the story. Many more people are
-              contributing behind the scenes to make it happen.
+              {t("intro")}
             </p>
           </Reveal>
         </div>
@@ -241,9 +192,7 @@ export default function TeamSection() {
             </div>
 
             <p className="text-base leading-relaxed text-[#B8B3AA]/75 sm:text-[17px]">
-              Behind every name here is a wider circle of people, and everyone
-              else who gives their time, skills and energy to this showcase.
-              Every contribution counts, and we are grateful for each one.
+              {t("outro")}
             </p>
           </div>
         </Reveal>

@@ -1,0 +1,247 @@
+{
+  "en": {
+    "eyebrow": "The Core Team",
+    "heading": "Meet the Team",
+    "intro": "These are the leads coordinating AFRIQA Creative Showcase, but they are only part of the story. Many more people are contributing behind the scenes to make it happen.",
+    "outro": "Behind every name here is a wider circle of people, and everyone else who gives their time, skills and energy to this showcase. Every contribution counts, and we are grateful for each one.",
+    "photoAlt": "{name}, {role} of AFRIQA Creative Showcase",
+    "members": {
+      "paulgold": {
+        "role": "Convener",
+        "bio": "The vision behind Afriqa Creative Showcase, bringing Africa's creatives, investors and industry leaders together in Abuja."
+      },
+      "ebere": {
+        "role": "Director",
+        "bio": "Directs the planning and delivery of the showcase, keeping every team and programme aligned with the event's vision."
+      },
+      "desmond": {
+        "role": "Head of Media Publicity",
+        "bio": "Leads media publicity for the showcase, handling press, announcements and outreach that put the story in front of the right audiences."
+      },
+      "happiness": {
+        "role": "Head of Operations",
+        "bio": "Oversees day-to-day operations, making sure every part of the showcase runs smoothly from planning to event day."
+      },
+      "favour": {
+        "role": "Head of Administration",
+        "bio": "Leads administration for the showcase, keeping records, documentation and internal processes organised and on track."
+      },
+      "susan": {
+        "role": "Head of Protocol",
+        "bio": "Handles protocol for the showcase, looking after guests, speakers and dignitaries from arrival to departure."
+      },
+      "charles": {
+        "role": "Head of Technology",
+        "bio": "Leads technology for the showcase, building and maintaining the website, registration and ticketing systems."
+      },
+      "caroline": {
+        "role": "Head of Secretariat",
+        "bio": "Runs the secretariat, handling coordination, communication and day-to-day paperwork for the team."
+      },
+      "david": {
+        "role": "Head of Logistics",
+        "bio": "Heads logistics, coordinating venue setup, the movement of people and materials, and everything needed on the ground."
+      },
+      "jhilblanket": {
+        "role": "Head of Media Production",
+        "bio": "Leads media production for the showcase, creating the video, photo and visual content that tells its story before, during and after the event."
+      }
+    }
+  },
+  "fr": {
+    "eyebrow": "L'équipe principale",
+    "heading": "Rencontrez l'équipe",
+    "intro": "Voici les responsables qui coordonnent l'AFRIQA Creative Showcase, mais ils ne sont qu'une partie de l'histoire. Beaucoup d'autres personnes œuvrent en coulisses pour que l'événement ait lieu.",
+    "outro": "Derrière chaque nom se trouve un cercle plus large de personnes, ainsi que toutes celles et tous ceux qui donnent leur temps, leurs compétences et leur énergie à ce showcase. Chaque contribution compte, et nous leur sommes reconnaissants.",
+    "photoAlt": "{name}, {role} de l'AFRIQA Creative Showcase",
+    "members": {
+      "paulgold": {
+        "role": "Organisateur",
+        "bio": "À l'origine de la vision de l'Afriqa Creative Showcase, qui réunit à Abuja les créatifs, les investisseurs et les leaders de l'industrie d'Afrique."
+      },
+      "ebere": {
+        "role": "Direction",
+        "bio": "Dirige la planification et la réalisation du showcase, en veillant à ce que chaque équipe et chaque programme reste fidèle à la vision de l'événement."
+      },
+      "desmond": {
+        "role": "Responsable de la communication média",
+        "bio": "Pilote la communication média du showcase : presse, annonces et actions de sensibilisation qui placent l'histoire devant les bons publics."
+      },
+      "happiness": {
+        "role": "Responsable des opérations",
+        "bio": "Supervise les opérations au quotidien et veille à ce que chaque élément du showcase se déroule sans accroc, de la préparation au jour J."
+      },
+      "favour": {
+        "role": "Responsable de l'administration",
+        "bio": "Dirige l'administration du showcase et garde les dossiers, la documentation et les processus internes organisés et à jour."
+      },
+      "susan": {
+        "role": "Responsable du protocole",
+        "bio": "Gère le protocole du showcase et prend soin des invités, des intervenants et des personnalités, de leur arrivée à leur départ."
+      },
+      "charles": {
+        "role": "Responsable de la technologie",
+        "bio": "Dirige la technologie du showcase : conception et maintenance du site web, des inscriptions et de la billetterie."
+      },
+      "caroline": {
+        "role": "Responsable du secrétariat",
+        "bio": "Dirige le secrétariat et assure la coordination, la communication et les tâches administratives courantes de l'équipe."
+      },
+      "david": {
+        "role": "Responsable de la logistique",
+        "bio": "Dirige la logistique : installation du lieu, déplacement des personnes et du matériel, et tout ce qu'il faut sur le terrain."
+      },
+      "jhilblanket": {
+        "role": "Responsable de la production média",
+        "bio": "Dirige la production média du showcase et crée les contenus vidéo, photo et visuels qui racontent son histoire avant, pendant et après l'événement."
+      }
+    }
+  },
+  "de": {
+    "eyebrow": "Das Kernteam",
+    "heading": "Lernen Sie das Team kennen",
+    "intro": "Das sind die Verantwortlichen, die die AFRIQA Creative Showcase koordinieren – doch sie sind nur ein Teil der Geschichte. Viele weitere Menschen tragen hinter den Kulissen dazu bei, dass sie stattfindet.",
+    "outro": "Hinter jedem Namen steht ein größerer Kreis von Menschen, dazu alle, die dieser Showcase ihre Zeit, ihre Fähigkeiten und ihre Energie schenken. Jeder Beitrag zählt, und wir sind für jeden dankbar.",
+    "photoAlt": "{name}, {role} der AFRIQA Creative Showcase",
+    "members": {
+      "paulgold": {
+        "role": "Veranstalter",
+        "bio": "Die Vision hinter der Afriqa Creative Showcase, die Afrikas Kreative, Investoren und Branchenführer in Abuja zusammenbringt."
+      },
+      "ebere": {
+        "role": "Leitung",
+        "bio": "Leitet Planung und Durchführung der Showcase und sorgt dafür, dass jedes Team und jedes Programm auf die Vision der Veranstaltung ausgerichtet bleibt."
+      },
+      "desmond": {
+        "role": "Leitung Medien-PR",
+        "bio": "Verantwortet die Medien-PR der Showcase – Presse, Ankündigungen und Öffentlichkeitsarbeit, die die Geschichte zum richtigen Publikum bringen."
+      },
+      "happiness": {
+        "role": "Leitung Betrieb",
+        "bio": "Überwacht den laufenden Betrieb und sorgt dafür, dass jeder Teil der Showcase von der Planung bis zum Veranstaltungstag reibungslos läuft."
+      },
+      "favour": {
+        "role": "Leitung Verwaltung",
+        "bio": "Leitet die Verwaltung der Showcase und hält Unterlagen, Dokumentation und interne Abläufe geordnet und auf Kurs."
+      },
+      "susan": {
+        "role": "Leitung Protokoll",
+        "bio": "Verantwortet das Protokoll der Showcase und betreut Gäste, Redner und Ehrengäste von der Ankunft bis zur Abreise."
+      },
+      "charles": {
+        "role": "Leitung Technologie",
+        "bio": "Leitet die Technologie der Showcase und baut und betreut die Website sowie die Registrierungs- und Ticketsysteme."
+      },
+      "caroline": {
+        "role": "Leitung Sekretariat",
+        "bio": "Führt das Sekretariat und übernimmt Koordination, Kommunikation und den täglichen Schriftverkehr für das Team."
+      },
+      "david": {
+        "role": "Leitung Logistik",
+        "bio": "Leitet die Logistik – Aufbau des Veranstaltungsorts, Transport von Menschen und Material und alles, was vor Ort gebraucht wird."
+      },
+      "jhilblanket": {
+        "role": "Leitung Medienproduktion",
+        "bio": "Leitet die Medienproduktion der Showcase und erstellt die Video-, Foto- und Bildinhalte, die ihre Geschichte vor, während und nach der Veranstaltung erzählen."
+      }
+    }
+  },
+  "es": {
+    "eyebrow": "El equipo principal",
+    "heading": "Conoce al equipo",
+    "intro": "Estos son los responsables que coordinan AFRIQA Creative Showcase, pero son solo una parte de la historia. Muchas más personas contribuyen entre bastidores para que todo sea posible.",
+    "outro": "Detrás de cada nombre hay un círculo más amplio de personas, y todos los demás que dedican su tiempo, sus habilidades y su energía a este showcase. Cada aportación cuenta, y estamos agradecidos por cada una de ellas.",
+    "photoAlt": "{name}, {role} de AFRIQA Creative Showcase",
+    "members": {
+      "paulgold": {
+        "role": "Convocante",
+        "bio": "La visión detrás de Afriqa Creative Showcase, que reúne en Abuja a creativos, inversores y líderes del sector de África."
+      },
+      "ebere": {
+        "role": "Dirección",
+        "bio": "Dirige la planificación y la ejecución del showcase, y mantiene a cada equipo y programa alineado con la visión del evento."
+      },
+      "desmond": {
+        "role": "Responsable de Publicidad en Medios",
+        "bio": "Lidera la publicidad en medios del showcase: prensa, anuncios y acciones de difusión que llevan la historia a las audiencias adecuadas."
+      },
+      "happiness": {
+        "role": "Responsable de Operaciones",
+        "bio": "Supervisa las operaciones del día a día y se asegura de que cada parte del showcase funcione sin problemas, desde la planificación hasta el día del evento."
+      },
+      "favour": {
+        "role": "Responsable de Administración",
+        "bio": "Lidera la administración del showcase y mantiene los registros, la documentación y los procesos internos ordenados y al día."
+      },
+      "susan": {
+        "role": "Responsable de Protocolo",
+        "bio": "Se encarga del protocolo del showcase y atiende a invitados, ponentes y autoridades desde su llegada hasta su partida."
+      },
+      "charles": {
+        "role": "Responsable de Tecnología",
+        "bio": "Lidera la tecnología del showcase: crea y mantiene el sitio web y los sistemas de inscripción y de venta de entradas."
+      },
+      "caroline": {
+        "role": "Responsable de Secretaría",
+        "bio": "Dirige la secretaría y se ocupa de la coordinación, la comunicación y el trabajo administrativo diario del equipo."
+      },
+      "david": {
+        "role": "Responsable de Logística",
+        "bio": "Dirige la logística: el montaje del recinto, el traslado de personas y materiales y todo lo necesario sobre el terreno."
+      },
+      "jhilblanket": {
+        "role": "Responsable de Producción de Medios",
+        "bio": "Lidera la producción de medios del showcase y crea el contenido de vídeo, foto y visual que cuenta su historia antes, durante y después del evento."
+      }
+    }
+  },
+  "zh": {
+    "eyebrow": "核心团队",
+    "heading": "认识我们的团队",
+    "intro": "他们是统筹 AFRIQA Creative Showcase 的负责人，但这只是故事的一部分。还有更多人在幕后付出，让展会得以实现。",
+    "outro": "每个名字的背后都有一个更大的群体，还有所有为本次展会奉献时间、技能和精力的人。每一份付出都很重要，我们对每一位都心怀感激。",
+    "photoAlt": "{name}，AFRIQA Creative Showcase {role}",
+    "members": {
+      "paulgold": {
+        "role": "召集人",
+        "bio": "Afriqa Creative Showcase 的愿景发起人，致力于把非洲的创作者、投资人和行业领袖汇聚到阿布贾。"
+      },
+      "ebere": {
+        "role": "总监",
+        "bio": "负责展会的规划与执行，确保每个团队和每项议程都与活动愿景保持一致。"
+      },
+      "desmond": {
+        "role": "媒体宣传负责人",
+        "bio": "负责展会的媒体宣传，处理新闻报道、公告发布和对外联络，让展会的故事传达给合适的受众。"
+      },
+      "happiness": {
+        "role": "运营负责人",
+        "bio": "统筹日常运营，确保展会从筹备到活动当天的每个环节都顺利进行。"
+      },
+      "favour": {
+        "role": "行政负责人",
+        "bio": "负责展会的行政工作，让档案、文件和内部流程保持有序、按计划推进。"
+      },
+      "susan": {
+        "role": "礼宾负责人",
+        "bio": "负责展会的礼宾事务，从抵达到离开全程照顾嘉宾、演讲者和贵宾。"
+      },
+      "charles": {
+        "role": "技术负责人",
+        "bio": "负责展会的技术工作，搭建并维护网站、注册和票务系统。"
+      },
+      "caroline": {
+        "role": "秘书处负责人",
+        "bio": "负责秘书处工作，处理团队的协调、沟通和日常文书事务。"
+      },
+      "david": {
+        "role": "物流负责人",
+        "bio": "负责物流工作，统筹场地搭建、人员与物资调度，以及现场所需的一切保障。"
+      },
+      "jhilblanket": {
+        "role": "媒体制作负责人",
+        "bio": "负责展会的媒体制作，创作视频、照片和视觉内容，在活动前、中、后讲述展会的故事。"
+      }
+    }
+  }
+}
