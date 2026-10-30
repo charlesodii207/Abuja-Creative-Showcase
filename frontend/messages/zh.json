@@ -461,6 +461,95 @@
       "newReg": "新注册",
       "checkStatus": "查询状态、付款或升级",
       "footer": "阿布贾 · 2026年12月4–5日"
+    },
+    "tiers": {
+      "general": {
+        "label": "普通票",
+        "blurb": "12月4日和5日两天免费入场：时装秀、电影放映与艺术展、创意市集以及现场音乐会。普通座位。"
+      },
+      "vip": {
+        "label": "VIP",
+        "blurb": "包含普通票的全部权益，并在时装秀和音乐会上享有优先座位。"
+      },
+      "masterclass": {
+        "label": "大师班",
+        "blurb": "包含普通票的全部权益，另含两天的大师班。普通座位。"
+      },
+      "vvip": {
+        "label": "VVIP",
+        "blurb": "全部包含：前排预留座位、音乐会与晚宴预留餐桌、见面会、两天大师班，以及路演与交易洽谈室入场资格。"
+      }
+    },
+    "attendeeNew": {
+      "taking": "正在带您前往通行证页面…",
+      "registered": "您已注册成功",
+      "received": "已收到注册",
+      "freeTitle": "您的免费票正在发送中",
+      "paidTitle": "完成您的注册",
+      "freeText": "您的注册已确认。我们已通过电子邮件发送您的免费票。",
+      "paidText": "我们已收到您的注册，并已为您保留席位。",
+      "ticket": "票种",
+      "price": "价格",
+      "amountDue": "应付金额",
+      "confirmationEmail": "确认邮箱",
+      "freeNote": "您的票已附在我们发送的邮件中。两天中任意一天入场时请出示。",
+      "paidNote": "请查看邮箱中的参考编号并妥善保存——您需要用它来完成注册和付款。",
+      "backHome": "返回首页",
+      "finish": "完成注册",
+      "footer": "阿布贾 · 2026年12月4–5日",
+      "eyebrow": "加入展会",
+      "heading": "观众注册",
+      "intro": "请确认您的通行证，然后告诉我们您的信息。注册后，您将通过电子邮件收到参考编号。",
+      "step1": "第 01 步",
+      "yourTicket": "您的票",
+      "changePass": "更换通行证",
+      "amountDueSmall": "应付金额",
+      "selected": "已选择",
+      "step2": "第 02 步",
+      "yourDetails": "您的信息",
+      "fullName": "姓名",
+      "fullNamePh": "例如：张三",
+      "email": "电子邮箱",
+      "phone": "电话",
+      "agree": "我已阅读并同意<terms>条款与条件</terms>及<privacy>隐私政策</privacy>。",
+      "errorFallback": "出了点问题——请检查您的信息后重试。",
+      "registrationFailed": "注册失败",
+      "registering": "正在注册...",
+      "getFree": "领取我的免费票 →",
+      "complete": "完成注册 →",
+      "payNote": "注册后，您将选择付款方式：在线支付或银行转账。您的参考编号也会通过电子邮件发送给您。",
+      "group": "为团队、学校或团体购票？",
+      "groupBtn": "批量购票"
+    },
+    "attendeeFinish": {
+      "eyebrow": "观众服务中心",
+      "heading": "查询状态、付款或升级",
+      "intro": "请输入注册邮件中的参考编号。",
+      "refLabel": "参考编号",
+      "checking": "查询中...",
+      "check": "查询状态",
+      "hi": "{name}，您好：",
+      "regStatus": "注册状态",
+      "rejectedDefault": "您的注册未获本届展会通过。",
+      "attendee": "观众",
+      "unpaidText": "您的注册仍在等待付款。请完成付款以确保您的席位。您可以在线支付或通过银行转账。",
+      "completePay": "完成付款并确保席位",
+      "confirmed": "已确认",
+      "ticketSent": "您的票已发送至您的邮箱。",
+      "wantUpgrade": "想升级您的身份吗？",
+      "clickHere": "点击此处",
+      "upgradeTitle": "升级您的票",
+      "upgradeNote": "您的票号和二维码保持不变——只有您的入场类型会改变。付款确认后，更新后的票将通过电子邮件发送给您。",
+      "upgradeTo": "升级为",
+      "selectTicket": "请选择票种",
+      "optionPay": "{label}（需支付 ₦{amount}）",
+      "starting": "正在开始升级...",
+      "upgradeBtn": "升级并付款",
+      "backHome": "返回首页",
+      "errNotFound": "未找到匹配的注册信息。",
+      "errGeneric": "出了点问题，请重试。",
+      "errUpgrade": "无法开始升级。",
+      "errUpgradeStart": "开始升级时出了点问题。"
     }
   }
 }

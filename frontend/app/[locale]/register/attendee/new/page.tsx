@@ -1,56 +1,34 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
-import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
+import { routing } from "@/i18n/routing";
+import { useLocale, useTranslations } from "next-intl";
+import { useSearchParams } from "next/navigation";
 
 // The values below are what the backend stores (general / vip / masterclass /
 // vvip). The names people see:
 //   general -> General (free)   vip -> VIP   masterclass -> Masterclass   vvip -> VVIP
 type TicketType = "general" | "vip" | "masterclass" | "vvip";
 
-const TIERS: {
-  value: TicketType;
-  label: string;
-  price: string;
-  blurb: string;
-}[] = [
-  {
-    value: "general",
-    label: "General",
-    price: "Free",
-    blurb:
-      "Free entry on both days, 4 and 5 December: fashion runway, film screenings and art, the Creative Market, and the live concert. General seating.",
-  },
-  {
-    value: "vip",
-    label: "VIP",
-    price: "₦20,000",
-    blurb:
-      "Everything in General, with priority seating at the runway and the concert.",
-  },
-  {
-    value: "masterclass",
-    label: "Masterclass",
-    price: "₦50,000",
-    blurb:
-      "Everything in General, plus the masterclasses on both days. General seating.",
-  },
-  {
-    value: "vvip",
-    label: "VVIP",
-    price: "₦150,000",
-    blurb:
-      "Everything included: front reserved seating, a reserved table at the concert and dinner, meet and greet, masterclasses on both days, and Pitch and Deal Room access.",
-  },
+// Labels and descriptions are translated: see messages/*.json (Register.tiers).
+const TIERS: { value: TicketType; price: string | null }[] = [
+  { value: "general", price: null },
+  { value: "vip", price: "₦20,000" },
+  { value: "masterclass", price: "₦50,000" },
+  { value: "vvip", price: "₦150,000" },
 ];
 
 function AttendeeNewRegistrationForm() {
   const router = useRouter();
+  const t = useTranslations("Register");
+  const locale = useLocale();
+  // English lives at the site root; the other languages have a /fr, /de... prefix.
+  const prefix = locale === routing.defaultLocale ? "" : `/${locale}`;
   const searchParams = useSearchParams();
 
   // The pass chosen on /register arrives as ?ticket=vip (general, vip, masterclass, vvip).
-  const picked = TIERS.find((t) => t.value === searchParams.get("ticket")) ?? null;
+  const picked = TIERS.find((x) => x.value === searchParams.get("ticket")) ?? null;
 
   const [form, setForm] = useState({
     full_name: "",
@@ -79,7 +57,8 @@ function AttendeeNewRegistrationForm() {
     if (!picked) router.replace("/register#passes");
   }, [picked, router]);
 
-  const selectedTier = TIERS.find((t) => t.value === form.ticket_type)!;
+  const selectedTier = TIERS.find((x) => x.value === form.ticket_type)!;
+  const priceOf = (tier: { price: string | null }) => tier.price ?? t("free");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -100,7 +79,7 @@ function AttendeeNewRegistrationForm() {
 
       if (!res.ok) {
         throw new Error(
-          typeof data?.detail === "string" ? data.detail : "Registration failed"
+          typeof data?.detail === "string" ? data.detail : t("attendeeNew.registrationFailed")
         );
       }
 
@@ -109,7 +88,7 @@ function AttendeeNewRegistrationForm() {
       // emailed as a backup.) Free tickets have no payment link, so they
       // fall through to the confirmation screen below.
       if (data.paystack_authorization_url && data.reference_number) {
-        window.location.href = `/verify?ref=${encodeURIComponent(
+        window.location.href = `${prefix}/verify?ref=${encodeURIComponent(
           data.reference_number
         )}&pay=1`;
         return;
@@ -134,7 +113,7 @@ function AttendeeNewRegistrationForm() {
   if (!picked) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#11152F] px-6">
-        <p className="text-sm text-[#B8B3AA]/75">Taking you to the passes…</p>
+        <p className="text-sm text-[#B8B3AA]/75">{t("attendeeNew.taking")}</p>
       </main>
     );
   }
@@ -177,44 +156,44 @@ function AttendeeNewRegistrationForm() {
                 </div>
 
                 <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#00A5A8]">
-                  {isFree ? "You're registered" : "Registration Received"}
+                  {isFree ? t("attendeeNew.registered") : t("attendeeNew.received")}
                 </p>
 
                 <h1 className="mt-4 font-display text-4xl leading-[1.05] text-[#F5EFE6] sm:text-5xl">
-                  {isFree ? "Your Free Ticket Is on Its Way" : "Finish Your Registration"}
+                  {isFree ? t("attendeeNew.freeTitle") : t("attendeeNew.paidTitle")}
                 </h1>
 
                 <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-[#B8B3AA]/75 sm:text-lg">
                   {isFree
-                    ? "Your registration is confirmed. We have emailed your free ticket."
-                    : "Your registration has been received and your place has been reserved."}
+                    ? t("attendeeNew.freeText")
+                    : t("attendeeNew.paidText")}
                 </p>
 
                 <div className="mt-10 grid gap-4 sm:grid-cols-2">
                   <div className="rounded-[1.5rem] border border-[#E59200]/20 bg-[#11152F]/60 px-6 py-6 text-left">
                     <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#B8B3AA]/45">
-                      Ticket
+                      {t("attendeeNew.ticket")}
                     </p>
 
                     <p className="mt-2 font-display text-2xl text-[#F5EFE6]">
-                      {selectedTier.label}
+                      {t(`tiers.${selectedTier.value}.label`)}
                     </p>
                   </div>
 
                   <div className="rounded-[1.5rem] border border-[#00A5A8]/20 bg-[#11152F]/60 px-6 py-6 text-left">
                     <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#B8B3AA]/45">
-                      {isFree ? "Price" : "Amount Due"}
+                      {isFree ? t("attendeeNew.price") : t("attendeeNew.amountDue")}
                     </p>
 
                     <p className="mt-2 font-display text-2xl text-[#E59200]">
-                      {isFree ? "Free" : `₦${amountNaira}`}
+                      {isFree ? t("free") : `₦${amountNaira}`}
                     </p>
                   </div>
                 </div>
 
                 <div className="mt-5 rounded-[1.5rem] border border-white/10 bg-[#11152F]/40 px-6 py-6 text-left">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#B8B3AA]/45">
-                    Confirmation Email
+                    {t("attendeeNew.confirmationEmail")}
                   </p>
 
                   <p className="mt-2 break-all font-mono text-sm text-[#F5EFE6]">
@@ -223,8 +202,8 @@ function AttendeeNewRegistrationForm() {
 
                   <p className="mt-3 text-sm leading-relaxed text-[#B8B3AA]/65">
                     {isFree
-                      ? "Your ticket is attached to the email we sent. Show it at check-in on either day."
-                      : "Check your email for your reference number. Keep it safe — you'll need it to finish your registration and complete payment."}
+                      ? t("attendeeNew.freeNote")
+                      : t("attendeeNew.paidNote")}
                   </p>
                 </div>
 
@@ -234,14 +213,14 @@ function AttendeeNewRegistrationForm() {
                       href="/"
                       className="inline-flex items-center justify-center rounded-full bg-[#00A5A8] px-8 py-3.5 text-sm font-semibold text-[#11152F] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_30px_rgba(0,165,168,0.18)]"
                     >
-                      Back to homepage
+                      {t("attendeeNew.backHome")}
                     </Link>
                   ) : (
                   <Link
                     href="/verify"
                     className="inline-flex items-center justify-center rounded-full bg-[#00A5A8] px-8 py-3.5 text-sm font-semibold text-[#11152F] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_30px_rgba(0,165,168,0.18)]"
                   >
-                    Finish Registration
+                    {t("attendeeNew.finish")}
                     <span className="ml-3">→</span>
                   </Link>
                   )}
@@ -251,7 +230,7 @@ function AttendeeNewRegistrationForm() {
                   <span className="h-px w-10 bg-white/10" />
 
                   <span className="text-[10px] uppercase tracking-[0.25em] text-[#F5EFE6]/30">
-                    Abuja · 04–05 December 2026
+                    {t("attendeeNew.footer")}
                   </span>
 
                   <span className="h-px w-10 bg-white/10" />
@@ -285,16 +264,15 @@ function AttendeeNewRegistrationForm() {
           </div>
 
           <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#00A5A8]">
-            Join the Showcase
+            {t("attendeeNew.eyebrow")}
           </p>
 
           <h1 className="mt-4 font-display text-4xl leading-[1.05] text-[#F5EFE6] sm:text-5xl md:text-6xl">
-            Attendee Registration
+            {t("attendeeNew.heading")}
           </h1>
 
           <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-[#B8B3AA]/75 sm:text-lg">
-            Check your pass, then tell us who you are. After
-            registration, you&apos;ll receive your reference number by email.
+            {t("attendeeNew.intro")}
           </p>
         </div>
 
@@ -311,11 +289,11 @@ function AttendeeNewRegistrationForm() {
             <div className="p-6 sm:p-8 lg:p-10">
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-[#00A5A8]">
-                  Step 01
+                  {t("attendeeNew.step1")}
                 </p>
 
                 <h2 className="mt-2 font-display text-2xl text-[#F5EFE6] sm:text-3xl">
-                  Your ticket
+                  {t("attendeeNew.yourTicket")}
                 </h2>
               </div>
 
@@ -327,34 +305,34 @@ function AttendeeNewRegistrationForm() {
 
                 <div className="flex w-full items-center justify-between gap-4">
                   <span className="text-base font-medium text-[#F5EFE6]">
-                    {selectedTier.label}
+                    {t(`tiers.${selectedTier.value}.label`)}
                   </span>
 
                   <span className="font-display text-xl text-[#E59200]">
-                    {selectedTier.price}
+                    {priceOf(selectedTier)}
                   </span>
                 </div>
 
                 <p className="mt-4 text-sm leading-relaxed text-[#B8B3AA]/70">
-                  {selectedTier.blurb}
+                  {t(`tiers.${selectedTier.value}.blurb`)}
                 </p>
 
                 <Link
                   href="/register#passes"
                   className="mt-4 inline-block text-xs text-[#F5EFE6]/60 underline underline-offset-4 hover:text-[#F5EFE6]"
                 >
-                  Change pass
+                  {t("attendeeNew.changePass")}
                 </Link>
               </div>
 
               <div className="mt-6 flex items-center justify-between rounded-xl border border-[#E59200]/20 bg-[#11152F]/60 px-5 py-4">
                 <div>
                   <p className="text-[10px] uppercase tracking-[0.18em] text-[#B8B3AA]/45">
-                    Amount due
+                    {t("attendeeNew.amountDueSmall")}
                   </p>
 
                   <p className="mt-1 font-display text-2xl text-[#E59200]">
-                    {selectedTier.price}
+                    {priceOf(selectedTier)}
                   </p>
                 </div>
 
@@ -362,7 +340,7 @@ function AttendeeNewRegistrationForm() {
                   <span className="h-2 w-2 rounded-full bg-[#E59200]" />
 
                   <span className="text-[10px] uppercase tracking-[0.2em] text-[#F5EFE6]/30">
-                    Selected
+                    {t("attendeeNew.selected")}
                   </span>
                 </div>
               </div>
@@ -371,24 +349,24 @@ function AttendeeNewRegistrationForm() {
             <div className="border-t border-white/10 bg-[#11152F]/30 p-6 sm:p-8 lg:border-l lg:border-t-0 lg:p-10">
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-[#00A5A8]">
-                  Step 02
+                  {t("attendeeNew.step2")}
                 </p>
 
                 <h2 className="mt-2 font-display text-2xl text-[#F5EFE6] sm:text-3xl">
-                  Your details
+                  {t("attendeeNew.yourDetails")}
                 </h2>
               </div>
 
               <div className="mt-7 space-y-5">
                 <div>
                   <label className="block text-sm font-medium text-[#F5EFE6]/75">
-                    Full Name
+                    {t("attendeeNew.fullName")}
                   </label>
 
                   <input
                     required
                     type="text"
-                    placeholder="e.g. John Doe"
+                    placeholder={t("attendeeNew.fullNamePh")}
                     value={form.full_name}
                     onChange={(e) =>
                       setForm({ ...form, full_name: e.target.value })
@@ -399,7 +377,7 @@ function AttendeeNewRegistrationForm() {
 
                 <div>
                   <label className="block text-sm font-medium text-[#F5EFE6]/75">
-                    Email
+                    {t("attendeeNew.email")}
                   </label>
 
                   <input
@@ -416,7 +394,7 @@ function AttendeeNewRegistrationForm() {
 
                 <div>
                   <label className="block text-sm font-medium text-[#F5EFE6]/75">
-                    Phone
+                    {t("attendeeNew.phone")}
                   </label>
 
                   <input
@@ -441,25 +419,28 @@ function AttendeeNewRegistrationForm() {
                   />
 
                   <span className="text-sm leading-relaxed text-[#F5EFE6]/65">
-                    I have read and agree to the{" "}
-                    <Link
-                      href="/terms"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[#00A5A8] underline underline-offset-2 hover:text-[#E59200]"
-                    >
-                      Terms &amp; Conditions
-                    </Link>{" "}
-                    and the{" "}
-                    <Link
-                      href="/privacy"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[#00A5A8] underline underline-offset-2 hover:text-[#E59200]"
-                    >
-                      Privacy Policy
-                    </Link>
-                    .
+                    {t.rich("attendeeNew.agree", {
+                      terms: (chunks) => (
+                        <Link
+                          href="/terms-and-conditions"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[#00A5A8] underline underline-offset-2 hover:text-[#E59200]"
+                        >
+                          {chunks}
+                        </Link>
+                      ),
+                      privacy: (chunks) => (
+                        <Link
+                          href="/privacy-policy"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[#00A5A8] underline underline-offset-2 hover:text-[#E59200]"
+                        >
+                          {chunks}
+                        </Link>
+                      ),
+                    })}
                   </span>
                 </label>
 
@@ -467,7 +448,7 @@ function AttendeeNewRegistrationForm() {
                   <div className="rounded-xl border border-[#B80319]/30 bg-[#B80319]/10 px-4 py-3">
                     <p className="text-sm leading-relaxed text-[#F5EFE6]/80">
                       {errorMessage ||
-                        "Something went wrong — please check your details and try again."}
+                        t("attendeeNew.errorFallback")}
                     </p>
                   </div>
                 )}
@@ -478,15 +459,14 @@ function AttendeeNewRegistrationForm() {
                   className="w-full rounded-full bg-[#00A5A8] px-7 py-4 text-sm font-semibold text-[#11152F] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(0,165,168,0.18)] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {status === "submitting"
-                    ? "Registering..."
+                    ? t("attendeeNew.registering")
                     : selectedTier.value === "general"
-                    ? "Get my free ticket →"
-                    : "Complete Registration →"}
+                    ? t("attendeeNew.getFree")
+                    : t("attendeeNew.complete")}
                 </button>
 
                 <p className="text-center text-[10px] leading-relaxed tracking-wide text-[#F5EFE6]/25">
-                  After registration, you will choose how to pay: online or by bank
-                  transfer. Your reference number is also emailed to you.
+                  {t("attendeeNew.payNote")}
                 </p>
               </div>
             </div>
@@ -496,13 +476,13 @@ function AttendeeNewRegistrationForm() {
         {/* Link to the group (bulk) ticket page */}
         <div className="mt-8 rounded-[1.5rem] border border-[#E59200]/20 bg-[#151A3A] px-6 py-6 text-center">
           <p className="text-sm text-[#F5EFE6]/75">
-            Buying for a team, school or group?
+            {t("attendeeNew.group")}
           </p>
           <Link
             href="/group"
             className="mt-3 inline-flex items-center justify-center rounded-full border border-[#E59200]/50 px-6 py-2.5 text-sm font-semibold text-[#E59200] transition-colors hover:bg-[#E59200]/10"
           >
-            Buy Multiple Tickets <span className="ml-2">→</span>
+            {t("attendeeNew.groupBtn")} <span className="ml-2">→</span>
           </Link>
         </div>
 
@@ -510,7 +490,7 @@ function AttendeeNewRegistrationForm() {
           <span className="h-px w-10 bg-white/10" />
 
           <span className="text-[10px] uppercase tracking-[0.25em] text-[#F5EFE6]/30">
-            Abuja · 04–05 December 2026
+            {t("attendeeNew.footer")}
           </span>
 
           <span className="h-px w-10 bg-white/10" />

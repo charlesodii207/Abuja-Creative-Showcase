@@ -461,6 +461,95 @@
       "newReg": "New Registration",
       "checkStatus": "Check Status, Pay, or Upgrade",
       "footer": "Abuja · 04–05 December 2026"
+    },
+    "tiers": {
+      "general": {
+        "label": "General",
+        "blurb": "Free entry on both days, 4 and 5 December: fashion runway, film screenings and art, the Creative Market, and the live concert. General seating."
+      },
+      "vip": {
+        "label": "VIP",
+        "blurb": "Everything in General, with priority seating at the runway and the concert."
+      },
+      "masterclass": {
+        "label": "Masterclass",
+        "blurb": "Everything in General, plus the masterclasses on both days. General seating."
+      },
+      "vvip": {
+        "label": "VVIP",
+        "blurb": "Everything included: front reserved seating, a reserved table at the concert and dinner, meet and greet, masterclasses on both days, and Pitch and Deal Room access."
+      }
+    },
+    "attendeeNew": {
+      "taking": "Taking you to the passes…",
+      "registered": "You're registered",
+      "received": "Registration Received",
+      "freeTitle": "Your Free Ticket Is on Its Way",
+      "paidTitle": "Finish Your Registration",
+      "freeText": "Your registration is confirmed. We have emailed your free ticket.",
+      "paidText": "Your registration has been received and your place has been reserved.",
+      "ticket": "Ticket",
+      "price": "Price",
+      "amountDue": "Amount Due",
+      "confirmationEmail": "Confirmation Email",
+      "freeNote": "Your ticket is attached to the email we sent. Show it at check-in on either day.",
+      "paidNote": "Check your email for your reference number. Keep it safe — you'll need it to finish your registration and complete payment.",
+      "backHome": "Back to homepage",
+      "finish": "Finish Registration",
+      "footer": "Abuja · 04–05 December 2026",
+      "eyebrow": "Join the Showcase",
+      "heading": "Attendee Registration",
+      "intro": "Check your pass, then tell us who you are. After registration, you'll receive your reference number by email.",
+      "step1": "Step 01",
+      "yourTicket": "Your ticket",
+      "changePass": "Change pass",
+      "amountDueSmall": "Amount due",
+      "selected": "Selected",
+      "step2": "Step 02",
+      "yourDetails": "Your details",
+      "fullName": "Full Name",
+      "fullNamePh": "e.g. John Doe",
+      "email": "Email",
+      "phone": "Phone",
+      "agree": "I have read and agree to the <terms>Terms & Conditions</terms> and the <privacy>Privacy Policy</privacy>.",
+      "errorFallback": "Something went wrong — please check your details and try again.",
+      "registrationFailed": "Registration failed",
+      "registering": "Registering...",
+      "getFree": "Get my free ticket →",
+      "complete": "Complete Registration →",
+      "payNote": "After registration, you will choose how to pay: online or by bank transfer. Your reference number is also emailed to you.",
+      "group": "Buying for a team, school or group?",
+      "groupBtn": "Buy Multiple Tickets"
+    },
+    "attendeeFinish": {
+      "eyebrow": "Attendee Portal",
+      "heading": "Check Status, Pay, or Upgrade",
+      "intro": "Enter the reference number from your registration email.",
+      "refLabel": "Reference Number",
+      "checking": "Checking...",
+      "check": "Check Status",
+      "hi": "Hi {name},",
+      "regStatus": "Registration Status",
+      "rejectedDefault": "Your registration was not approved for this edition.",
+      "attendee": "Attendee",
+      "unpaidText": "Your registration is still awaiting payment. Complete payment to secure your slot. You can pay online or by bank transfer.",
+      "completePay": "Complete Payment & Secure Your Slot",
+      "confirmed": "Confirmed",
+      "ticketSent": "Your ticket has been sent to your email.",
+      "wantUpgrade": "Want to upgrade your status?",
+      "clickHere": "Click here",
+      "upgradeTitle": "Upgrade your ticket",
+      "upgradeNote": "Your ticket number and QR code stay the same — only your access type changes. An updated ticket will be emailed once payment is confirmed.",
+      "upgradeTo": "Upgrade to",
+      "selectTicket": "Select a ticket",
+      "optionPay": "{label} (pay ₦{amount})",
+      "starting": "Starting upgrade...",
+      "upgradeBtn": "Upgrade & Pay",
+      "backHome": "Back to homepage",
+      "errNotFound": "No matching registration found.",
+      "errGeneric": "Something went wrong. Please try again.",
+      "errUpgrade": "Could not start upgrade.",
+      "errUpgradeStart": "Something went wrong starting the upgrade."
     }
   }
 }

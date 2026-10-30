@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 
 type Phase = "enter-ref" | "loading" | "unpaid" | "paid" | "rejected" | "error";
 
@@ -10,12 +11,8 @@ type Phase = "enter-ref" | "loading" | "unpaid" | "paid" | "rejected" | "error";
 //   general     -> 1-Day Pass
 //   vip         -> 2-Day Pass
 //   masterclass -> Masterclass Pass
-const TICKET_LABELS: Record<string, string> = {
-  general: "General",
-  vip: "VIP",
-  masterclass: "Masterclass",
-  vvip: "VVIP",
-};
+// Ticket names are translated: see messages/*.json (Register.tiers).
+const KNOWN_TICKETS = ["general", "vip", "masterclass", "vvip"];
 
 // Ticket prices in naira (General is free). Used to show what an upgrade costs.
 const PRICES: Record<string, number> = {
@@ -43,6 +40,7 @@ const UPGRADE_OPTIONS: Record<
 };
 
 export default function AttendeeFinishPage() {
+  const t = useTranslations("Register");
   const [referenceNumber, setReferenceNumber] = useState("");
   const [phase, setPhase] = useState<Phase>("enter-ref");
   const [error, setError] = useState("");
@@ -76,7 +74,7 @@ export default function AttendeeFinishPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.detail || "No matching registration found.");
+        setError(data.detail || t("attendeeFinish.errNotFound"));
         setPhase("error");
         return;
       }
@@ -93,7 +91,7 @@ export default function AttendeeFinishPage() {
         setPhase(data.is_paid ? "paid" : "unpaid");
       }
     } catch {
-      setError("Something went wrong. Please try again.");
+      setError(t("attendeeFinish.errGeneric"));
       setPhase("error");
     }
   }
@@ -120,20 +118,22 @@ export default function AttendeeFinishPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.detail || "Could not start upgrade.");
+        setError(data.detail || t("attendeeFinish.errUpgrade"));
         setUpgrading(false);
         return;
       }
 
       window.location.href = data.paystack_authorization_url;
     } catch {
-      setError("Something went wrong starting the upgrade.");
+      setError(t("attendeeFinish.errUpgradeStart"));
       setUpgrading(false);
     }
   }
 
   const upgradeChoices = UPGRADE_OPTIONS[ticketType] || [];
-  const ticketLabel = TICKET_LABELS[ticketType] ?? ticketType;
+  const ticketLabel = KNOWN_TICKETS.includes(ticketType)
+    ? t(`tiers.${ticketType}.label`)
+    : ticketType;
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#11152F]">
@@ -157,15 +157,15 @@ export default function AttendeeFinishPage() {
           </div>
 
           <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#00A5A8]">
-            Attendee Portal
+            {t("attendeeFinish.eyebrow")}
           </p>
 
           <h1 className="mt-4 font-display text-4xl leading-[1.05] text-[#F5EFE6] sm:text-5xl">
-            Check Status, Pay, or Upgrade
+            {t("attendeeFinish.heading")}
           </h1>
 
           <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-[#B8B3AA]/75 sm:text-lg">
-            Enter the reference number from your registration email.
+            {t("attendeeFinish.intro")}
           </p>
         </div>
 
@@ -179,7 +179,7 @@ export default function AttendeeFinishPage() {
           />
 
           <label className="block text-sm font-medium text-[#F5EFE6]/75">
-            Reference Number
+            {t("attendeeFinish.refLabel")}
           </label>
 
           <input
@@ -198,7 +198,9 @@ export default function AttendeeFinishPage() {
             disabled={phase === "loading"}
             className="mt-6 w-full rounded-full bg-[#00A5A8] px-7 py-4 text-sm font-semibold text-[#11152F] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(0,165,168,0.18)] disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {phase === "loading" ? "Checking..." : "Check Status"}
+            {phase === "loading"
+              ? t("attendeeFinish.checking")
+              : t("attendeeFinish.check")}
           </button>
         </form>
 
@@ -210,17 +212,17 @@ export default function AttendeeFinishPage() {
 
         {phase === "rejected" && (
           <div className="mt-8 rounded-[2rem] border border-[#B80319]/25 bg-[#151A3A] px-6 py-9 text-center shadow-[0_25px_60px_rgba(0,0,0,0.14)] sm:px-8">
-            <p className="text-sm text-[#B8B3AA]/65">Hi {fullName},</p>
+            <p className="text-sm text-[#B8B3AA]/65">{t("attendeeFinish.hi", { name: fullName })}</p>
 
             <p className="mt-3 font-display text-2xl text-[#F5EFE6]">
-              Registration Status
+              {t("attendeeFinish.regStatus")}
             </p>
 
             <div className="mx-auto mt-5 h-px w-16 bg-[#B80319]/40" />
 
             <p className="mx-auto mt-5 max-w-md text-sm leading-relaxed text-[#B8B3AA]/70">
               {statusMessage ||
-                "Your registration was not approved for this edition."}
+                t("attendeeFinish.rejectedDefault")}
             </p>
           </div>
         )}
@@ -228,11 +230,11 @@ export default function AttendeeFinishPage() {
         {phase === "unpaid" && (
           <div className="mt-8 rounded-[2rem] border border-[#E59200]/25 bg-[#151A3A] px-6 py-9 text-center shadow-[0_25px_60px_rgba(0,0,0,0.14)] sm:px-8">
             <p className="text-sm text-[#B8B3AA]/65">
-              Hi {fullName},
+              {t("attendeeFinish.hi", { name: fullName })}
             </p>
 
             <p className="mt-3 font-display text-2xl text-[#F5EFE6]">
-              Attendee —{" "}
+              {t("attendeeFinish.attendee")} —{" "}
               <span className="text-[#E59200]">
                 {ticketLabel}
               </span>
@@ -241,8 +243,7 @@ export default function AttendeeFinishPage() {
             <div className="mx-auto mt-5 h-px w-16 bg-[#E59200]/40" />
 
             <p className="mx-auto mt-5 max-w-md text-sm leading-relaxed text-[#B8B3AA]/70">
-              Your registration is still awaiting payment. Complete payment
-              to secure your slot. You can pay online or by bank transfer.
+              {t("attendeeFinish.unpaidText")}
             </p>
 
             {/* The payment choice (Kora or bank transfer) lives on /verify. */}
@@ -250,7 +251,7 @@ export default function AttendeeFinishPage() {
               href={`/verify?ref=${encodeURIComponent(referenceNumber)}`}
               className="mt-7 block w-full rounded-full bg-[#E59200] px-7 py-4 text-sm font-semibold text-[#11152F] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(229,146,0,0.18)]"
             >
-              Complete Payment &amp; Secure Your Slot
+              {t("attendeeFinish.completePay")}
             </Link>
           </div>
         )}
@@ -262,32 +263,32 @@ export default function AttendeeFinishPage() {
             </div>
 
             <p className="mt-5 text-sm text-[#B8B3AA]/65">
-              Hi {fullName},
+              {t("attendeeFinish.hi", { name: fullName })}
             </p>
 
             <p className="mt-3 font-display text-2xl text-[#F5EFE6]">
-              Attendee —{" "}
+              {t("attendeeFinish.attendee")} —{" "}
               <span className="text-[#00A5A8]">
                 {ticketLabel}
               </span>
             </p>
 
             <p className="mt-2 text-sm font-medium uppercase tracking-[0.18em] text-[#00A5A8]">
-              Confirmed
+              {t("attendeeFinish.confirmed")}
             </p>
 
             <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-[#B8B3AA]/70">
-              Your ticket has been sent to your email.
+              {t("attendeeFinish.ticketSent")}
             </p>
 
             {upgradeChoices.length > 0 && !showUpgrade && (
               <p className="mt-6 text-xs text-[#B8B3AA]/60">
-                Want to upgrade your status?{" "}
+                {t("attendeeFinish.wantUpgrade")}{" "}
                 <button
                   onClick={() => setShowUpgrade(true)}
                   className="text-[#F5EFE6]/80 underline underline-offset-4 transition-colors hover:text-[#00A5A8]"
                 >
-                  Click here
+                  {t("attendeeFinish.clickHere")}
                 </button>
               </p>
             )}
@@ -295,17 +296,15 @@ export default function AttendeeFinishPage() {
             {showUpgrade && (
               <div className="mt-7 rounded-[1.25rem] border border-white/10 bg-[#11152F] px-5 py-6 text-left">
                 <p className="text-sm font-medium text-[#F5EFE6]/75">
-                  Upgrade your ticket
+                  {t("attendeeFinish.upgradeTitle")}
                 </p>
 
                 <p className="mt-2 text-xs leading-relaxed text-[#B8B3AA]/55">
-                  Your ticket number and QR code stay the same — only your
-                  access type changes. An updated ticket will be emailed once
-                  payment is confirmed.
+                  {t("attendeeFinish.upgradeNote")}
                 </p>
 
                 <label className="mt-4 block text-xs uppercase tracking-[0.15em] text-[#B8B3AA]/50">
-                  Upgrade to
+                  {t("attendeeFinish.upgradeTo")}
                 </label>
 
                 <select
@@ -313,13 +312,16 @@ export default function AttendeeFinishPage() {
                   onChange={(e) => setUpgradeTier(e.target.value)}
                   className="mt-2 w-full rounded-xl border border-white/10 bg-[#151A3A] px-4 py-3 text-[#F5EFE6] outline-none transition-colors focus:border-[#00A5A8]/60"
                 >
-                  <option value="">Select a ticket</option>
+                  <option value="">{t("attendeeFinish.selectTicket")}</option>
 
                   {upgradeChoices.map((opt) => (
                     <option key={opt.value} value={opt.value}>
-                      {`${opt.label} (pay ₦${(
-                        (PRICES[opt.value] ?? 0) - (PRICES[ticketType] ?? 0)
-                      ).toLocaleString()})`}
+                      {t("attendeeFinish.optionPay", {
+                        label: t(`tiers.${opt.value}.label`),
+                        amount: (
+                          (PRICES[opt.value] ?? 0) - (PRICES[ticketType] ?? 0)
+                        ).toLocaleString(),
+                      })}
                     </option>
                   ))}
                 </select>
@@ -330,8 +332,8 @@ export default function AttendeeFinishPage() {
                   className="mt-4 w-full rounded-full bg-[#00A5A8] px-7 py-3.5 text-sm font-semibold text-[#11152F] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_25px_rgba(0,165,168,0.18)] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {upgrading
-                    ? "Starting upgrade..."
-                    : "Upgrade & Pay"}
+                    ? t("attendeeFinish.starting")
+                    : t("attendeeFinish.upgradeBtn")}
                 </button>
 
                 {error && (
@@ -349,7 +351,7 @@ export default function AttendeeFinishPage() {
             href="/"
             className="text-[10px] uppercase tracking-[0.25em] text-[#F5EFE6]/35 transition-colors hover:text-[#F5EFE6]/70"
           >
-            Back to homepage
+            {t("attendeeFinish.backHome")}
           </Link>
 
           <span className="h-px w-10 bg-white/10" />

@@ -461,6 +461,95 @@
       "newReg": "Nouvelle inscription",
       "checkStatus": "Vérifier le statut, payer ou améliorer",
       "footer": "Abuja · 4–5 décembre 2026"
+    },
+    "tiers": {
+      "general": {
+        "label": "Général",
+        "blurb": "Entrée gratuite les deux jours, les 4 et 5 décembre : défilé de mode, projections de films et art, Marché créatif et concert en direct. Placement général."
+      },
+      "vip": {
+        "label": "VIP",
+        "blurb": "Tout ce qui est inclus dans le pass Général, avec un placement prioritaire au défilé et au concert."
+      },
+      "masterclass": {
+        "label": "Masterclass",
+        "blurb": "Tout ce qui est inclus dans le pass Général, plus les masterclasses des deux jours. Placement général."
+      },
+      "vvip": {
+        "label": "VVIP",
+        "blurb": "Tout est inclus : places réservées au premier rang, table réservée au concert et au dîner, rencontre avec les artistes, masterclasses des deux jours et accès au Pitch et à la Deal Room."
+      }
+    },
+    "attendeeNew": {
+      "taking": "Redirection vers les pass…",
+      "registered": "Vous êtes inscrit",
+      "received": "Inscription reçue",
+      "freeTitle": "Votre billet gratuit est en route",
+      "paidTitle": "Terminez votre inscription",
+      "freeText": "Votre inscription est confirmée. Nous vous avons envoyé votre billet gratuit par e-mail.",
+      "paidText": "Votre inscription a bien été reçue et votre place est réservée.",
+      "ticket": "Billet",
+      "price": "Prix",
+      "amountDue": "Montant à payer",
+      "confirmationEmail": "E-mail de confirmation",
+      "freeNote": "Votre billet est joint à l'e-mail que nous avons envoyé. Présentez-le à l'entrée l'un ou l'autre jour.",
+      "paidNote": "Consultez votre e-mail pour trouver votre numéro de référence. Conservez-le précieusement : il vous servira à terminer votre inscription et à effectuer le paiement.",
+      "backHome": "Retour à l'accueil",
+      "finish": "Terminer l'inscription",
+      "footer": "Abuja · 4–5 décembre 2026",
+      "eyebrow": "Rejoignez le Showcase",
+      "heading": "Inscription des participants",
+      "intro": "Vérifiez votre pass, puis dites-nous qui vous êtes. Après l'inscription, vous recevrez votre numéro de référence par e-mail.",
+      "step1": "Étape 01",
+      "yourTicket": "Votre billet",
+      "changePass": "Changer de pass",
+      "amountDueSmall": "Montant à payer",
+      "selected": "Sélectionné",
+      "step2": "Étape 02",
+      "yourDetails": "Vos informations",
+      "fullName": "Nom complet",
+      "fullNamePh": "ex. Jean Dupont",
+      "email": "E-mail",
+      "phone": "Téléphone",
+      "agree": "J'ai lu et j'accepte les <terms>Conditions générales</terms> ainsi que la <privacy>Politique de confidentialité</privacy>.",
+      "errorFallback": "Une erreur s'est produite — veuillez vérifier vos informations et réessayer.",
+      "registrationFailed": "L'inscription a échoué",
+      "registering": "Inscription en cours...",
+      "getFree": "Obtenir mon billet gratuit →",
+      "complete": "Finaliser l'inscription →",
+      "payNote": "Après l'inscription, vous choisirez comment payer : en ligne ou par virement bancaire. Votre numéro de référence vous est également envoyé par e-mail.",
+      "group": "Vous achetez pour une équipe, une école ou un groupe ?",
+      "groupBtn": "Acheter plusieurs billets"
+    },
+    "attendeeFinish": {
+      "eyebrow": "Espace participant",
+      "heading": "Vérifier le statut, payer ou améliorer",
+      "intro": "Saisissez le numéro de référence figurant dans votre e-mail d'inscription.",
+      "refLabel": "Numéro de référence",
+      "checking": "Vérification...",
+      "check": "Vérifier le statut",
+      "hi": "Bonjour {name},",
+      "regStatus": "Statut de l'inscription",
+      "rejectedDefault": "Votre inscription n'a pas été retenue pour cette édition.",
+      "attendee": "Participant",
+      "unpaidText": "Votre inscription est toujours en attente de paiement. Effectuez le paiement pour sécuriser votre place. Vous pouvez payer en ligne ou par virement bancaire.",
+      "completePay": "Payer et sécuriser ma place",
+      "confirmed": "Confirmé",
+      "ticketSent": "Votre billet a été envoyé à votre adresse e-mail.",
+      "wantUpgrade": "Vous souhaitez améliorer votre statut ?",
+      "clickHere": "Cliquez ici",
+      "upgradeTitle": "Améliorer votre billet",
+      "upgradeNote": "Le numéro de votre billet et votre code QR restent les mêmes — seul votre type d'accès change. Un billet mis à jour vous sera envoyé par e-mail dès que le paiement sera confirmé.",
+      "upgradeTo": "Passer à",
+      "selectTicket": "Choisir un billet",
+      "optionPay": "{label} (à payer : ₦{amount})",
+      "starting": "Démarrage de l'amélioration...",
+      "upgradeBtn": "Améliorer et payer",
+      "backHome": "Retour à l'accueil",
+      "errNotFound": "Aucune inscription correspondante n'a été trouvée.",
+      "errGeneric": "Une erreur s'est produite. Veuillez réessayer.",
+      "errUpgrade": "Impossible de démarrer l'amélioration.",
+      "errUpgradeStart": "Une erreur s'est produite au démarrage de l'amélioration."
     }
   }
 }

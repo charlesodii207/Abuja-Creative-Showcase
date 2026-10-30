@@ -461,6 +461,95 @@
       "newReg": "Neue Registrierung",
       "checkStatus": "Status prüfen, bezahlen oder upgraden",
       "footer": "Abuja · 4.–5. Dezember 2026"
+    },
+    "tiers": {
+      "general": {
+        "label": "General",
+        "blurb": "Freier Eintritt an beiden Tagen, 4. und 5. Dezember: Modenschau, Filmvorführungen und Kunst, der Creative Market und das Live-Konzert. Allgemeine Sitzplätze."
+      },
+      "vip": {
+        "label": "VIP",
+        "blurb": "Alles aus General, mit bevorzugten Sitzplätzen bei der Modenschau und beim Konzert."
+      },
+      "masterclass": {
+        "label": "Masterclass",
+        "blurb": "Alles aus General, plus die Masterclasses an beiden Tagen. Allgemeine Sitzplätze."
+      },
+      "vvip": {
+        "label": "VVIP",
+        "blurb": "Alles inklusive: reservierte Plätze ganz vorne, ein reservierter Tisch bei Konzert und Dinner, Meet & Greet, Masterclasses an beiden Tagen sowie Zugang zu Pitch und Deal Room."
+      }
+    },
+    "attendeeNew": {
+      "taking": "Sie werden zu den Pässen weitergeleitet…",
+      "registered": "Sie sind registriert",
+      "received": "Registrierung erhalten",
+      "freeTitle": "Ihr kostenloses Ticket ist unterwegs",
+      "paidTitle": "Schließen Sie Ihre Registrierung ab",
+      "freeText": "Ihre Registrierung ist bestätigt. Wir haben Ihnen Ihr kostenloses Ticket per E-Mail geschickt.",
+      "paidText": "Ihre Registrierung ist eingegangen und Ihr Platz ist reserviert.",
+      "ticket": "Ticket",
+      "price": "Preis",
+      "amountDue": "Zu zahlender Betrag",
+      "confirmationEmail": "Bestätigungs-E-Mail",
+      "freeNote": "Ihr Ticket hängt an der E-Mail, die wir gesendet haben. Zeigen Sie es an einem der beiden Tage beim Check-in vor.",
+      "paidNote": "Prüfen Sie Ihre E-Mails auf Ihre Referenznummer. Bewahren Sie sie gut auf — Sie brauchen sie, um Ihre Registrierung abzuschließen und die Zahlung vorzunehmen.",
+      "backHome": "Zurück zur Startseite",
+      "finish": "Registrierung abschließen",
+      "footer": "Abuja · 4.–5. Dezember 2026",
+      "eyebrow": "Seien Sie bei der Showcase dabei",
+      "heading": "Registrierung für Besucher",
+      "intro": "Prüfen Sie Ihren Pass und sagen Sie uns dann, wer Sie sind. Nach der Registrierung erhalten Sie Ihre Referenznummer per E-Mail.",
+      "step1": "Schritt 01",
+      "yourTicket": "Ihr Ticket",
+      "changePass": "Pass ändern",
+      "amountDueSmall": "Zu zahlender Betrag",
+      "selected": "Ausgewählt",
+      "step2": "Schritt 02",
+      "yourDetails": "Ihre Angaben",
+      "fullName": "Vollständiger Name",
+      "fullNamePh": "z. B. Max Mustermann",
+      "email": "E-Mail",
+      "phone": "Telefon",
+      "agree": "Ich habe die <terms>Allgemeinen Geschäftsbedingungen</terms> und die <privacy>Datenschutzerklärung</privacy> gelesen und stimme ihnen zu.",
+      "errorFallback": "Etwas ist schiefgelaufen — bitte prüfen Sie Ihre Angaben und versuchen Sie es erneut.",
+      "registrationFailed": "Registrierung fehlgeschlagen",
+      "registering": "Registrierung läuft...",
+      "getFree": "Mein kostenloses Ticket holen →",
+      "complete": "Registrierung abschließen →",
+      "payNote": "Nach der Registrierung wählen Sie, wie Sie bezahlen: online oder per Banküberweisung. Ihre Referenznummer wird Ihnen außerdem per E-Mail zugeschickt.",
+      "group": "Sie kaufen für ein Team, eine Schule oder eine Gruppe?",
+      "groupBtn": "Mehrere Tickets kaufen"
+    },
+    "attendeeFinish": {
+      "eyebrow": "Besucherbereich",
+      "heading": "Status prüfen, bezahlen oder upgraden",
+      "intro": "Geben Sie die Referenznummer aus Ihrer Registrierungs-E-Mail ein.",
+      "refLabel": "Referenznummer",
+      "checking": "Wird geprüft...",
+      "check": "Status prüfen",
+      "hi": "Hallo {name},",
+      "regStatus": "Registrierungsstatus",
+      "rejectedDefault": "Ihre Registrierung wurde für diese Ausgabe nicht angenommen.",
+      "attendee": "Besucher",
+      "unpaidText": "Ihre Registrierung wartet noch auf die Zahlung. Schließen Sie die Zahlung ab, um sich Ihren Platz zu sichern. Sie können online oder per Banküberweisung bezahlen.",
+      "completePay": "Zahlung abschließen und Platz sichern",
+      "confirmed": "Bestätigt",
+      "ticketSent": "Ihr Ticket wurde an Ihre E-Mail-Adresse gesendet.",
+      "wantUpgrade": "Möchten Sie Ihren Status upgraden?",
+      "clickHere": "Hier klicken",
+      "upgradeTitle": "Ticket upgraden",
+      "upgradeNote": "Ihre Ticketnummer und Ihr QR-Code bleiben gleich — nur Ihre Zugangsart ändert sich. Ein aktualisiertes Ticket wird per E-Mail gesendet, sobald die Zahlung bestätigt ist.",
+      "upgradeTo": "Upgrade auf",
+      "selectTicket": "Ticket auswählen",
+      "optionPay": "{label} (Aufpreis ₦{amount})",
+      "starting": "Upgrade wird gestartet...",
+      "upgradeBtn": "Upgraden und bezahlen",
+      "backHome": "Zurück zur Startseite",
+      "errNotFound": "Keine passende Registrierung gefunden.",
+      "errGeneric": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.",
+      "errUpgrade": "Das Upgrade konnte nicht gestartet werden.",
+      "errUpgradeStart": "Beim Starten des Upgrades ist etwas schiefgelaufen."
     }
   }
 }

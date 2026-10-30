@@ -461,6 +461,95 @@
       "newReg": "Nuevo registro",
       "checkStatus": "Consultar estado, pagar o mejorar",
       "footer": "Abuja · 4–5 de diciembre de 2026"
+    },
+    "tiers": {
+      "general": {
+        "label": "General",
+        "blurb": "Entrada gratuita los dos días, 4 y 5 de diciembre: desfile de moda, proyecciones de cine y arte, el Mercado Creativo y el concierto en vivo. Asiento general."
+      },
+      "vip": {
+        "label": "VIP",
+        "blurb": "Todo lo del pase General, con asiento prioritario en el desfile y el concierto."
+      },
+      "masterclass": {
+        "label": "Masterclass",
+        "blurb": "Todo lo del pase General, más las clases magistrales de ambos días. Asiento general."
+      },
+      "vvip": {
+        "label": "VVIP",
+        "blurb": "Todo incluido: asientos reservados en primera fila, mesa reservada en el concierto y la cena, meet and greet, clases magistrales de ambos días y acceso al Pitch y a la Deal Room."
+      }
+    },
+    "attendeeNew": {
+      "taking": "Te llevamos a los pases…",
+      "registered": "Estás registrado",
+      "received": "Registro recibido",
+      "freeTitle": "Tu entrada gratuita va en camino",
+      "paidTitle": "Termina tu registro",
+      "freeText": "Tu registro está confirmado. Te hemos enviado tu entrada gratuita por correo electrónico.",
+      "paidText": "Hemos recibido tu registro y tu plaza está reservada.",
+      "ticket": "Entrada",
+      "price": "Precio",
+      "amountDue": "Importe a pagar",
+      "confirmationEmail": "Correo de confirmación",
+      "freeNote": "Tu entrada va adjunta al correo que te enviamos. Muéstrala en el control de acceso cualquiera de los dos días.",
+      "paidNote": "Revisa tu correo para ver tu número de referencia. Guárdalo bien: lo necesitarás para terminar tu registro y completar el pago.",
+      "backHome": "Volver al inicio",
+      "finish": "Terminar el registro",
+      "footer": "Abuja · 4–5 de diciembre de 2026",
+      "eyebrow": "Únete al Showcase",
+      "heading": "Registro de asistentes",
+      "intro": "Revisa tu pase y cuéntanos quién eres. Tras registrarte, recibirás tu número de referencia por correo electrónico.",
+      "step1": "Paso 01",
+      "yourTicket": "Tu entrada",
+      "changePass": "Cambiar de pase",
+      "amountDueSmall": "Importe a pagar",
+      "selected": "Seleccionado",
+      "step2": "Paso 02",
+      "yourDetails": "Tus datos",
+      "fullName": "Nombre completo",
+      "fullNamePh": "p. ej. Juan Pérez",
+      "email": "Correo electrónico",
+      "phone": "Teléfono",
+      "agree": "He leído y acepto los <terms>Términos y condiciones</terms> y la <privacy>Política de privacidad</privacy>.",
+      "errorFallback": "Algo salió mal. Revisa tus datos e inténtalo de nuevo.",
+      "registrationFailed": "El registro ha fallado",
+      "registering": "Registrando...",
+      "getFree": "Obtener mi entrada gratuita →",
+      "complete": "Completar el registro →",
+      "payNote": "Tras el registro, elegirás cómo pagar: en línea o por transferencia bancaria. También te enviaremos tu número de referencia por correo electrónico.",
+      "group": "¿Compras para un equipo, una escuela o un grupo?",
+      "groupBtn": "Comprar varias entradas"
+    },
+    "attendeeFinish": {
+      "eyebrow": "Portal del asistente",
+      "heading": "Consultar estado, pagar o mejorar",
+      "intro": "Introduce el número de referencia que aparece en tu correo de registro.",
+      "refLabel": "Número de referencia",
+      "checking": "Comprobando...",
+      "check": "Consultar estado",
+      "hi": "Hola, {name}:",
+      "regStatus": "Estado del registro",
+      "rejectedDefault": "Tu registro no fue aprobado para esta edición.",
+      "attendee": "Asistente",
+      "unpaidText": "Tu registro sigue pendiente de pago. Completa el pago para asegurar tu plaza. Puedes pagar en línea o por transferencia bancaria.",
+      "completePay": "Completar el pago y asegurar mi plaza",
+      "confirmed": "Confirmado",
+      "ticketSent": "Tu entrada se ha enviado a tu correo electrónico.",
+      "wantUpgrade": "¿Quieres mejorar tu estatus?",
+      "clickHere": "Haz clic aquí",
+      "upgradeTitle": "Mejora tu entrada",
+      "upgradeNote": "El número de tu entrada y tu código QR siguen siendo los mismos; solo cambia tu tipo de acceso. Te enviaremos por correo una entrada actualizada en cuanto se confirme el pago.",
+      "upgradeTo": "Mejorar a",
+      "selectTicket": "Selecciona una entrada",
+      "optionPay": "{label} (pagar ₦{amount})",
+      "starting": "Iniciando la mejora...",
+      "upgradeBtn": "Mejorar y pagar",
+      "backHome": "Volver al inicio",
+      "errNotFound": "No se encontró ningún registro que coincida.",
+      "errGeneric": "Algo salió mal. Inténtalo de nuevo.",
+      "errUpgrade": "No se pudo iniciar la mejora.",
+      "errUpgradeStart": "Algo salió mal al iniciar la mejora."
     }
   }
 }
