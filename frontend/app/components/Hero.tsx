@@ -12,36 +12,43 @@ const SLIDES = [
     key: "slide1",
     color: "text-red",
     hex: "#B80319",
+    pos: "object-center",
   },
   {
     image: "/images/hero-02.webp",
     key: "slide2",
     color: "text-gold",
     hex: "#E59200",
+    // Only this slide: on phones, anchor to the right so the film strip stays in view.
+    pos: "object-[95%_center] md:object-center",
   },
   {
     image: "/images/hero-03.webp",
     key: "slide3",
     color: "text-teal",
     hex: "#00A5A8",
+    pos: "object-center",
   },
   {
     image: "/images/hero-04.webp",
     key: "slide4",
     color: "text-red",
     hex: "#B80319",
+    pos: "object-center",
   },
   {
     image: "/images/hero-05.webp",
     key: "slide5",
     color: "text-gold",
     hex: "#E59200",
+    pos: "object-center",
   },
   {
     image: "/images/hero-06.webp",
     key: "slide6",
     color: "text-teal",
     hex: "#00A5A8",
+    pos: "object-center",
   },
 ] as const;
 
@@ -203,7 +210,7 @@ export default function Hero() {
                       quality={75}
                       priority={index === 0}
                       loading={index === 0 ? undefined : "lazy"}
-                      className="object-cover object-center"
+                      className={`object-cover ${slide.pos}`}
                     />
                   )}
                 </div>
