@@ -168,7 +168,7 @@ export default function Hero() {
   const cycle = Math.floor(active / 3);
 
   return (
-    <section className="relative min-h-[60vh] overflow-hidden border-b border-white/10 bg-[#11152F] md:min-h-[calc(100vh-104px)]">
+    <section className="relative min-h-[60vh] overflow-hidden border-b border-white/10 bg-[#11152F] md:min-h-[calc(100svh-190px)]">
       {/* =====================================================
           CINEMATIC SLIDESHOW BACKGROUND
       ====================================================== */}
@@ -254,13 +254,13 @@ export default function Hero() {
           CONTENT
       ====================================================== */}
 
-      <div className="relative z-10 mx-auto flex min-h-[60vh] max-w-7xl flex-col px-6 pb-24 pt-5 md:min-h-[calc(100vh-104px)] md:px-10 md:pb-32 md:pt-12 lg:px-12">
+      <div className="relative z-10 mx-auto flex min-h-[60vh] max-w-7xl flex-col px-6 pb-24 pt-5 md:min-h-[calc(100svh-190px)] md:px-10 md:pb-20 md:pt-8 lg:px-12">
         {/* =================================================
             ORGANIZER
         ================================================== */}
 
         <div className="hero-intro hero-intro-1">
-          <p className="mb-3 text-xs text-white/60 md:mb-5 md:text-sm">
+          <p className="mb-3 text-xs text-white/60 md:mb-4 md:text-sm">
             {t("organizedBy")}{" "}
             <a
               href="https://www.afrigos-academy.com/"
@@ -277,9 +277,9 @@ export default function Hero() {
             MAIN CONTENT
         ================================================== */}
 
-        <div className="my-auto max-w-4xl py-5 md:py-12">
+        <div className="my-auto max-w-4xl py-5 md:py-6">
           <div className="hero-title-wrap">
-            <h1 className="hero-title max-w-4xl font-display text-4xl leading-[0.95] tracking-[-0.025em] text-[#F5EFE6] drop-shadow-2xl sm:text-6xl md:text-7xl lg:text-8xl">
+            <h1 className="hero-title max-w-4xl font-display text-4xl leading-[0.95] tracking-[-0.025em] text-[#F5EFE6] drop-shadow-2xl sm:text-6xl md:text-6xl lg:text-[clamp(3.5rem,5.2vw,5rem)]">
               {event.name}
             </h1>
           </div>
@@ -287,14 +287,14 @@ export default function Hero() {
           {/* Tagline */}
 
           <div className="hero-intro hero-intro-3">
-            <p className="mt-3 max-w-2xl font-display text-xl italic text-[#E59200] drop-shadow-lg sm:mt-6 sm:text-3xl md:text-4xl">
+            <p className="mt-3 max-w-2xl font-display text-xl italic text-[#E59200] drop-shadow-lg sm:mt-5 sm:text-3xl md:mt-4 md:text-3xl">
               {t("tagline")}
             </p>
           </div>
 
           {/* Tricolor rule */}
 
-          <div className="hero-rule mt-4 flex h-[3px] w-28 overflow-hidden rounded-full sm:mt-5 sm:w-32">
+          <div className="hero-rule mt-4 flex h-[3px] w-28 overflow-hidden rounded-full sm:mt-5 sm:w-32 md:mt-4">
             <span className="flex-1 bg-[#B80319]" />
             <span className="flex-1 bg-[#E59200]" />
             <span className="flex-1 bg-[#00A5A8]" />
@@ -302,7 +302,7 @@ export default function Hero() {
 
           {/* Event information */}
 
-          <div className="hero-intro hero-intro-5 mt-4 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[10px] uppercase tracking-[0.16em] text-white/65 sm:mt-7 sm:gap-x-4 sm:gap-y-2 sm:text-xs sm:tracking-[0.2em]">
+          <div className="hero-intro hero-intro-5 mt-4 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[10px] uppercase tracking-[0.16em] text-white/65 sm:mt-7 sm:gap-x-4 sm:gap-y-2 sm:text-xs sm:tracking-[0.2em] md:mt-5">
             <span>{t("location")}</span>
 
             <span className="h-1 w-1 rounded-full bg-[#E59200]" />
@@ -314,7 +314,7 @@ export default function Hero() {
               ANIMATED SLIDE MESSAGE
           ================================================== */}
 
-          <div className="hero-slide-message mt-4 min-h-[82px] max-w-2xl sm:mt-7 sm:min-h-[120px]">
+          <div className="hero-slide-message mt-4 min-h-[82px] max-w-2xl sm:mt-7 sm:min-h-[120px] md:mt-5 md:min-h-[96px]">
             <div className="relative h-[48px] overflow-hidden sm:h-[60px]">
               <p
                 key={active}
