@@ -2,9 +2,9 @@
 
 export const BASE = 'https://africacreativeshowcase.com/register';
 
-// Single registration entry point for the attendee passes.
-// TODO: replace with separate links (or a ?tier= parameter) once the form can capture the pass type.
-export const ATTENDEE_URL = `${BASE}/attendee/new`;
+// Attendee passes. The ?ticket= value tells the form which pass was chosen.
+export const ATTENDEE_URL = `${BASE}/attendee?ticket=general`;
+export const VIP_URL = `${BASE}/attendee?ticket=vip`;
 
 // Stands, exhibition spaces and fashion slots are booked by phone, not through a form.
 export const BOOKING_PHONE = '+234 (0) 906 780 8306';
@@ -68,7 +68,7 @@ export const tiers: Tier[] = [
       'Priority access to the Creative Market',
     ],
     cta: 'Get VIP',
-    href: ATTENDEE_URL,
+    href: VIP_URL,
     featured: true,
   },
 ];
