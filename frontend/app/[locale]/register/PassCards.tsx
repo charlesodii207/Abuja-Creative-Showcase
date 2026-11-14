@@ -24,8 +24,6 @@ export default function PassCards() {
             <a
               className={`${styles.btn} ${styles.btnBlock} ${t.featured ? '' : styles.btnDark}`}
               href={t.href}
-              target="_blank"
-              rel="noopener noreferrer"
             >
               {t.cta}
             </a>
@@ -42,7 +40,7 @@ export default function PassCards() {
         </div>
         <div className={styles.pitchAction}>
           <strong>{pitchStrip.price}</strong>
-          <a className={`${styles.btn} ${styles.btnOutline}`} href={pitchStrip.href} target="_blank" rel="noopener noreferrer">
+          <a className={`${styles.btn} ${styles.btnOutline}`} href={pitchStrip.href}>
             {pitchStrip.cta}
           </a>
         </div>
